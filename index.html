@@ -1611,10 +1611,10 @@ function calcTurno(type) {
 function newRecord(){
   editingId=null;formImgs=[];deletedImgs=[];
   FKEYS.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
-  // Set today's date as default for FECHA DE INICIO
+  const _t=new Date();
+  const _hoy=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
-  if(todayEl) todayEl.value=new Date().toISOString().slice(0,10);
-  document.getElementById('f-fechaInicio').value=new Date().toISOString().slice(0,10);
+  if(todayEl) todayEl.value=_hoy;
   renderIG();setEl('iStatus','');showScr('form');
 }
 function cancelForm(){showScr('list');}
@@ -1646,10 +1646,13 @@ function rmImg(i){
 async function saveRecord(){
   if(!fv('fechaInicio')){toast('⚠ La fecha de inicio es obligatoria');return;}
   if(!fv('viaje')){toast('⚠ El N° de viaje es obligatorio');return;}
-  /* Validate unique viaje per orden+motivo */
   const vOrden=fv('orden').trim(), vMotivo=fv('motivo').trim(), vViaje=fv('viaje').trim();
-  const dup=records.find(r=>r.id!==(editingId||'') && r.orden===vOrden && r.motivo===vMotivo && String(r.viaje)===vViaje);
-  if(dup){toast('⚠ Ya existe un registro con esta Orden, Motivo y N° Viaje');return;}
+  /* Prevent folder collision: block only when the computed folderName already
+     exists in another record. Same order number on a different date or viaje
+     produces a different folderName and is therefore allowed. */
+  const _chkFolder=`ORDEN-${vOrden||'SIN_NUMERO'}-${(vMotivo.split(' ')[0]||'SIN_MOTIVO').toUpperCase()}-${vViaje||'1'}-${formatDateToDDMMYYYY(fv('fechaInicio'))||'SIN_FECHA'}`;
+  const dup=records.find(r=>r.id!==(editingId||'')&&(r.folderName||getFolderName(r))===_chkFolder);
+  if(dup){toast('⚠ Ya existe un registro con esta misma Orden, Motivo, Viaje y Fecha');return;}
 
   const btn=document.getElementById('btnSave');btn.disabled=true;
   const id=editingId||genId();
@@ -1723,7 +1726,7 @@ async function saveRecord(){
 
 function genId(){
   const d=new Date(); const pad=n=>String(n).padStart(2,'0');
-  return`TP${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  return`TP${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${String(d.getMilliseconds()).padStart(3,'0')}${Math.random().toString(36).slice(2,5)}`;
 }
 
 /* ════════════════════════════════════════════════════════
