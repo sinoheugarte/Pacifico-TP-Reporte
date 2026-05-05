@@ -823,7 +823,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   const sp=new URLSearchParams(location.search);
   if(window.opener&&(sp.has('code')||sp.has('error'))){
     try{window.opener.postMessage({type:'msOAuthCb',href:location.href},location.origin);}catch(_){}
-    window.close();
+    setTimeout(()=>window.close(),400);
   }
 })();
 /* ════════════════════════════════════════════════════════
@@ -974,7 +974,8 @@ async function signIn(){
          This avoids continuous COOP warnings from polling. */
       function onFocus(){
         let closed=false; try{closed=popup.closed;}catch(_){closed=true;}
-        if(closed) finish(()=>reject(new Error('user_cancelled')));
+        /* Delay rejection slightly so postMessage (if in flight) can arrive first */
+        if(closed) setTimeout(()=>{ if(!done) finish(()=>reject(new Error('user_cancelled'))); }, 600);
       }
 
       window.addEventListener('message',onMsg);
