@@ -1645,10 +1645,7 @@ function rmImg(i){
 async function saveRecord(){
   if(!fv('fechaInicio')){toast('⚠ La fecha de inicio es obligatoria');return;}
   if(!fv('viaje')){toast('⚠ El N° de viaje es obligatorio');return;}
-  /* Validate unique viaje per orden+motivo */
   const vOrden=fv('orden').trim(), vMotivo=fv('motivo').trim(), vViaje=fv('viaje').trim();
-  const dup=records.find(r=>r.id!==(editingId||'') && r.orden===vOrden && r.motivo===vMotivo && String(r.viaje)===vViaje);
-  if(dup){toast('⚠ Ya existe un registro con esta Orden, Motivo y N° Viaje');return;}
 
   const btn=document.getElementById('btnSave');btn.disabled=true;
   const id=editingId||genId();
@@ -1722,7 +1719,7 @@ async function saveRecord(){
 
 function genId(){
   const d=new Date(); const pad=n=>String(n).padStart(2,'0');
-  return`TP${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  return`TP${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${String(d.getMilliseconds()).padStart(3,'0')}${Math.random().toString(36).slice(2,5)}`;
 }
 
 /* ════════════════════════════════════════════════════════
