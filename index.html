@@ -218,6 +218,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .guide-btn { width: 44px; height: 44px; border-radius: 6px; background: var(--bg); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2); flex-shrink: 0; }
 .guide-btn:active { background: var(--border); }
 .guide-btn svg { width: 18px; height: 18px; }
+.doc-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:5px;vertical-align:middle;background:#d1d5db;transition:background .25s,box-shadow .25s}
+.doc-dot.has{background:#22c55e;box-shadow:0 0 0 3px #dcfce7}
 
 /* image section */
 .isec{padding:14px 18px 0}
@@ -572,7 +574,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   <div class="fsec">
     <div class="slbl">Guías y Documentos</div>
     <div class="fg">
-      <div class="f"><label>N° GUÍA REMITENTE</label>
+      <div class="f"><label>N° GUÍA REMITENTE <span class="doc-dot" id="dot-guiaRemitente"></span></label>
         <div class="guide-group">
           <input type="text" id="f-guiaRemitente" placeholder="Número de guía">
           <button class="guide-btn" onclick="triggerDocUpload('GuiaRemitente', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
@@ -580,7 +582,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
           <button class="guide-btn" onclick="triggerQR('Guía Remitente')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
         </div>
       </div>
-      <div class="f"><label>N° GUÍA TRANSPORTISTA</label>
+      <div class="f"><label>N° GUÍA TRANSPORTISTA <span class="doc-dot" id="dot-guiaTransportista"></span></label>
         <div class="guide-group">
           <input type="text" id="f-guiaTransportista" placeholder="Número de guía">
           <button class="guide-btn" onclick="triggerDocUpload('GuiaTransportista', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
@@ -588,7 +590,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
           <button class="guide-btn" onclick="triggerQR('Guía Transportista')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
         </div>
       </div>
-      <div class="f"><label>N° HOJA INGRESO TAI LOY</label>
+      <div class="f"><label>N° HOJA INGRESO TAI LOY <span class="doc-dot" id="dot-hojaIngreso"></span></label>
         <div class="guide-group">
           <input type="text" id="f-hojaIngreso" placeholder="Número de hoja">
           <button class="guide-btn" onclick="triggerDocUpload('HojaIngreso', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
@@ -1624,6 +1626,12 @@ function addImgs(inp){
   inp.value='';
   setTimeout(()=>setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:''),100);
 }
+function updateDocIndicators(){
+  const dot=(id,v)=>{const el=document.getElementById(id);if(el)el.classList.toggle('has',v);};
+  dot('dot-guiaRemitente',  formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiaremitente')||n.startsWith('guia_remitente');}));
+  dot('dot-guiaTransportista', formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiatransportista')||n.startsWith('guia_transportista');}));
+  dot('dot-hojaIngreso',    formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('hojaingreso')||n.startsWith('hoja_ingreso')||n.startsWith('hoja');}));
+}
 function renderIG(){
   const dUs=formImgs.map(f=>f.dataUrl);
   document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>{
@@ -1635,6 +1643,7 @@ function renderIG(){
      ${docLabel?`<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${docLabel}</div>`:''}
     </div>`;
   }).join('');
+  updateDocIndicators();
 }
 function rmImg(i){
   const removed = formImgs.splice(i,1)[0];
