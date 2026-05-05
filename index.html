@@ -1119,8 +1119,10 @@ async function withRetry(fn, retries=5, baseMs=1500){
     try{ return await fn(); }
     catch(e){
       const msg = e.message||'';
-      const isProcessing = msg.includes('processing') || msg.includes('423') || msg.includes('503') || msg.includes('504') || msg.includes('429');
-      if(attempt === retries || !isProcessing) throw e;
+      /* 423 = resource locked (Excel open) — not transient, never retry */
+      const isRetryable = !msg.includes('423') &&
+        (msg.includes('processing') || msg.includes('503') || msg.includes('504') || msg.includes('429'));
+      if(attempt === retries || !isRetryable) throw e;
       await wait(baseMs * Math.pow(2, attempt));
     }
   }
