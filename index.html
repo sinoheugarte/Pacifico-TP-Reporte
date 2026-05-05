@@ -1655,7 +1655,13 @@ async function saveRecord(){
   const motivo       = vMotivo.split(' ')[0].toUpperCase() || 'SIN_MOTIVO';
   const viaje        = vViaje || '1';
   const formattedDate= formatDateToDDMMYYYY(fv('fechaInicio')) || 'SIN_FECHA';
-  const folderName   = `ORDEN-${ord}-${motivo}-${viaje}-${formattedDate}`;
+  let   folderName   = `ORDEN-${ord}-${motivo}-${viaje}-${formattedDate}`;
+  /* Guarantee one folder per record: if another record already uses this
+     folderName, append a short unique suffix from the record ID so that
+     rename/delete operations never affect a different record's photos.    */
+  if(!editingId && records.some(r=>(r.folderName||getFolderName(r))===folderName)){
+    folderName = `${folderName}-${id.slice(-5)}`;
+  }
 
   const rec={
     id, folderName,
