@@ -817,6 +817,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 <div class="toast" id="toast"></div>
 
 <script>
+/* OAuth popup callback: if this page loaded with ?code= or ?error= inside a popup,
+   relay the URL to the opener and close — no cross-origin property access needed. */
+(function(){
+  const sp=new URLSearchParams(location.search);
+  if(window.opener&&(sp.has('code')||sp.has('error'))){
+    try{window.opener.postMessage({type:'msOAuthCb',href:location.href},location.origin);}catch(_){}
+    window.close();
+  }
+})();
 /* ════════════════════════════════════════════════════════
    CONSTANTS & STATE
 ════════════════════════════════════════════════════════ */
@@ -931,40 +940,45 @@ async function signIn(){
     const popup = window.open(authUrl.toString(), 'msAuth', `width=${W},height=${H},top=${top},left=${left},toolbar=no,menubar=no`);
     if(!popup||popup.closed){ showAErr('⚠ El navegador bloqueó la ventana emergente.'); setBtnMS(false); return; }
 
-    const isPopupClosed = w => { try{ return w.closed; }catch(e){ return true; } };
+    /* postMessage-based flow: popup relays the callback URL, no polling needed.
+       Fallback: onFocus fires when user returns to this tab after closing popup. */
     await new Promise((resolve, reject)=>{
-      const timer = setInterval(async ()=>{
-        try{
-          if(isPopupClosed(popup)){ clearInterval(timer); reject(new Error('user_cancelled')); return; }
-          const href = popup.location.href;
-          if(!href.startsWith(cfg.redir)) return;
-          popup.close(); clearInterval(timer);
+      let done=false;
+      function finish(fn){if(!done){done=true;cleanup();fn();}}
+      function cleanup(){window.removeEventListener('message',onMsg);window.removeEventListener('focus',onFocus);}
 
-          const url   = new URL(href);
-          const error = url.searchParams.get('error');
-          if(error){ reject(new Error(url.searchParams.get('error_description')||error)); return; }
-          const code      = url.searchParams.get('code');
-          const retState  = url.searchParams.get('state');
-          const saved     = JSON.parse(sessionStorage.getItem(PKCE_KEY)||'{}');
-          if(retState !== saved.state){ reject(new Error('State mismatch')); return; }
-          sessionStorage.removeItem(PKCE_KEY);
+      function onMsg(ev){
+        if(ev.origin!==location.origin||!ev.data||ev.data.type!=='msOAuthCb') return;
+        try{popup.close();}catch(_){}
+        const url=new URL(ev.data.href);
+        const error=url.searchParams.get('error');
+        if(error){finish(()=>reject(new Error(url.searchParams.get('error_description')||error)));return;}
+        const code=url.searchParams.get('code');
+        const retState=url.searchParams.get('state');
+        const saved=JSON.parse(sessionStorage.getItem(PKCE_KEY)||'{}');
+        if(retState!==saved.state){finish(()=>reject(new Error('State mismatch')));return;}
+        sessionStorage.removeItem(PKCE_KEY);
+        fetch(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/token`,{
+          method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+          body:new URLSearchParams({client_id:cfg.cid,grant_type:'authorization_code',code,redirect_uri:cfg.redir,code_verifier:saved.verifier,scope:GRAPH_SCOPES.join(' ')+' offline_access'})
+        }).then(r=>r.json()).then(td=>{
+          if(td.error){finish(()=>reject(new Error(td.error_description||td.error)));return;}
+          const expiry=Date.now()+(td.expires_in||3600)*1000;
+          localStorage.setItem(TOKEN_KEY,JSON.stringify({access_token:td.access_token,refresh_token:td.refresh_token,expiry}));
+          token=td.access_token;
+          finish(()=>resolve());
+        }).catch(e=>finish(()=>reject(e)));
+      }
 
-          const tokenResp = await fetch(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/token`, { 
-            method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({ client_id: cfg.cid, grant_type: 'authorization_code', code, redirect_uri: cfg.redir, code_verifier: saved.verifier, scope: GRAPH_SCOPES.join(' ') + ' offline_access' })
-          });
-          const tokenData = await tokenResp.json();
-          if(tokenData.error){ reject(new Error(tokenData.error_description||tokenData.error)); return; }
+      /* Only check popup.closed when user switches back to this tab (1 check max).
+         This avoids continuous COOP warnings from polling. */
+      function onFocus(){
+        let closed=false; try{closed=popup.closed;}catch(_){closed=true;}
+        if(closed) finish(()=>reject(new Error('user_cancelled')));
+      }
 
-          const expiry = Date.now() + (tokenData.expires_in||3600)*1000;
-          localStorage.setItem(TOKEN_KEY, JSON.stringify({ access_token: tokenData.access_token, refresh_token: tokenData.refresh_token, expiry }));
-          token = tokenData.access_token;
-          resolve();
-        } catch(e){
-          if(e.name==='SecurityError'||e.message?.includes('cross-origin')) return;
-          clearInterval(timer); if(!isPopupClosed(popup)) popup.close(); reject(e);
-        }
-      }, 300);
+      window.addEventListener('message',onMsg);
+      window.addEventListener('focus',onFocus);
     });
 
     const me = await gGet('me?$select=displayName,mail,userPrincipalName');
