@@ -1631,11 +1631,15 @@ function addImgs(inp){
 }
 function renderIG(){
   const dUs=formImgs.map(f=>f.dataUrl);
-  document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>
-    `<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGal(${JSON.stringify(dUs).replace(/"/g,'&quot;')},${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
-     ${f.name.startsWith('Guia') || f.name.startsWith('Hoja') ? `<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${f.name.split('_')[0]}</div>` : ''}
-    </div>`
-  ).join('');
+  document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>{
+    const nl=f.name.toLowerCase();
+    const docLabel=nl.startsWith('guiaremitente')||nl.startsWith('guia_remitente')?'Guía Rem.':
+                   nl.startsWith('guiatransportista')||nl.startsWith('guia_transportista')?'Guía Trans.':
+                   nl.startsWith('hojaingreso')||nl.startsWith('hoja_ingreso')||nl.startsWith('hoja')?'Hoja Ingreso':'';
+    return`<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGal(${JSON.stringify(dUs).replace(/"/g,'&quot;')},${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
+     ${docLabel?`<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${docLabel}</div>`:''}
+    </div>`;
+  }).join('');
 }
 function rmImg(i){
   const removed = formImgs.splice(i,1)[0];
@@ -1647,10 +1651,18 @@ async function saveRecord(){
   if(!fv('fechaInicio')){toast('⚠ La fecha de inicio es obligatoria');return;}
   if(!fv('viaje')){toast('⚠ El N° de viaje es obligatorio');return;}
   const vOrden=fv('orden').trim(), vMotivo=fv('motivo').trim(), vViaje=fv('viaje').trim();
+  /* Block duplicate viaje: same Orden+Motivo+Viaje cannot be registered twice
+     regardless of date (different date does not make a trip a different trip). */
+  const vMotivoKey=(vMotivo.split(' ')[0]||'SIN_MOTIVO').toUpperCase();
+  const dupViaje=records.find(r=>{
+    if(r.id===(editingId||'')) return false;
+    const rMotivoKey=((r.motivo||'').split(' ')[0]||'SIN_MOTIVO').toUpperCase();
+    return (r.orden||'').trim()===(vOrden||'SIN_NUMERO') && rMotivoKey===vMotivoKey && (r.viaje||'').trim()===vViaje;
+  });
+  if(dupViaje){toast('⚠ Ya existe un registro con este N° de Orden, Motivo y N° de Viaje');return;}
   /* Prevent folder collision: block only when the computed folderName already
-     exists in another record. Same order number on a different date or viaje
-     produces a different folderName and is therefore allowed. */
-  const _chkFolder=`ORDEN-${vOrden||'SIN_NUMERO'}-${(vMotivo.split(' ')[0]||'SIN_MOTIVO').toUpperCase()}-${vViaje||'1'}-${formatDateToDDMMYYYY(fv('fechaInicio'))||'SIN_FECHA'}`;
+     exists in another record (same Orden+Motivo+Viaje+Fecha). */
+  const _chkFolder=`ORDEN-${vOrden||'SIN_NUMERO'}-${vMotivoKey}-${vViaje||'1'}-${formatDateToDDMMYYYY(fv('fechaInicio'))||'SIN_FECHA'}`;
   const dup=records.find(r=>r.id!==(editingId||'')&&(r.folderName||getFolderName(r))===_chkFolder);
   if(dup){toast('⚠ Ya existe un registro con esta misma Orden, Motivo, Viaje y Fecha');return;}
 
@@ -1871,11 +1883,11 @@ async function renamePhotosIfNeeded(rec){
     const ext = oldName.split('.').pop().toLowerCase();
     let newName = oldName;
     if(/^(guiaRemitente|GuiaRemitente|Guia.*Remitente|GR-)/i.test(oldName) && rec.guiaRemitente){
-      newName = `guiaRemitente_${rec.guiaRemitente.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+      newName = `GuiaRemitente_${rec.guiaRemitente.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
     } else if(/^(guiaTransportista|GuiaTransportista|Guia.*Transportista|GT-)/i.test(oldName) && rec.guiaTransportista){
-      newName = `guiaTransportista_${rec.guiaTransportista.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+      newName = `GuiaTransportista_${rec.guiaTransportista.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
     } else if(/^(hojaIngreso|HojaIngreso|Hoja|HI-)/i.test(oldName) && rec.hojaIngreso){
-      newName = `hojaIngreso_${rec.hojaIngreso.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+      newName = `HojaIngreso_${rec.hojaIngreso.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
     }
     if(oldName !== newName){
       try{
@@ -1890,9 +1902,20 @@ async function renamePhotosIfNeeded(rec){
     } else { newNames.push(oldName); }
   }
   rec.photoNames = newNames;
-  /* Update cache with new names */
+  /* Update cache and cloud JSON with new names so fresh loads get correct filenames */
   const idx = records.findIndex(r=>r.id===rec.id);
-  if(idx>=0){ records[idx].photoNames = newNames; saveCache(); }
+  if(idx>=0){
+    records[idx].photoNames = newNames;
+    saveCache();
+    try{
+      const cloudRecords=records.map(r=>{const c={...r};delete c.images;return c;});
+      const tk=await freshToken();
+      await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}:/content`,{
+        method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/json'},
+        body:new Blob([JSON.stringify(cloudRecords,null,2)],{type:'application/json'})
+      });
+    }catch(e){console.warn('renamePhotosIfNeeded: datos.json sync failed:',e);}
+  }
 }
 
 /* Delete a single photo from OneDrive */
