@@ -1611,10 +1611,9 @@ function calcTurno(type) {
 function newRecord(){
   editingId=null;formImgs=[];deletedImgs=[];
   FKEYS.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
-  // Set today's date as default for FECHA DE INICIO
+  const _t=new Date(),_todayVal=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
-  if(todayEl) todayEl.value=new Date().toISOString().slice(0,10);
-  document.getElementById('f-fechaInicio').value=new Date().toISOString().slice(0,10);
+  if(todayEl) todayEl.value=_todayVal;
   renderIG();setEl('iStatus','');showScr('form');
 }
 function cancelForm(){showScr('list');}
