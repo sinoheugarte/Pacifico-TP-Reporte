@@ -620,7 +620,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     </div>
   </div>
   <div class="isec">
-    <div class="slbl">Evidencia Fotográfica (Fotos Generales)</div>
+    <div class="slbl">Evidencia Fotográfica (Fotos Generales) <span class="doc-dot" id="dot-fotosGenerales"></span></div>
     <div class="igrid" id="igrid"></div>
     <div class="iadd-row">
       <button class="iadd" onclick="document.getElementById('camIn').click()">
@@ -1631,6 +1631,7 @@ function updateDocIndicators(){
   dot('dot-guiaRemitente',  formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiaremitente')||n.startsWith('guia_remitente');}));
   dot('dot-guiaTransportista', formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiatransportista')||n.startsWith('guia_transportista');}));
   dot('dot-hojaIngreso',    formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('hojaingreso')||n.startsWith('hoja_ingreso')||n.startsWith('hoja');}));
+  dot('dot-fotosGenerales', formImgs.some(f=>{const n=f.name.toLowerCase();return !n.startsWith('guiaremitente')&&!n.startsWith('guia_remitente')&&!n.startsWith('guiatransportista')&&!n.startsWith('guia_transportista')&&!n.startsWith('hojaingreso')&&!n.startsWith('hoja_ingreso')&&!n.startsWith('hoja');}));
 }
 function renderIG(){
   const dUs=formImgs.map(f=>f.dataUrl);
