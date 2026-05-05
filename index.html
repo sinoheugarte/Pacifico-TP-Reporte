@@ -1188,6 +1188,9 @@ async function loadRecordsFromOD(){
       saveCache();
     }
     lastSync = new Date(); setSdot('ok'); renderList();
+    if(localStorage.getItem('ptp_excel_pending')){
+      try{ await uploadExcel(); localStorage.removeItem('ptp_excel_pending'); }catch(_){}
+    }
   }catch(e){ console.warn('Load OD:', e); setSdot(records.length ? 'ok' : 'off'); }
 }
 
@@ -1257,9 +1260,11 @@ async function pushToOneDrive(rec, finalImgs){
   showUp('Generando Excel actualizado…', 'Creando ReporteTransporte.xlsx', 82);
   try {
       await uploadExcel();
+      localStorage.removeItem('ptp_excel_pending');
   } catch(e) {
-      console.warn("Excel locked:", e);
-      toast('⚠ Datos guardados. El archivo Excel está bloqueado y se actualizará después.');
+      console.warn("Excel upload failed:", e);
+      localStorage.setItem('ptp_excel_pending','1');
+      toast('⚠ Datos guardados. El Excel se sincronizará automáticamente en la próxima conexión.');
   }
 
   // Rename photos if guide numbers changed during edit
@@ -1436,9 +1441,10 @@ async function deleteFromOD(rec){
   }, 3, 1000);
 
   setUpStep('Actualizando Excel…'); setUpBar(80);
-  try { await uploadExcel(); setUpBar(100); } catch(e) {
+  try { await uploadExcel(); localStorage.removeItem('ptp_excel_pending'); setUpBar(100); } catch(e) {
     console.warn('deleteFromOD Excel:', e.message);
-    toast('⚠ Registro eliminado pero Excel en uso.');
+    localStorage.setItem('ptp_excel_pending','1');
+    toast('⚠ Registro eliminado. El Excel se sincronizará automáticamente en la próxima conexión.');
   }
 }
 
@@ -1972,7 +1978,7 @@ function openOD(){window.open('https://onedrive.live.com','_blank');}
 
 function toggleEM(e){e.stopPropagation();const m=document.getElementById('emenu'),o=document.getElementById('emOv'),op=m.style.display!=='none';m.style.display=op?'none':'block';o.style.display=op?'none':'block';}
 function closeEM(){document.getElementById('emenu').style.display='none';document.getElementById('emOv').style.display='none';}
-function expXLSX(){closeEM();if(!records.length){toast('No hay registros');return;}uploadExcel().then(()=>toast('✓ Excel actualizado en OneDrive')).catch(()=>{});
+function expXLSX(){closeEM();if(!records.length){toast('No hay registros');return;}uploadExcel().then(()=>{localStorage.removeItem('ptp_excel_pending');toast('✓ Excel actualizado en OneDrive');}).catch(()=>{});
   const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const data=records.map(r=>{const row={};KEYS.forEach((k,i)=>{
