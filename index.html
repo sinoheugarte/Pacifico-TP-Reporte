@@ -931,12 +931,13 @@ async function signIn(){
     const popup = window.open(authUrl.toString(), 'msAuth', `width=${W},height=${H},top=${top},left=${left},toolbar=no,menubar=no`);
     if(!popup||popup.closed){ showAErr('⚠ El navegador bloqueó la ventana emergente.'); setBtnMS(false); return; }
 
+    const isPopupClosed = w => { try{ return w.closed; }catch(e){ return true; } };
     await new Promise((resolve, reject)=>{
       const timer = setInterval(async ()=>{
         try{
-          if(popup.closed){ clearInterval(timer); reject(new Error('user_cancelled')); return; }
+          if(isPopupClosed(popup)){ clearInterval(timer); reject(new Error('user_cancelled')); return; }
           const href = popup.location.href;
-          if(!href.startsWith(cfg.redir)) return; 
+          if(!href.startsWith(cfg.redir)) return;
           popup.close(); clearInterval(timer);
 
           const url   = new URL(href);
@@ -961,7 +962,7 @@ async function signIn(){
           resolve();
         } catch(e){
           if(e.name==='SecurityError'||e.message?.includes('cross-origin')) return;
-          clearInterval(timer); if(!popup.closed) popup.close(); reject(e);
+          clearInterval(timer); if(!isPopupClosed(popup)) popup.close(); reject(e);
         }
       }, 300);
     });
