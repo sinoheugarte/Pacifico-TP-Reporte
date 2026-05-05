@@ -1237,12 +1237,7 @@ async function pushToOneDrive(rec, finalImgs){
   }, 4, 1500);
 
   showUp('Generando Excel actualizado…', 'Creando ReporteTransporte.xlsx', 82);
-  try {
-      await uploadExcel();
-  } catch(e) {
-      console.warn("Excel locked:", e);
-      toast('⚠ Datos guardados. El archivo Excel está bloqueado y se actualizará después.');
-  }
+  await uploadExcel();
 
   // Rename photos if guide numbers changed during edit
   if(editingId && rec._origGuiaRem!==undefined){
@@ -1420,7 +1415,7 @@ async function deleteFromOD(rec){
   setUpStep('Actualizando Excel…'); setUpBar(80);
   try { await uploadExcel(); setUpBar(100); } catch(e) {
     console.warn('deleteFromOD Excel:', e.message);
-    toast('⚠ Registro eliminado pero Excel en uso.');
+    throw new Error('EXCEL_LOCKED');
   }
 }
 
@@ -1690,6 +1685,7 @@ async function saveRecord(){
     hoja:      existingRec._origHoja      ?? existingRec.hojaIngreso      ?? '',
   } : null;
 
+  editingId = id; // prevent duplicate record if Excel fails and user retries
   try{
     /* Delete removed photos from OneDrive FIRST */
     if(editingId && deletedImgs.length > 0){
@@ -1728,7 +1724,7 @@ async function saveRecord(){
   }catch(e){
     hideUp();
     const msg = e.message||String(e);
-    if(msg.includes('EXCEL_LOCKED') || msg.includes('423')) toast('⚠ Datos y fotos guardados. El Excel está bloqueado y se actualizará en la próxima subida.');
+    if(msg.includes('423')||msg.includes('Excel upload')) toast('⚠ Datos guardados. El Excel está abierto en OneDrive — ciérralo y vuelve a guardar para actualizar el reporte.');
     else if(msg.includes('401')||msg.includes('403')) toast('⚠ Sesión expirada. Cierra sesión e inicia de nuevo.');
     else if(msg.includes('Failed to fetch')) toast('⚠ Sin conexión. Verifica tu internet.');
     else toast('⚠ Error al guardar: '+msg.slice(0,60));
@@ -1940,7 +1936,16 @@ async function delRec(id){
     setSdot('ok');lastSync=new Date(); hideUp();
     toast('✓ Eliminado — Excel actualizado en OneDrive');
     showScr('list');
-  }catch(e){hideUp();toast('⚠ Error al eliminar: '+e.message);}
+  }catch(e){
+    hideUp();
+    if((e.message||'')==='EXCEL_LOCKED'){
+      setSdot('ok');lastSync=new Date();
+      toast('✓ Eliminado. El Excel está abierto en OneDrive — ciérralo para que se actualice.');
+      showScr('list');
+    } else {
+      toast('⚠ Error al eliminar: '+(e.message||''));
+    }
+  }
 }
 
 function renderUserCard() {
