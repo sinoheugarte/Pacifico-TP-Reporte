@@ -2580,6 +2580,7 @@ async function generatePPTX(){
       holeSize:55,chartColors:s4Chart.map(s=>s.c),
       showLegend:true,legendPos:'b',legendFontSize:10,
       showLabel:true,showPercent:true,
+      dataLabelPosition:'inEnd',
       dataLabelFontSize:11,dataLabelFontBold:true,dataLabelColor:WHITE,
     });
     [[WHITE,NAVY,'ESTADO','N°','%'],...[[comp,'Completado','22C55E','F0FDF4'],[enRuta,'En Ruta','3B82F6','EFF6FF'],[pend,'Pendiente','F59E0B','FFFBEB'],[cancel,'Cancelado','EF4444','FEF2F2']].map(([n,l,c,bg])=>[bg,c,l,n,total?Math.round(n/total*100)+'%':'0%'])].forEach(([bg,c,label,num,pct],ri)=>{
@@ -2624,7 +2625,8 @@ async function generatePPTX(){
       s6.addChart(pptx.ChartType.pie,[{name:'Motivos',labels:topMotivos.slice(0,8).map(([k])=>k),values:topMotivos.slice(0,8).map(([,v])=>v||0)}],{
         x:ML,y:CTX_Y,w:5.0,h:CTX_H,
         chartColors:mColors,showLegend:true,legendPos:'b',legendFontSize:8.5,
-        showLabel:true,showPercent:true,dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
+        showLabel:true,showPercent:true,dataLabelPosition:'inEnd',
+        dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
       });
     }
     s6.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
