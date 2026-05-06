@@ -1969,14 +1969,52 @@ function openOD(){window.open('https://onedrive.live.com','_blank');}
 
 function toggleEM(e){e.stopPropagation();const m=document.getElementById('emenu'),o=document.getElementById('emOv'),op=m.style.display!=='none';m.style.display=op?'none':'block';o.style.display=op?'none':'block';}
 function closeEM(){document.getElementById('emenu').style.display='none';document.getElementById('emOv').style.display='none';}
-function expXLSX(){closeEM();if(!records.length){toast('No hay registros');return;}uploadExcel().then(()=>toast('✓ Excel actualizado en OneDrive')).catch(()=>{});
+function expXLSX(){
+  closeEM();
+  if(!records.length){toast('No hay registros');return;}
   const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
-  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
-  const data=records.map(r=>{const row={};KEYS.forEach((k,i)=>{
-    if(k==='fechaInicio' || k==='fechaTermino') row[COLS[i]] = formatDateToDDMMYYYY(r[k]);
-    else row[COLS[i]]=KEYS.indexOf(k)>=15&&KEYS.indexOf(k)<=17?Number(r[k])||0:r[k]||'';
-  });row['N° FOTOS']=r.photoCount||0;return row;});
-  const ws=XLSX.utils.json_to_sheet(data,{header:COLS});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'REPORTE'); XLSX.writeFile(wb,`Reporte_${new Date().toISOString().slice(0,10)}.xlsx`);toast('✓ Copia Excel descargada');
+  const MAP=[
+    {k:'fechaInicio',      fmt:true},
+    {k:'fechaTermino',     fmt:true},
+    {k:'horaInicio'},
+    {k:'horaTermino'},
+    {k:'turnoInicio'},
+    {k:'turnoTermino'},
+    {k:'orden'},
+    {k:'dam'},
+    {k:'tipoUnidad'},
+    {k:'transportista'},
+    {k:'ruta'},
+    {k:'motivo'},
+    {k:'viaje',            num:true},
+    {k:'guiaRemitente'},
+    {k:'guiaTransportista'},
+    {k:'hojaIngreso'},
+    {k:'paletas',          num:true},
+    {k:'cajas',            num:true},
+    {k:'sobres',           num:true},
+    {k:'status'},
+    {k:'observaciones'},
+    {k:'_photoCount',      num:true},
+    {k:'_folder'},
+  ];
+  const data=records.map(r=>{
+    const row={};
+    MAP.forEach((m,i)=>{
+      let v;
+      if(m.k==='_photoCount') v=r.photoCount||0;
+      else if(m.k==='_folder') v=r.folderName||getFolderName(r)||'';
+      else if(m.fmt) v=formatDateToDDMMYYYY(r[m.k])||'';
+      else v=r[m.k]||'';
+      row[COLS[i]]=m.num?Number(v)||0:v;
+    });
+    return row;
+  });
+  const ws=XLSX.utils.json_to_sheet(data,{header:COLS});
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'REPORTE');
+  XLSX.writeFile(wb,`ReporteTransporte_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('✓ Excel descargado con todos los registros');
 }
 function expCSV(){closeEM();if(!records.length){toast('No hay registros');return;}
   const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
