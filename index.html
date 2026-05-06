@@ -2572,11 +2572,14 @@ async function generatePPTX(){
     setUpStep('Estado de Operaciones'); setUpBar(23);
     const s4=pptx.addSlide(); s4.background={color:BG};
     addHdr(s4,'DISTRIBUCIÓN POR ESTADO DE OPERACIONES'); addFtr(s4,++pageN);
-    s4.addChart(pptx.ChartType.doughnut,[{name:'Estado',labels:['Completado','En Ruta','Pendiente','Cancelado'],values:[comp||0,enRuta||0,pend||0,cancel||0]}],{
+    // Filter out 0-value slices so their labels don't cluster at the same point
+    const s4All=[{l:'Completado',v:comp||0,c:'22C55E'},{l:'En Ruta',v:enRuta||0,c:'3B82F6'},{l:'Pendiente',v:pend||0,c:'F59E0B'},{l:'Cancelado',v:cancel||0,c:'EF4444'}];
+    const s4Chart=s4All.filter(s=>s.v>0).length>0?s4All.filter(s=>s.v>0):s4All;
+    s4.addChart(pptx.ChartType.doughnut,[{name:'Estado',labels:s4Chart.map(s=>s.l),values:s4Chart.map(s=>s.v)}],{
       x:ML,y:CTX_Y,w:5.0,h:CTX_H,
-      holeSize:55,chartColors:['22C55E','3B82F6','F59E0B','EF4444'],
+      holeSize:55,chartColors:s4Chart.map(s=>s.c),
       showLegend:true,legendPos:'b',legendFontSize:10,
-      showLabel:false,showPercent:true,
+      showLabel:true,showPercent:true,
       dataLabelFontSize:11,dataLabelFontBold:true,dataLabelColor:WHITE,
     });
     [[WHITE,NAVY,'ESTADO','N°','%'],...[[comp,'Completado','22C55E','F0FDF4'],[enRuta,'En Ruta','3B82F6','EFF6FF'],[pend,'Pendiente','F59E0B','FFFBEB'],[cancel,'Cancelado','EF4444','FEF2F2']].map(([n,l,c,bg])=>[bg,c,l,n,total?Math.round(n/total*100)+'%':'0%'])].forEach(([bg,c,label,num,pct],ri)=>{
@@ -2618,10 +2621,10 @@ async function generatePPTX(){
     addHdr(s6,'ANÁLISIS DE MOTIVOS DE TRASLADO',`${topMotivos.length} tipo${topMotivos.length!==1?'s':''} de motivo`); addFtr(s6,++pageN);
     const mColors=['F59E0B','0EA5E9','22C55E','EF4444','7C3AED','F97316','14B8A6','EC4899'];
     if(topMotivos.length>0){
-      s6.addChart(pptx.ChartType.pie,[{name:'Motivos',labels:topMotivos.slice(0,8).map(([k])=>k.length>22?k.slice(0,20)+'…':k),values:topMotivos.slice(0,8).map(([,v])=>v||0)}],{
+      s6.addChart(pptx.ChartType.pie,[{name:'Motivos',labels:topMotivos.slice(0,8).map(([k])=>k),values:topMotivos.slice(0,8).map(([,v])=>v||0)}],{
         x:ML,y:CTX_Y,w:5.0,h:CTX_H,
         chartColors:mColors,showLegend:true,legendPos:'b',legendFontSize:8.5,
-        showLabel:false,showPercent:true,dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
+        showLabel:true,showPercent:true,dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
       });
     }
     s6.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
