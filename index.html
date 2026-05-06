@@ -2520,11 +2520,12 @@ async function generatePPTX(){
     s1.addText('DE OPERACIONES DE TRASLADO',{x:ML+.22,y:2.18,w:8.0,h:.56,fontSize:17,color:AMBER});
     s1.addText(`Período: ${periodo}`,{x:ML+.22,y:2.85,w:7.5,h:.36,fontSize:11,color:'94A3B8'});
     s1.addShape(pptx.ShapeType.rect,{x:0,y:3.46,w:10,h:.03,fill:{color:'1E3A5F'}});
-    [[total,'OPERACIONES',ML,AMBER],[comp,'COMPLETADAS',2.8,'22C55E'],[pctComp+'%','CUMPLIMIENTO',5.3,'60A5FA'],[(paletas+cajas),'CARGA (pal+caj)',7.8,'F472B6']].forEach(([v,l,x],idx)=>{
+    // 4 cards centered: 4×2.2 + 3×0.27 gap, start x=0.3 → ends at 9.71
+    [[total,'OPERACIONES',0.3,AMBER],[comp,'COMPLETADAS',2.77,'22C55E'],[pctComp+'%','CUMPLIMIENTO',5.24,'60A5FA'],[(paletas+cajas),'CARGA (pal+caj)',7.71,'F472B6']].forEach(([v,l,x],idx)=>{
       const c=[AMBER,'22C55E','60A5FA','F472B6'][idx];
-      s1.addShape(pptx.ShapeType.rect,{x,y:3.5,w:2.3,h:1.34,fill:{color:'0A1628'},line:{color:'1E3A5F',width:.4}});
-      s1.addText(String(v),{x,y:3.52,w:2.3,h:.72,fontSize:26,bold:true,color:c,align:'center'});
-      s1.addText(l,{x,y:4.22,w:2.3,h:.26,fontSize:7,bold:true,color:'64748B',align:'center'});
+      s1.addShape(pptx.ShapeType.rect,{x,y:3.5,w:2.2,h:1.34,fill:{color:'0A1628'},line:{color:'1E3A5F',width:.4}});
+      s1.addText(String(v),{x,y:3.52,w:2.2,h:.72,fontSize:26,bold:true,color:c,align:'center'});
+      s1.addText(l,{x,y:4.22,w:2.2,h:.26,fontSize:7,bold:true,color:'64748B',align:'center'});
     });
     s1.addShape(pptx.ShapeType.rect,{x:0,y:4.98,w:10,h:.06,fill:{color:AMBER}});
     s1.addText(`Generado: ${new Date().toLocaleString('es-PE')}  ·  ${user?.email||''}`,{x:ML,y:5.06,w:9.4,h:.28,fontSize:7.5,color:'475569',align:'center'});
@@ -2575,7 +2576,7 @@ async function generatePPTX(){
       x:ML,y:CTX_Y,w:5.0,h:CTX_H,
       holeSize:55,chartColors:['22C55E','3B82F6','F59E0B','EF4444'],
       showLegend:true,legendPos:'b',legendFontSize:10,
-      showLabel:true,showPercent:true,
+      showLabel:false,showPercent:true,
       dataLabelFontSize:11,dataLabelFontBold:true,dataLabelColor:WHITE,
     });
     [[WHITE,NAVY,'ESTADO','N°','%'],...[[comp,'Completado','22C55E','F0FDF4'],[enRuta,'En Ruta','3B82F6','EFF6FF'],[pend,'Pendiente','F59E0B','FFFBEB'],[cancel,'Cancelado','EF4444','FEF2F2']].map(([n,l,c,bg])=>[bg,c,l,n,total?Math.round(n/total*100)+'%':'0%'])].forEach(([bg,c,label,num,pct],ri)=>{
@@ -2620,7 +2621,7 @@ async function generatePPTX(){
       s6.addChart(pptx.ChartType.pie,[{name:'Motivos',labels:topMotivos.slice(0,8).map(([k])=>k.length>22?k.slice(0,20)+'…':k),values:topMotivos.slice(0,8).map(([,v])=>v||0)}],{
         x:ML,y:CTX_Y,w:5.0,h:CTX_H,
         chartColors:mColors,showLegend:true,legendPos:'b',legendFontSize:8.5,
-        showLabel:true,showPercent:true,dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
+        showLabel:false,showPercent:true,dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
       });
     }
     s6.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
@@ -2699,15 +2700,18 @@ async function generatePPTX(){
       barDir:'col',barGapWidthPct:60,chartColors:['22C55E','3B82F6','A78BFA'],
       showLegend:false,showValue:true,dataLabelFontSize:11,dataLabelFontBold:true,
     });
-    s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:CTX_Y,w:3.62,h:.68,fill:{color:NAVY},line:{color:NAVY}});
-    s9.addText(`TOTAL: ${cargoTotal} UNIDADES`,{x:6.05,y:CTX_Y,w:3.62,h:.68,fontSize:10,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:CTX_Y,w:3.62,h:.6,fill:{color:NAVY},line:{color:NAVY}});
+    s9.addText(`TOTAL: ${cargoTotal} UNIDADES`,{x:6.05,y:CTX_Y,w:3.62,h:.6,fontSize:10,bold:true,color:WHITE,align:'center',valign:'middle'});
+    // 3 cards evenly filling remaining height: (CTX_H - 0.6 - 2 gaps) / 3
+    // available = 4.47 - 0.6 - 0.18 = 3.69 → each card h=1.23, step=1.23+0.09=1.32
     [{l:'PALETAS',v:paletas,c:GREEN,bg:GREEN_BG},{l:'CAJAS',v:cajas,c:BLUE,bg:BLUE_BG},{l:'SOBRES',v:sobres,c:PURPLE,bg:PURPLE_BG}].forEach(({l,v,c,bg},i)=>{
-      const cy=CTX_Y+.82+i*1.2, pct2=cargoTotal?Math.round(v/cargoTotal*100):0;
-      s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy,w:3.62,h:1.06,fill:{color:bg},line:{color:c,width:.6}});
-      s9.addText(String(v),{x:6.05,y:cy+.02,w:3.62,h:.58,fontSize:30,bold:true,color:c,align:'center'});
-      s9.addText(`${l}  (${pct2}%)`,{x:6.05,y:cy+.62,w:3.62,h:.26,fontSize:8.5,bold:true,color:c,align:'center'});
-      s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy+.9,w:3.62,h:.13,fill:{color:'E2E8F0'},line:{color:'E2E8F0'}});
-      if(pct2>0) s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy+.9,w:3.62*pct2/100,h:.13,fill:{color:c},line:{color:c}});
+      const ch=1.18, cy=CTX_Y+.69+i*(ch+.09), pct2=cargoTotal?Math.round(v/cargoTotal*100):0;
+      s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy,w:3.62,h:ch,fill:{color:bg},line:{color:BORDER,width:.4}});
+      s9.addShape(pptx.ShapeType.rect,{x:6.05,y:cy,w:3.62,h:.07,fill:{color:c}});
+      s9.addText(String(v),{x:6.05,y:cy+.06,w:3.62,h:.62,fontSize:32,bold:true,color:c,align:'center'});
+      s9.addText(`${l}  (${pct2}%)`,{x:6.05,y:cy+.7,w:3.62,h:.26,fontSize:8.5,bold:true,color:c,align:'center'});
+      s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy+.98,w:3.62,h:.12,fill:{color:'E2E8F0'},line:{color:'E2E8F0'}});
+      if(pct2>0) s9.addShape(pptx.ShapeType.roundRect,{x:6.05,y:cy+.98,w:3.62*pct2/100,h:.12,fill:{color:c},line:{color:c}});
     });
 
     // ══ TABLA DE REGISTROS ══
@@ -2786,7 +2790,8 @@ async function generatePPTX(){
     sf.addText('Sistema de Gestión de Traslados',{x:.5,y:1.22,w:9,h:.52,fontSize:13,color:'94A3B8',align:'center'});
     sf.addText(`${total} operaciones  ·  ${comp} completadas  ·  ${pctComp}% de cumplimiento`,{x:.5,y:2.68,w:9,h:.44,fontSize:11,color:WHITE,align:'center'});
     sf.addText(`Período: ${periodo}`,{x:.5,y:3.18,w:9,h:.38,fontSize:10,color:'94A3B8',align:'center'});
-    [[comp,'Completadas',GREEN,ML],[enRuta,'En Ruta',BLUE,2.8],[pend,'Pendientes',ORANGE,5.3],[cancel,'Canceladas',RED,7.8]].forEach(([v,l,c,x])=>{
+    // 4 cards centered: 4×2.2 + 3×0.27 gap → total 9.61, start 0.2
+    [[comp,'Completadas',GREEN,0.2],[enRuta,'En Ruta',BLUE,2.67],[pend,'Pendientes',ORANGE,5.14],[cancel,'Canceladas',RED,7.61]].forEach(([v,l,c,x])=>{
       sf.addShape(pptx.ShapeType.roundRect,{x,y:3.82,w:2.2,h:.88,fill:{color:'152234'},line:{color:c,width:.6}});
       sf.addText(String(v),{x,y:3.84,w:2.2,h:.5,fontSize:22,bold:true,color:c,align:'center'});
       sf.addText(l,{x,y:4.3,w:2.2,h:.32,fontSize:7.5,color:'64748B',align:'center'});
