@@ -3265,10 +3265,10 @@ function generateRevealPresentation(){
   const rendLvlR=pctComp>=80?'ÓPTIMO':pctComp>=60?'MODERADO':'BAJO';
   const resumenTextR=`${total} operación${total!==1?'es':''} registradas. Cumplimiento: ${pctComp}% — nivel ${rendLvlR}. ${comp} completadas, ${enRuta} en ruta.`;
   const estadoTextR=`Completadas: ${comp} (${pctComp}%) · En ruta: ${enRuta} (${pctRutaR}%) · Pendientes: ${pend} (${pctPendR}%) · Canceladas: ${cancel} (${pctCancelR}%). ${pctCancelR>10?'⚠ Cancelaciones sobre umbral del 10%.':cancel===0?'✓ Sin cancelaciones.':'✓ Cancelaciones en rango normal.'}`;
-  const transpTextR=topTrans[0]?`${topTrans.length} transportistas activos. Principal: "${topTrans[0][0]}" — ${topTrans[0][1]} viaje${topTrans[0][1]!==1?'s':''} (${Math.round(topTrans[0][1]/total*100)}%).${topTrans.length>1?' 2°: "'+topTrans[1][0]+'" con '+topTrans[1][1]+'.':'`}'Sin datos.';
-  const rutasTextR=topRutas[0]?`${topRutas.length} rutas. Corredor principal: "${topRutas[0][0]}" — ${topRutas[0][1]} traslado${topRutas[0][1]!==1?'s':''} (${Math.round(topRutas[0][1]/total*100)}%).${topRutas.length>1?' 2°: "'+topRutas[1][0]+'" ('+topRutas[1][1]+').':'`}'Sin datos.';
+  const transpTextR=topTrans[0]?`${topTrans.length} transportistas activos. Principal: "${topTrans[0][0]}" — ${topTrans[0][1]} viaje${topTrans[0][1]!==1?'s':''} (${Math.round(topTrans[0][1]/total*100)}%).${topTrans.length>1?' 2°: "'+topTrans[1][0]+'" con '+topTrans[1][1]+'.':''}`:'Sin datos.';
+  const rutasTextR=topRutas[0]?`${topRutas.length} rutas. Corredor principal: "${topRutas[0][0]}" — ${topRutas[0][1]} traslado${topRutas[0][1]!==1?'s':''} (${Math.round(topRutas[0][1]/total*100)}%).${topRutas.length>1?' 2°: "'+topRutas[1][0]+'" ('+topRutas[1][1]+').':''}`:'Sin datos.';
   const cargaTextR=`Total: ${cargoTotalR} u. Paletas: ${paletas} (${cargoTotalR?Math.round(paletas/cargoTotalR*100):0}%) · Cajas: ${cajas} (${cargoTotalR?Math.round(cajas/cargoTotalR*100):0}%) · Sobres: ${sobres} (${cargoTotalR?Math.round(sobres/cargoTotalR*100):0}%).`;
-  const motivosTextR=topMotivoR[0]?`${topMotivoR.length} motivo${topMotivoR.length!==1?'s':''} identificados. Predominante: "${topMotivoR[0][0]}" — ${topMotivoR[0][1]} op. (${Math.round(topMotivoR[0][1]/total*100)}%).${topMotivoR.length>1?' 2°: "'+topMotivoR[1][0]+'" ('+Math.round(topMotivoR[1][1]/total*100)+'%).':'`}'Sin datos.';
+  const motivosTextR=topMotivoR[0]?`${topMotivoR.length} motivo${topMotivoR.length!==1?'s':''} identificados. Predominante: "${topMotivoR[0][0]}" — ${topMotivoR[0][1]} op. (${Math.round(topMotivoR[0][1]/total*100)}%).${topMotivoR.length>1?' 2°: "'+topMotivoR[1][0]+'" ('+Math.round(topMotivoR[1][1]/total*100)+'%).':''}`:'Sin datos.';
 
   // Conclusions
   const concItems=[];
