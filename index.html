@@ -3300,6 +3300,7 @@ function generateRevealPresentation(){
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"><\/script>
 <style>
   :root{--navy:#0f2340;--amber:#f59e0b;--green:#22c55e;--blue:#3b82f6;--red:#ef4444}
   .reveal{font-family:'Segoe UI',Calibri,sans-serif}
@@ -3355,7 +3356,7 @@ function generateRevealPresentation(){
     <p style="font-size:.6em;letter-spacing:.28em;text-transform:uppercase;opacity:.4;margin:0">Sistema de Gestión de Traslados · Perú</p>
   </div>
   <div style="position:absolute;bottom:62px;left:0;right:0;text-align:center;z-index:2">
-    <p class="glow-text" style="font-size:1.9em;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0;line-height:1.1">PACÍFICO TRANSPORTATION SAC</p>
+    <p class="glow-text" style="font-size:1.75em;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0;line-height:1.25">PACÍFICO<br>TRANSPORTATION SAC</p>
     <div class="scroll-ticker"><div class="scroll-ticker-inner">TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
   </div>
 </section>
@@ -3598,11 +3599,24 @@ function startGlobe(){
 }
 function stopGlobe(){if(globeRAF){cancelAnimationFrame(globeRAF);globeRAF=null;}}
 
+Chart.register(ChartDataLabels);
+
 Reveal.on('ready',function(){
   setTimeout(startGlobe,120);
   Chart.defaults.color='rgba(255,255,255,.7)';
   Chart.defaults.font.family="'Segoe UI',Calibri,sans-serif";
   Chart.defaults.plugins.legend.labels.padding=14;
+
+  var dlDonut={display:true,color:'#fff',font:{size:13,weight:'bold'},
+    formatter:function(val,ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return t>0&&val>0?Math.round(val/t*100)+'%':'';},
+    textShadowBlur:4,textShadowColor:'rgba(0,0,0,.8)'};
+  var dlBarH={display:true,anchor:'end',align:'right',offset:4,color:'#fff',font:{size:13,weight:'bold'},
+    formatter:function(v){return v;}};
+  var dlBarV={display:true,anchor:'end',align:'top',offset:4,color:'#fff',font:{size:13,weight:'bold'},
+    formatter:function(v){return v;}};
+  var dlLine={display:true,anchor:'end',align:'top',offset:6,color:'#F59E0B',font:{size:13,weight:'bold'},
+    backgroundColor:'rgba(2,8,20,.65)',borderRadius:4,padding:{top:2,bottom:2,left:5,right:5},
+    formatter:function(v){return v;}};
 
   new Chart(document.getElementById('revChartStatus'),{
     type:'doughnut',
@@ -3610,7 +3624,7 @@ Reveal.on('ready',function(){
       datasets:[{data:[${comp},${enRuta},${pend},${cancel}],
         backgroundColor:['#22C55E','#3B82F6','#F59E0B','#EF4444'],borderWidth:3,borderColor:'#0f2340',hoverOffset:12}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:13}}}}}
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:13}}},datalabels:dlDonut}}
   });
 
   new Chart(document.getElementById('revChartTransp'),{
@@ -3618,7 +3632,8 @@ Reveal.on('ready',function(){
     data:{labels:${transLabels},datasets:[{label:'Viajes',data:${transData},
       backgroundColor:'rgba(59,130,246,.8)',borderRadius:6,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      plugins:{legend:{display:false}},
+      layout:{padding:{right:50}},
+      plugins:{legend:{display:false},datalabels:dlBarH},
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
               y:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
@@ -3628,7 +3643,8 @@ Reveal.on('ready',function(){
     data:{labels:${rutaLabels},datasets:[{label:'Viajes',data:${rutaData},
       backgroundColor:'rgba(245,158,11,.8)',borderRadius:6,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      plugins:{legend:{display:false}},
+      layout:{padding:{right:50}},
+      plugins:{legend:{display:false},datalabels:dlBarH},
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
               y:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
@@ -3638,7 +3654,8 @@ Reveal.on('ready',function(){
     data:{labels:${uniLabels},datasets:[{label:'Cantidad',data:${uniData},
       backgroundColor:['#6366F1','#8B5CF6','#A78BFA','#C4B5FD','#818CF8','#7C3AED'],borderRadius:6,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
+      layout:{padding:{top:28}},
+      plugins:{legend:{display:false},datalabels:dlBarV},
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:11},maxRotation:25}},
               y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12},stepSize:1}}}}
   });
@@ -3648,9 +3665,10 @@ Reveal.on('ready',function(){
     data:{labels:${mensLabels},datasets:[{label:'Reportes',data:${mensData},
       borderColor:'#F59E0B',backgroundColor:'rgba(245,158,11,.1)',
       borderWidth:3,pointBackgroundColor:'#F59E0B',pointRadius:6,pointHoverRadius:9,
-      fill:true,tension:.4}]},
+      fill:true,tension:.4,datalabels:{labels:{title:null}}}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
+      layout:{padding:{top:30}},
+      plugins:{legend:{display:false},datalabels:dlLine},
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
               y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12},stepSize:1}}}}
   });
@@ -3661,7 +3679,7 @@ Reveal.on('ready',function(){
       datasets:[{data:[${paletas},${cajas},${sobres}],
         backgroundColor:['#22C55E','#3B82F6','#A78BFA'],borderWidth:3,borderColor:'#0f2340',hoverOffset:10}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:13}}}}}
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:13}}},datalabels:dlDonut}}
   });
 });
 
