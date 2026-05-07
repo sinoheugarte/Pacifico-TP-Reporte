@@ -2391,43 +2391,46 @@ async function generatePDF(){
       {scales:{x:{grid:{display:false},ticks:{font:{size:14},color:'#0F172A'}}, y:{...axisStyle,beginAtZero:true}}},
       {display:false}, 600, 380);
 
-    // ── Layout helper ──
+    // ── Layout helper — bold Navy header + amber stripe + white chart body ──
     function addPDFChart(imgData, title, cx, cy, cw, ch2){
-      doc.setFillColor(15,35,64); doc.roundedRect(cx,cy,cw,7,1,1,'F');
-      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-      doc.text(title.toUpperCase(),cx+3,cy+4.8);
-      doc.setFillColor(255,255,255); doc.setDrawColor(226,232,240);
-      doc.roundedRect(cx,cy+7,cw,ch2,1,1,'FD');
-      doc.addImage(imgData,'PNG',cx+1,cy+8,cw-2,ch2-2);
+      // Header bar
+      doc.setFillColor(15,35,64); doc.roundedRect(cx,cy,cw,9,2,2,'F');
+      doc.setFillColor(245,158,11); doc.rect(cx,cy+8,cw,1.5,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text(title.toUpperCase(),cx+4,cy+6);
+      // Chart body
+      doc.setFillColor(255,255,255); doc.setDrawColor(200,210,225);
+      doc.roundedRect(cx,cy+10,cw,ch2,2,2,'FD');
+      doc.addImage(imgData,'PNG',cx+2,cy+12,cw-4,ch2-4);
     }
-    const half=(contentW-5)/2, ch2=58;
+    const half=(contentW-5)/2, ch2=66;
     setUpBar(55);
 
     // Row 1: Estado + Motivos (side by side)
-    if(y+ch2+12>H-margin-10){doc.addPage();y=margin;}
+    if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
     addPDFChart(imgEstado,'Estado de Operaciones',margin,y,half,ch2);
     if(imgMotivos) addPDFChart(imgMotivos,'Motivos de Traslado',margin+half+5,y,half,ch2);
-    y+=ch2+12;
+    y+=ch2+14;
 
     // Row 2: Transportistas (full width)
     if(imgTransp){
-      if(y+ch2+12>H-margin-10){doc.addPage();y=margin;}
+      if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
       addPDFChart(imgTransp,'Top Transportistas',margin,y,contentW,ch2);
-      y+=ch2+12;
+      y+=ch2+14;
     }
 
     // Row 3: Tendencia mensual (full width)
     if(imgMensual){
-      if(y+ch2+12>H-margin-10){doc.addPage();y=margin;}
+      if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
       addPDFChart(imgMensual,'Tendencia Mensual de Operaciones',margin,y,contentW,ch2);
-      y+=ch2+12;
+      y+=ch2+14;
     }
 
     // Row 4: Rutas + Carga (side by side)
-    if(y+ch2+12>H-margin-10){doc.addPage();y=margin;}
+    if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
     if(imgRutas) addPDFChart(imgRutas,'Top Rutas',margin,y,half,ch2);
     addPDFChart(imgCarga,'Carga Transportada',margin+half+5,y,half,ch2);
-    y+=ch2+12;
+    y+=ch2+14;
 
     // ── RECORDS TABLE ──
     setUpStep('Generando tabla de registros…'); setUpBar(70);
@@ -2453,37 +2456,48 @@ async function generatePDF(){
     const scale=contentW/totalColW;
     cols.forEach(c=>c.w=c.w*scale);
 
-    doc.setFillColor(15,35,64); doc.rect(margin,y,contentW,7,'F');
+    doc.setFillColor(15,35,64); doc.rect(margin,y,contentW,8,'F');
     doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7);
     let cx=margin;
-    cols.forEach(c=>{doc.text(c.h,cx+c.w/2,y+4.8,{align:'center'});cx+=c.w;});
-    y+=7;
+    cols.forEach(c=>{doc.text(c.h,cx+c.w/2,y+5.2,{align:'center'});cx+=c.w;});
+    y+=8;
 
     records.forEach((rec,ri)=>{
-      if(y>H-margin-10){
+      // Pre-calculate row height: find max lines needed across all columns
+      doc.setFontSize(6.5);
+      let maxLines=1;
+      cols.forEach(c=>{
+        let v=rec[c.k]||''; if(c.fmt)v=c.fmt(v);
+        const lines=doc.splitTextToSize(String(v),c.w-2);
+        if(lines.length>maxLines) maxLines=Math.min(lines.length,2);
+      });
+      const rowH=maxLines===1?8:12;
+
+      if(y+rowH>H-margin-10){
         doc.addPage(); y=margin;
-        doc.setFillColor(15,35,64); doc.rect(margin,y,contentW,7,'F');
+        doc.setFillColor(15,35,64); doc.rect(margin,y,contentW,8,'F');
         doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7);
         let cx3=margin;
-        cols.forEach(c=>{doc.text(c.h,cx3+c.w/2,y+4.8,{align:'center'});cx3+=c.w;});
-        y+=7;
+        cols.forEach(c=>{doc.text(c.h,cx3+c.w/2,y+5.2,{align:'center'});cx3+=c.w;});
+        y+=8;
       }
-      const rowH=6.5;
       doc.setFillColor(ri%2===0?248:255,ri%2===0?250:255,ri%2===0?252:255);
       doc.rect(margin,y,contentW,rowH,'F');
       doc.setDrawColor(226,232,240); doc.rect(margin,y,contentW,rowH,'S');
       doc.setTextColor(15,23,42); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
       let cx2=margin;
+      const lineH=3.5;
       cols.forEach(c=>{
-        let v=rec[c.k]||'';
-        if(c.fmt) v=c.fmt(v);
-        v=String(v).slice(0,22);
+        let v=rec[c.k]||''; if(c.fmt)v=c.fmt(v); v=String(v);
+        const lines=doc.splitTextToSize(v,c.w-2).slice(0,2);
+        const blockH=lines.length*lineH;
+        const startY=y+(rowH-blockH)/2+lineH-0.5;
         if(c.k==='status'){
           const sc={completado:[21,128,61],pendiente:[146,64,14],'en-ruta':[30,64,175],cancelado:[153,27,27]};
           const col=sc[(v||'').toLowerCase()];
           if(col){doc.setTextColor(...col);doc.setFont('helvetica','bold');}
         }
-        doc.text(v,cx2+c.w/2,y+4.2,{align:'center',maxWidth:c.w-2});
+        lines.forEach((line,li)=>doc.text(line,cx2+c.w/2,startY+li*lineH,{align:'center'}));
         doc.setTextColor(15,23,42); doc.setFont('helvetica','normal');
         cx2+=c.w;
       });
@@ -2712,8 +2726,8 @@ async function generatePPTX(){
       s6.addChart(pptx.ChartType.pie,[{name:'Motivos',labels:topMotivos.slice(0,8).map(([k])=>k),values:topMotivos.slice(0,8).map(([,v])=>v||0)}],{
         x:ML,y:CTX_Y,w:5.3,h:CTX_H,
         chartColors:mColors,showLegend:true,legendPos:'b',legendFontSize:8.5,
-        showLabel:true,showPercent:true,dataLabelPosition:'inEnd',
-        dataLabelFontSize:10,dataLabelFontBold:true,dataLabelColor:WHITE,
+        showLabel:true,showPercent:true,dataLabelPosition:'outEnd',
+        dataLabelFontSize:9,dataLabelFontBold:true,dataLabelColor:'0F172A',
       });
     }
     s6.addShape(pptx.ShapeType.rect,{x:5.85,y:CTX_Y,w:3.82,h:.46,fill:{color:NAVY}});
