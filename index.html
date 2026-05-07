@@ -3350,12 +3350,11 @@ function generateRevealPresentation(){
 <div class="reveal"><div class="slides">
 
 <!-- SLIDE 1: GLOBE INTRO -->
-<section data-transition="zoom" data-background="#020814" style="padding:0;overflow:hidden;position:relative">
-  <canvas id="globeCanvas" width="960" height="540" style="position:absolute;top:0;left:0;width:960px;height:540px;z-index:1"></canvas>
-  <div style="position:absolute;top:22px;left:0;right:0;z-index:10;text-align:center">
+<section data-transition="zoom" data-background-color="#020814" style="padding:0">
+  <div style="position:absolute;top:22px;left:0;right:0;text-align:center;z-index:2">
     <p style="font-size:.6em;letter-spacing:.28em;text-transform:uppercase;opacity:.4;margin:0">Sistema de Gestión de Traslados · Perú</p>
   </div>
-  <div style="position:absolute;bottom:62px;left:0;right:0;z-index:10;text-align:center">
+  <div style="position:absolute;bottom:62px;left:0;right:0;text-align:center;z-index:2">
     <p class="glow-text" style="font-size:1.9em;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0;line-height:1.1">PACÍFICO TRANSPORTATION SAC</p>
     <div class="scroll-ticker"><div class="scroll-ticker-inner">TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
   </div>
@@ -3534,82 +3533,73 @@ Reveal.initialize({
   plugins:[]
 });
 
-/* Render charts after reveal loads */
-// ── Spinning Globe ──
-var globeRAF=null,globeRot=0,globeFr=0;
-var globeStars=Array.from({length:220},()=>({x:Math.random()*960,y:Math.random()*540,r:Math.random()*1.4+0.3,a:Math.random()*Math.PI*2}));
-function drawGlobe(){
-  var gc=document.getElementById('globeCanvas');
-  if(!gc)return;
-  var ctx=gc.getContext('2d');
-  var W=960,H=540,CX=W/2,CY=H*0.43,R=168;
-  // solid background
-  ctx.fillStyle='#020814';ctx.fillRect(0,0,W,H);
-  // stars
+/* ── Globe ── */
+var globeRAF=null,globeRot=0,globeFr=0,globeGC=null,globeCtx=null;
+var globeStars=Array.from({length:220},function(){return{x:Math.random()*960,y:Math.random()*540,r:Math.random()*1.4+0.3,a:Math.random()*Math.PI*2};});
+function globeFrame(){
+  if(!globeGC||!globeCtx)return;
+  var W=960,H=540,CX=480,CY=232,R=168;
+  globeCtx.fillStyle='#020814';globeCtx.fillRect(0,0,W,H);
   globeStars.forEach(function(s){
     var tw=0.35+0.65*Math.abs(Math.sin(globeFr*0.018+s.a));
-    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,'+( tw*0.75).toFixed(2)+')';ctx.fill();
+    globeCtx.beginPath();globeCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    globeCtx.fillStyle='rgba(255,255,255,'+( tw*0.75).toFixed(2)+')';globeCtx.fill();
   });
-  // outer atmosphere ring
-  var outer=ctx.createRadialGradient(CX,CY,R*0.85,CX,CY,R*1.35);
+  var outer=globeCtx.createRadialGradient(CX,CY,R*0.85,CX,CY,R*1.35);
   outer.addColorStop(0,'rgba(40,140,255,0.18)');outer.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,Math.PI*2);ctx.fillStyle=outer;ctx.fill();
-  // ocean
-  var oc=ctx.createRadialGradient(CX-R*.28,CY-R*.28,R*.04,CX,CY,R);
+  globeCtx.beginPath();globeCtx.arc(CX,CY,R*1.35,0,Math.PI*2);globeCtx.fillStyle=outer;globeCtx.fill();
+  var oc=globeCtx.createRadialGradient(CX-R*.28,CY-R*.28,R*.04,CX,CY,R);
   oc.addColorStop(0,'#1a6fa0');oc.addColorStop(0.55,'#0c3850');oc.addColorStop(1,'#04131e');
-  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=oc;ctx.fill();
-  ctx.save();ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.clip();
-  // latitude lines
+  globeCtx.beginPath();globeCtx.arc(CX,CY,R,0,Math.PI*2);globeCtx.fillStyle=oc;globeCtx.fill();
+  globeCtx.save();globeCtx.beginPath();globeCtx.arc(CX,CY,R,0,Math.PI*2);globeCtx.clip();
   for(var lat=-80;lat<=80;lat+=20){
     var yr=CY+Math.sin(lat*Math.PI/180)*R,xr=Math.cos(lat*Math.PI/180)*R;
     if(xr<2)continue;
-    ctx.beginPath();ctx.ellipse(CX,yr,xr,xr*0.14,0,0,Math.PI*2);
-    ctx.strokeStyle='rgba(100,210,255,0.22)';ctx.lineWidth=0.8;ctx.stroke();
+    globeCtx.beginPath();globeCtx.ellipse(CX,yr,xr,xr*0.14,0,0,Math.PI*2);
+    globeCtx.strokeStyle='rgba(100,210,255,0.22)';globeCtx.lineWidth=0.8;globeCtx.stroke();
   }
-  // meridian lines
   for(var lon=0;lon<360;lon+=15){
     var a=(lon+globeRot)*Math.PI/180,ca=Math.cos(a),xr2=Math.abs(ca)*R;
     if(xr2<2)continue;
-    ctx.beginPath();ctx.ellipse(CX,CY,xr2,R,0,0,Math.PI*2);
-    ctx.strokeStyle='rgba(100,210,255,'+(0.07+Math.abs(ca)*0.13).toFixed(2)+')';ctx.lineWidth=0.55;ctx.stroke();
+    globeCtx.beginPath();globeCtx.ellipse(CX,CY,xr2,R,0,0,Math.PI*2);
+    globeCtx.strokeStyle='rgba(100,210,255,'+(0.07+Math.abs(ca)*0.13).toFixed(2)+')';globeCtx.lineWidth=0.55;globeCtx.stroke();
   }
-  // glowing city dots
   [[0.15,0.08],[0.55,0.28],[0.3,-0.12],[0.72,-0.18],[0.08,0.38],[0.85,0.1]].forEach(function(p){
-    var lx=p[0],ly=p[1];
-    var ac=(lx*360+globeRot)*Math.PI/180,ca=Math.cos(ac);
+    var ac=(p[0]*360+globeRot)*Math.PI/180,ca=Math.cos(ac);
     if(ca<0)return;
-    var bx=CX+ca*Math.cos(ly*Math.PI)*R,by=CY+Math.sin(ly*Math.PI)*R;
-    var pulse=3+1.5*Math.abs(Math.sin(globeFr*0.06+lx*10));
-    ctx.beginPath();ctx.arc(bx,by,2,0,Math.PI*2);ctx.fillStyle='rgba(245,158,11,'+ca.toFixed(2)+')';ctx.fill();
-    ctx.beginPath();ctx.arc(bx,by,pulse,0,Math.PI*2);ctx.strokeStyle='rgba(245,158,11,'+(ca*0.45).toFixed(2)+')';ctx.lineWidth=1;ctx.stroke();
+    var bx=CX+ca*Math.cos(p[1]*Math.PI)*R,by=CY+Math.sin(p[1]*Math.PI)*R;
+    var pulse=3+1.5*Math.abs(Math.sin(globeFr*0.06+p[0]*10));
+    globeCtx.beginPath();globeCtx.arc(bx,by,2,0,Math.PI*2);globeCtx.fillStyle='rgba(245,158,11,'+ca.toFixed(2)+')';globeCtx.fill();
+    globeCtx.beginPath();globeCtx.arc(bx,by,pulse,0,Math.PI*2);globeCtx.strokeStyle='rgba(245,158,11,'+(ca*0.45).toFixed(2)+')';globeCtx.lineWidth=1;globeCtx.stroke();
   });
-  ctx.restore();
-  // atmosphere glow
-  var atm=ctx.createRadialGradient(CX,CY,R,CX,CY,R*1.12);
+  globeCtx.restore();
+  var atm=globeCtx.createRadialGradient(CX,CY,R,CX,CY,R*1.12);
   atm.addColorStop(0,'rgba(60,160,255,0.22)');atm.addColorStop(1,'rgba(60,160,255,0)');
-  ctx.beginPath();ctx.arc(CX,CY,R*1.12,0,Math.PI*2);ctx.fillStyle=atm;ctx.fill();
-  // specular shine
-  var sh=ctx.createRadialGradient(CX-R*.38,CY-R*.38,1,CX-R*.22,CY-R*.22,R*.68);
+  globeCtx.beginPath();globeCtx.arc(CX,CY,R*1.12,0,Math.PI*2);globeCtx.fillStyle=atm;globeCtx.fill();
+  var sh=globeCtx.createRadialGradient(CX-R*.38,CY-R*.38,1,CX-R*.22,CY-R*.22,R*.68);
   sh.addColorStop(0,'rgba(255,255,255,0.16)');sh.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=sh;ctx.fill();
-  // rotating text ring below globe
-  ctx.save();
-  ctx.translate(CX,CY+R+28);
-  ctx.font='bold 11px "Segoe UI",sans-serif';
-  ctx.letterSpacing='3px';
-  ctx.fillStyle='rgba(245,158,11,0.55)';
-  ctx.textAlign='center';
-  ctx.fillText('PACIFICO TRANSPORTATION SAC',0,0);
-  ctx.restore();
+  globeCtx.beginPath();globeCtx.arc(CX,CY,R,0,Math.PI*2);globeCtx.fillStyle=sh;globeCtx.fill();
   globeRot+=0.22;globeFr++;
-  globeRAF=requestAnimationFrame(drawGlobe);
+  globeRAF=requestAnimationFrame(globeFrame);
 }
-function startGlobe(){if(globeRAF)cancelAnimationFrame(globeRAF);drawGlobe();}
+function startGlobe(){
+  if(globeRAF)cancelAnimationFrame(globeRAF);
+  // Inject canvas into the first slide-background element (Reveal's background layer)
+  if(!globeGC){
+    var bg=document.querySelectorAll('.reveal .backgrounds .slide-background')[0];
+    if(!bg){globeGC=null;return;}
+    globeGC=document.createElement('canvas');
+    globeGC.width=960;globeGC.height=540;
+    globeGC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%';
+    bg.appendChild(globeGC);
+    globeCtx=globeGC.getContext('2d');
+  }
+  globeFrame();
+}
 function stopGlobe(){if(globeRAF){cancelAnimationFrame(globeRAF);globeRAF=null;}}
 
-Reveal.on('ready',()=>{
-  setTimeout(startGlobe,80);
+Reveal.on('ready',function(){
+  setTimeout(startGlobe,120);
   Chart.defaults.color='rgba(255,255,255,.7)';
   Chart.defaults.font.family="'Segoe UI',Calibri,sans-serif";
   Chart.defaults.plugins.legend.labels.padding=14;
