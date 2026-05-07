@@ -3255,6 +3255,44 @@ function generateRevealPresentation(){
   const multiVRows=multiV.map(([k,c])=>{const[o,m]=k.split('_');return `<tr><td>${o}</td><td>${m}</td><td><strong>${c}</strong></td></tr>`;}).join('');
   const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,20)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
 
+  // ── Analysis slide data ──
+  const motivoMR={};records.forEach(r=>{const k=(r.motivo||'Sin Motivo').trim();motivoMR[k]=(motivoMR[k]||0)+1;});
+  const topMotivoR=Object.entries(motivoMR).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const pctCancelR=total?Math.round(cancel/total*100):0;
+  const pctPendR=total?Math.round(pend/total*100):0;
+  const pctRutaR=total?Math.round(enRuta/total*100):0;
+  const cargoTotalR=paletas+cajas+sobres;
+  const rendLvlR=pctComp>=80?'ÓPTIMO':pctComp>=60?'MODERADO':'BAJO';
+  const resumenTextR=`${total} operación${total!==1?'es':''} registradas. Cumplimiento: ${pctComp}% — nivel ${rendLvlR}. ${comp} completadas, ${enRuta} en ruta.`;
+  const estadoTextR=`Completadas: ${comp} (${pctComp}%) · En ruta: ${enRuta} (${pctRutaR}%) · Pendientes: ${pend} (${pctPendR}%) · Canceladas: ${cancel} (${pctCancelR}%). ${pctCancelR>10?'⚠ Cancelaciones sobre umbral del 10%.':cancel===0?'✓ Sin cancelaciones.':'✓ Cancelaciones en rango normal.'}`;
+  const transpTextR=topTrans[0]?`${topTrans.length} transportistas activos. Principal: "${topTrans[0][0]}" — ${topTrans[0][1]} viaje${topTrans[0][1]!==1?'s':''} (${Math.round(topTrans[0][1]/total*100)}%).${topTrans.length>1?' 2°: "'+topTrans[1][0]+'" con '+topTrans[1][1]+'.':'`}'Sin datos.';
+  const rutasTextR=topRutas[0]?`${topRutas.length} rutas. Corredor principal: "${topRutas[0][0]}" — ${topRutas[0][1]} traslado${topRutas[0][1]!==1?'s':''} (${Math.round(topRutas[0][1]/total*100)}%).${topRutas.length>1?' 2°: "'+topRutas[1][0]+'" ('+topRutas[1][1]+').':'`}'Sin datos.';
+  const cargaTextR=`Total: ${cargoTotalR} u. Paletas: ${paletas} (${cargoTotalR?Math.round(paletas/cargoTotalR*100):0}%) · Cajas: ${cajas} (${cargoTotalR?Math.round(cajas/cargoTotalR*100):0}%) · Sobres: ${sobres} (${cargoTotalR?Math.round(sobres/cargoTotalR*100):0}%).`;
+  const motivosTextR=topMotivoR[0]?`${topMotivoR.length} motivo${topMotivoR.length!==1?'s':''} identificados. Predominante: "${topMotivoR[0][0]}" — ${topMotivoR[0][1]} op. (${Math.round(topMotivoR[0][1]/total*100)}%).${topMotivoR.length>1?' 2°: "'+topMotivoR[1][0]+'" ('+Math.round(topMotivoR[1][1]/total*100)+'%).':'`}'Sin datos.';
+
+  // Conclusions
+  const concItems=[];
+  if(pctComp>=80) concItems.push({t:`Cumplimiento del ${pctComp}%: desempeño ÓPTIMO (≥80%).`,c:'#22c55e'});
+  else if(pctComp>=60) concItems.push({t:`Cumplimiento del ${pctComp}%: nivel MODERADO — meta alcanzar ≥80%.`,c:'#f59e0b'});
+  else concItems.push({t:`Cumplimiento del ${pctComp}%: nivel BAJO — requiere acción urgente.`,c:'#ef4444'});
+  if(topTrans.length>0){const cn=Math.round(topTrans[0][1]/total*100);concItems.push({t:cn>50?`Alta dependencia de "${topTrans[0][0]}" (${cn}%) — riesgo operacional.`:`Cartera de ${topTrans.length} transportistas equilibrada.`,c:cn>50?'#f59e0b':'#22c55e'});}
+  if(cancel===0) concItems.push({t:'Sin cancelaciones — planificación efectiva y alta confiabilidad.',c:'#22c55e'});
+  else if(pctCancelR>10) concItems.push({t:`Cancelación del ${pctCancelR}% supera umbral del 10% — revisar causas.`,c:'#ef4444'});
+  else concItems.push({t:`Cancelación del ${pctCancelR}%: dentro de parámetros normales.`,c:'#f59e0b'});
+  if(topRutas[0]) concItems.push({t:`Corredor principal: "${topRutas[0][0]}" — ${Math.round(topRutas[0][1]/total*100)}% del total.`,c:'#3b82f6'});
+  if(mensual.length>1){const up=mensual[mensual.length-1][1]>mensual[0][1];const eq=mensual[mensual.length-1][1]===mensual[0][1];concItems.push({t:`Tendencia: ${up?'CRECIENTE ▲ — actividad en expansión.':eq?'ESTABLE → — volumen constante.':'DECRECIENTE ▼ — reducción a monitorear.'}`,c:up?'#22c55e':eq?'#3b82f6':'#ef4444'});}
+  const concHtml=concItems.slice(0,5).map(({t,c})=>`<div class="concl-item" style="background:${c}14;border:1px solid ${c}44"><div class="concl-dot" style="background:${c}"></div><div class="concl-txt">${t}</div></div>`).join('');
+
+  // Recommendations
+  const recItems=[];
+  if(pctComp<80) recItems.push(`Meta: alcanzar ${Math.min(pctComp+15,90)}% en el próximo período con revisión semanal.`);
+  if(pend>0) recItems.push(`Activar ${pend} operación${pend!==1?'es':''} pendientes con responsables y fechas límite.`);
+  if(topTrans.length>0&&Math.round(topTrans[0][1]/total*100)>50) recItems.push('Diversificar cartera de transportistas para reducir riesgo de dependencia.');
+  if(pctCancelR>5) recItems.push('Registrar causas de cancelación para identificar patrones recurrentes.');
+  recItems.push('Actualizar el sistema diariamente para mantener precisión de indicadores.');
+  recItems.push('Revisar KPIs mensualmente y aplicar mejoras basadas en datos.');
+  const recsHtml=recItems.slice(0,5).map(t=>`<div class="rec-item"><div class="rec-arrow">→</div><div class="rec-txt">${t}</div></div>`).join('');
+
   const html=`<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -3293,11 +3331,37 @@ function generateRevealPresentation(){
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
   .stat-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}
   .stat-row .name{font-size:16px}.stat-row .val{font-size:20px;font-weight:700;color:var(--amber)}
+  .glow-text{animation:glowPulse 2.5s ease-in-out infinite}
+  @keyframes glowPulse{0%,100%{text-shadow:0 0 15px rgba(245,158,11,.5),0 0 30px rgba(245,158,11,.25)}50%{text-shadow:0 0 30px rgba(245,158,11,1),0 0 60px rgba(245,158,11,.6),0 0 90px rgba(245,158,11,.3)}}
+  .scroll-ticker{overflow:hidden;width:80%;margin:6px auto 0}
+  .scroll-ticker-inner{display:inline-block;white-space:nowrap;animation:tickerMove 12s linear infinite;color:rgba(255,255,255,.3);font-size:.55em;letter-spacing:.18em}
+  @keyframes tickerMove{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  .analysis-box{background:rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);text-align:left}
+  .analysis-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);font-weight:700;margin-bottom:5px}
+  .analysis-text{font-size:11.5px;opacity:.75;line-height:1.55}
+  .concl-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:7px;text-align:left}
+  .concl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .concl-txt{font-size:12px;opacity:.9;line-height:1.4}
+  .rec-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);margin-bottom:6px;text-align:left}
+  .rec-arrow{color:var(--amber);font-size:15px;flex-shrink:0;font-weight:700}
+  .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
 </style>
 </head><body>
 <div class="reveal"><div class="slides">
 
-<!-- SLIDE 1: PORTADA -->
+<!-- SLIDE 1: GLOBE INTRO -->
+<section data-transition="zoom" data-background="#020814" style="padding:0;overflow:hidden">
+  <canvas id="globeCanvas" width="960" height="540" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1"></canvas>
+  <div style="position:absolute;top:22px;left:0;right:0;z-index:10;text-align:center">
+    <p style="font-size:.6em;letter-spacing:.28em;text-transform:uppercase;opacity:.4;margin:0">Sistema de Gestión de Traslados · Perú</p>
+  </div>
+  <div style="position:absolute;bottom:62px;left:0;right:0;z-index:10;text-align:center">
+    <p class="glow-text" style="font-size:1.9em;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0;line-height:1.1">PACÍFICO TRANSPORTATION SAC</p>
+    <div class="scroll-ticker"><div class="scroll-ticker-inner">TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TRANSPORTE · LOGÍSTICA · DISTRIBUCIÓN · TRASLADOS · PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
+  </div>
+</section>
+
+<!-- SLIDE 2: PORTADA -->
 <section data-transition="zoom" data-background="linear-gradient(135deg,#0a1628 0%,#0f2340 40%,#1a3a5c 100%)">
   <div class="accent-line" style="margin-bottom:30px"></div>
   <h1 style="font-size:2.4em;margin:0">PACÍFICO<br><span class="gold">TRANSPORTATION</span> SAC</h1>
@@ -3324,19 +3388,38 @@ function generateRevealPresentation(){
   </div>
 </section>
 
-<!-- SLIDE 3: TASA DE COMPLETADO -->
+<!-- SLIDE 4: TASA DE COMPLETADO -->
 <section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
-  <h2 style="font-size:1.4em">Tasa de <span class="gold">Completado</span></h2>
-  <div class="accent-line" style="width:20%;margin:10px auto 25px"></div>
-  <div class="gauge-ring"><div class="gauge-inner">${pctComp}%</div></div>
-  <p style="opacity:.6;font-size:.9em">${comp} de ${total} reportes completados</p>
-  <div style="max-width:500px;margin:20px auto">
-    <div style="display:flex;justify-content:space-between;font-size:.7em;opacity:.6"><span>Completado</span><span>${pct(comp)}</span></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${pctComp}%;background:var(--green)"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:.7em;opacity:.6;margin-top:10px"><span>En Ruta</span><span>${pct(enRuta)}</span></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(enRuta/total*100):0}%;background:var(--blue)"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:.7em;opacity:.6;margin-top:10px"><span>Pendiente</span><span>${pct(pend)}</span></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(pend/total*100):0}%;background:var(--amber)"></div></div>
+  <h2 style="font-size:1.35em;margin-bottom:6px">Tasa de <span class="gold">Completado</span></h2>
+  <div class="accent-line" style="width:18%;margin:6px auto 18px"></div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:55px;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div style="width:185px;height:185px;border-radius:50%;background:conic-gradient(var(--amber) 0deg ${pctComp*3.6}deg,rgba(255,255,255,.08) ${pctComp*3.6}deg 360deg);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(245,158,11,.25)">
+        <div style="width:135px;height:135px;border-radius:50%;background:#0a1628;display:flex;align-items:center;justify-content:center;flex-direction:column">
+          <span style="font-size:40px;font-weight:800;color:var(--amber);line-height:1">${pctComp}%</span>
+          <span style="font-size:9px;opacity:.45;text-transform:uppercase;letter-spacing:.1em;margin-top:3px">completado</span>
+        </div>
+      </div>
+      <p style="opacity:.5;font-size:.72em;margin:7px 0 0">${comp} de ${total} operaciones</p>
+    </div>
+    <div style="min-width:270px">
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.72em;margin-bottom:5px"><span style="opacity:.7">✅ Completado</span><span style="color:var(--green);font-weight:700">${pct(comp)}</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pctComp}%;background:var(--green)"></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.72em;margin-bottom:5px"><span style="opacity:.7">🔵 En Ruta</span><span style="color:var(--blue);font-weight:700">${pct(enRuta)}</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${total?Math.round(enRuta/total*100):0}%;background:var(--blue)"></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:.72em;margin-bottom:5px"><span style="opacity:.7">🟡 Pendiente</span><span style="color:var(--amber);font-weight:700">${pct(pend)}</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${total?Math.round(pend/total*100):0}%;background:var(--amber)"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.72em;margin-bottom:5px"><span style="opacity:.7">🔴 Cancelado</span><span style="color:var(--red);font-weight:700">${pct(cancel)}</span></div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${total?Math.round(cancel/total*100):0}%;background:var(--red)"></div></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -3396,7 +3479,37 @@ function generateRevealPresentation(){
   <table class="data-table"><tr><th>Orden</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
 </section>
 
-<!-- SLIDE 12: CIERRE -->
+<!-- SLIDE: ANÁLISIS OPERACIONAL -->
+<section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <h2 style="font-size:1.2em;margin-bottom:4px">Análisis <span class="gold">Operacional</span></h2>
+  <div class="accent-line" style="width:18%;margin:5px auto 15px"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div class="analysis-box"><div class="analysis-title">1. Resumen Ejecutivo</div><div class="analysis-text">${resumenTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">2. Estado Operacional</div><div class="analysis-text">${estadoTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">3. Transportistas</div><div class="analysis-text">${transpTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">4. Análisis de Rutas</div><div class="analysis-text">${rutasTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">5. Carga Transportada</div><div class="analysis-text">${cargaTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">6. Motivos de Traslado</div><div class="analysis-text">${motivosTextR}</div></div>
+  </div>
+</section>
+
+<!-- SLIDE: CONCLUSIONES Y RECOMENDACIONES -->
+<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <h2 style="font-size:1.2em;margin-bottom:4px">Conclusiones <span class="gold">&amp; Recomendaciones</span></h2>
+  <div class="accent-line" style="width:18%;margin:5px auto 15px"></div>
+  <div class="two-col" style="align-items:start;gap:22px">
+    <div>
+      <div style="font-size:.65em;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:8px;font-weight:700">✓ Conclusiones</div>
+      ${concHtml}
+    </div>
+    <div>
+      <div style="font-size:.65em;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:8px;font-weight:700">→ Recomendaciones</div>
+      ${recsHtml}
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE: CIERRE -->
 <section data-transition="zoom" data-background="linear-gradient(135deg,#0a1628 0%,#0f2340 40%,#1a3a5c 100%)">
   <div class="accent-line" style="margin-bottom:25px"></div>
   <h1 style="font-size:2.2em">¡Gracias!</h1>
@@ -3426,6 +3539,67 @@ Reveal.on('ready',()=>{
   Chart.defaults.color='rgba(255,255,255,.7)';
   Chart.defaults.font.family="'Segoe UI',Calibri,sans-serif";
   Chart.defaults.plugins.legend.labels.padding=14;
+
+  // ── Spinning Globe ──
+  const gc=document.getElementById('globeCanvas');
+  if(gc){
+    const ctx=gc.getContext('2d');
+    const W=960,H=540,CX=W/2,CY=H*0.43,R=168;
+    const stars=Array.from({length:220},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,a:Math.random()*Math.PI*2}));
+    let rot=0,fr=0;
+    function frame(){
+      ctx.clearRect(0,0,W,H);
+      // stars
+      stars.forEach(s=>{
+        const tw=0.35+0.65*Math.abs(Math.sin(fr*0.018+s.a));
+        ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,255,${(tw*0.75).toFixed(2)})`;ctx.fill();
+      });
+      // outer atmosphere ring
+      const outer=ctx.createRadialGradient(CX,CY,R*0.85,CX,CY,R*1.35);
+      outer.addColorStop(0,'rgba(40,140,255,0.18)');outer.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,Math.PI*2);ctx.fillStyle=outer;ctx.fill();
+      // ocean
+      const oc=ctx.createRadialGradient(CX-R*.28,CY-R*.28,R*.04,CX,CY,R);
+      oc.addColorStop(0,'#1a6fa0');oc.addColorStop(0.55,'#0c3850');oc.addColorStop(1,'#04131e');
+      ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=oc;ctx.fill();
+      ctx.save();ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.clip();
+      // latitude lines
+      for(let lat=-80;lat<=80;lat+=20){
+        const yr=CY+Math.sin(lat*Math.PI/180)*R,xr=Math.cos(lat*Math.PI/180)*R;
+        if(xr<2)continue;
+        ctx.beginPath();ctx.ellipse(CX,yr,xr,xr*0.14,0,0,Math.PI*2);
+        ctx.strokeStyle='rgba(100,210,255,0.22)';ctx.lineWidth=0.8;ctx.stroke();
+      }
+      // meridian lines
+      for(let lon=0;lon<360;lon+=15){
+        const a=(lon+rot)*Math.PI/180,ca=Math.cos(a),xr=Math.abs(ca)*R;
+        if(xr<2)continue;
+        ctx.beginPath();ctx.ellipse(CX,CY,xr,R,0,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(100,210,255,${(0.07+Math.abs(ca)*0.13).toFixed(2)})`;ctx.lineWidth=0.55;ctx.stroke();
+      }
+      // glowing city dots
+      [[0.15,0.08],[0.55,0.28],[0.3,-0.12],[0.72,-0.18],[0.08,0.38],[0.85,0.1]].forEach(([lx,ly])=>{
+        const a=(lx*360+rot)*Math.PI/180,ca=Math.cos(a);
+        if(ca<0)return;
+        const bx=CX+ca*Math.cos(ly*Math.PI)*R,by=CY+Math.sin(ly*Math.PI)*R;
+        const pulse=3+1.5*Math.abs(Math.sin(fr*0.06+lx*10));
+        ctx.beginPath();ctx.arc(bx,by,2,0,Math.PI*2);ctx.fillStyle=`rgba(245,158,11,${ca})`;ctx.fill();
+        ctx.beginPath();ctx.arc(bx,by,pulse,0,Math.PI*2);ctx.strokeStyle=`rgba(245,158,11,${ca*0.45})`;ctx.lineWidth=1;ctx.stroke();
+      });
+      ctx.restore();
+      // atmosphere glow
+      const atm=ctx.createRadialGradient(CX,CY,R,CX,CY,R*1.12);
+      atm.addColorStop(0,'rgba(60,160,255,0.22)');atm.addColorStop(1,'rgba(60,160,255,0)');
+      ctx.beginPath();ctx.arc(CX,CY,R*1.12,0,Math.PI*2);ctx.fillStyle=atm;ctx.fill();
+      // specular shine
+      const sh=ctx.createRadialGradient(CX-R*.38,CY-R*.38,1,CX-R*.22,CY-R*.22,R*.68);
+      sh.addColorStop(0,'rgba(255,255,255,0.16)');sh.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath();ctx.arc(CX,CY,R,0,Math.PI*2);ctx.fillStyle=sh;ctx.fill();
+      rot+=0.22;fr++;requestAnimationFrame(frame);
+    }
+    frame();
+  }
 
   new Chart(document.getElementById('revChartStatus'),{
     type:'doughnut',
