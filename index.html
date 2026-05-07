@@ -2335,102 +2335,163 @@ async function generatePDF(){
     const mensualLabelsP=monthEntriesP.map(([k])=>{const[m,yy]=k.split('/');return(MNP[parseInt(m)]||m)+' '+(yy||'').slice(2);});
     const mensualValuesP=monthEntriesP.map(([,v])=>v);
 
-    // ── Offscreen Chart.js renderer ──
-    function renderChartImg(type, labels, datasets, extraOpts={}, legendOpts={display:false}, w=900, h=420){
+    // ── Inline Chart.js plugin: draws value labels on bars and points ──
+    const pdfLabelPlugin={
+      id:'pdfLabels',
+      afterDatasetsDraw(chart){
+        const {ctx,config:{type},options:{indexAxis}}=chart;
+        chart.data.datasets.forEach((ds,di)=>{
+          const meta=chart.getDatasetMeta(di);
+          if(meta.hidden)return;
+          meta.data.forEach((el,i)=>{
+            const v=ds.data[i]; if(!v)return;
+            const pos=el.tooltipPosition();
+            ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+            if(type==='bar'){
+              const isH=indexAxis==='y';
+              ctx.font='bold 22px Arial'; ctx.fillStyle='#ffffff';
+              isH ? ctx.fillText(v, Math.max(pos.x-30, el.base+30), pos.y)
+                  : ctx.fillText(v, pos.x, pos.y+22);
+            } else if(type==='line'){
+              ctx.font='bold 20px Arial'; ctx.fillStyle='#0F2340';
+              ctx.strokeStyle='#ffffff'; ctx.lineWidth=4;
+              ctx.strokeText(v, pos.x, pos.y-20);
+              ctx.fillText(v, pos.x, pos.y-20);
+            }
+            ctx.restore();
+          });
+        });
+      }
+    };
+
+    // ── Offscreen Chart.js renderer — 2K resolution ──
+    function renderChartImg(type,labels,datasets,extraOpts={},legendOpts={display:false},w=2400,h=1000){
       const c=document.createElement('canvas'); c.width=w; c.height=h;
-      const ch=new Chart(c.getContext('2d'),{
-        type, data:{labels, datasets},
-        options:{responsive:false, animation:false,
-                 plugins:{legend:{...legendOpts}, tooltip:{enabled:false}},
-                 ...extraOpts}
-      });
+      const baseOpts={responsive:false,animation:false,
+                      plugins:{legend:{...legendOpts},tooltip:{enabled:false}}};
+      const{plugins:eplug,...rest}=extraOpts;
+      Object.assign(baseOpts,rest);
+      if(eplug) Object.assign(baseOpts.plugins,eplug);
+      const ch=new Chart(c.getContext('2d'),{type,data:{labels,datasets},options:baseOpts,plugins:[pdfLabelPlugin]});
       const img=c.toDataURL('image/png',1.0); ch.destroy(); return img;
     }
     const pcols=['#22C55E','#3B82F6','#F59E0B','#EF4444','#1D4ED8','#7C3AED','#0EA5E9','#F97316','#14B8A6','#EC4899'];
-    const axisStyle={grid:{color:'#E2E8F0'},ticks:{font:{size:12},color:'#475569'}};
-    const legendBot={display:true,position:'bottom',labels:{font:{size:12},color:'#0F172A',boxWidth:14}};
+    const axisHD={grid:{color:'#E2E8F0'},ticks:{font:{size:24},color:'#475569'}};
+    const legendBot={display:true,position:'bottom',labels:{font:{size:24},color:'#0F172A',boxWidth:32,padding:24}};
 
     // Estado doughnut
     const imgEstado=renderChartImg('doughnut',
       ['Completado','En Ruta','Pendiente','Cancelado'],
       [{data:[comp,enRuta,pend,cancel],backgroundColor:['#22C55E','#3B82F6','#F59E0B','#EF4444'],borderWidth:0}],
-      {cutout:'52%'}, legendBot, 700, 420);
+      {cutout:'52%'},legendBot,2000,1000);
 
     // Motivos pie
     const imgMotivos=topMotivosP.length?renderChartImg('pie',
-      topMotivosP.map(([k])=>k.length>20?k.slice(0,18)+'…':k),
+      topMotivosP.map(([k])=>k.length>22?k.slice(0,20)+'…':k),
       [{data:topMotivosP.map(([,v])=>v),backgroundColor:pcols.slice(0,topMotivosP.length),borderWidth:0}],
-      {}, legendBot, 700, 420):null;
+      {},legendBot,2000,1000):null;
 
     // Transportistas horizontal bar
     const imgTransp=topTranspP.length?renderChartImg('bar',
-      topTranspP.map(([k])=>k.length>24?k.slice(0,22)+'…':k),
-      [{data:topTranspP.map(([,v])=>v),backgroundColor:'#1D4ED8',borderWidth:0,label:'Viajes'}],
-      {indexAxis:'y', scales:{x:{...axisStyle}, y:{grid:{display:false},ticks:{font:{size:12},color:'#0F172A'}}}},
-      {display:false}, 900, 400):null;
+      topTranspP.map(([k])=>k.length>26?k.slice(0,24)+'…':k),
+      [{data:topTranspP.map(([,v])=>v),backgroundColor:'#1D4ED8',borderWidth:0,label:'Viajes',barThickness:38}],
+      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {display:false},2400,1000):null;
 
     // Tendencia mensual line
-    const imgMensual=mensualValuesP.length?renderChartImg('line',
-      mensualLabelsP,
+    const imgMensual=mensualValuesP.length?renderChartImg('line',mensualLabelsP,
       [{data:mensualValuesP,borderColor:'#0F2340',backgroundColor:'rgba(15,35,64,0.12)',
-        borderWidth:3,pointRadius:5,tension:0.3,fill:true,label:'Operaciones'}],
-      {scales:{x:{...axisStyle}, y:{...axisStyle,beginAtZero:true}}},
-      {display:false}, 900, 380):null;
+        borderWidth:5,pointRadius:10,pointBackgroundColor:'#0F2340',tension:0.3,fill:true}],
+      {scales:{x:{...axisHD},y:{...axisHD,beginAtZero:true}}},
+      {display:false},2400,900):null;
 
     // Rutas horizontal bar
     const imgRutas=topRutasP.length?renderChartImg('bar',
-      topRutasP.map(([k])=>k.length>28?k.slice(0,26)+'…':k),
-      [{data:topRutasP.map(([,v])=>v),backgroundColor:'#7C3AED',borderWidth:0,label:'Operaciones'}],
-      {indexAxis:'y', scales:{x:{...axisStyle}, y:{grid:{display:false},ticks:{font:{size:11},color:'#0F172A'}}}},
-      {display:false}, 900, 400):null;
+      topRutasP.map(([k])=>k.length>30?k.slice(0,28)+'…':k),
+      [{data:topRutasP.map(([,v])=>v),backgroundColor:'#7C3AED',borderWidth:0,label:'Ops',barThickness:38}],
+      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {display:false},2400,1000):null;
 
     // Carga vertical bar
-    const imgCarga=renderChartImg('bar',
-      ['Paletas','Cajas','Sobres'],
-      [{data:[paletas,cajas,sobres],backgroundColor:['#1D4ED8','#22C55E','#F59E0B'],borderWidth:0}],
-      {scales:{x:{grid:{display:false},ticks:{font:{size:14},color:'#0F172A'}}, y:{...axisStyle,beginAtZero:true}}},
-      {display:false}, 600, 380);
+    const imgCarga=renderChartImg('bar',['Paletas','Cajas','Sobres'],
+      [{data:[paletas,cajas,sobres],backgroundColor:['#1D4ED8','#22C55E','#F59E0B'],borderWidth:0,barThickness:90}],
+      {scales:{x:{grid:{display:false},ticks:{font:{size:30},color:'#0F172A'}},y:{...axisHD,beginAtZero:true}}},
+      {display:false},1600,1000);
 
-    // ── Layout helper — bold Navy header + amber stripe + white chart body ──
-    function addPDFChart(imgData, title, cx, cy, cw, ch2){
-      // Header bar
-      doc.setFillColor(15,35,64); doc.roundedRect(cx,cy,cw,9,2,2,'F');
-      doc.setFillColor(245,158,11); doc.rect(cx,cy+8,cw,1.5,'F');
+    // ── Helper: hex → [r,g,b] ──
+    function hexToRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+
+    // ── Helper: draw summary table beside chart ──
+    const CHT=70, TBLW=67, CHRTW=contentW-TBLW-4;
+    function drawSideTable(lbls,vals,clrs,tot,tx,ty,tw,th){
+      const maxRows=Math.floor((th-8)/7.5);
+      doc.setFillColor(15,35,64); doc.rect(tx,ty,tw,8,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(6.8);
+      doc.text('DESCRIPCIÓN',tx+6,ty+5.2);
+      doc.text('N°',tx+tw-18,ty+5.2,{align:'center'});
+      doc.text('%',tx+tw-5,ty+5.2,{align:'center'});
+      lbls.slice(0,maxRows).forEach((lbl,i)=>{
+        const ry=ty+8+i*7.5;
+        doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
+        doc.rect(tx,ry,tw,7.5,'F');
+        doc.setDrawColor(226,232,240); doc.rect(tx,ry,tw,7.5,'S');
+        const rgb=hexToRgb(clrs[i%clrs.length]);
+        doc.setFillColor(...rgb); doc.roundedRect(tx+2,ry+2.5,3,3,0.8,0.8,'F');
+        doc.setTextColor(15,23,42); doc.setFont('helvetica','normal'); doc.setFontSize(6.2);
+        doc.text(String(lbl).slice(0,18),tx+7,ry+5);
+        doc.setFont('helvetica','bold');
+        doc.text(String(vals[i]),tx+tw-18,ry+5,{align:'center'});
+        doc.setTextColor(30,64,175);
+        doc.text((tot?Math.round(vals[i]/tot*100):0)+'%',tx+tw-5,ry+5,{align:'center'});
+        doc.setTextColor(15,23,42); doc.setFont('helvetica','normal');
+      });
+    }
+
+    // ── Helper: add one chart row (chart left + table right) ──
+    function addChartRow(imgData,title,lbls,vals,clrs,tot){
+      if(y+CHT+14>H-margin-10){doc.addPage();y=margin;}
+      doc.setFillColor(15,35,64); doc.roundedRect(margin,y,contentW,9,2,2,'F');
+      doc.setFillColor(245,158,11); doc.rect(margin,y+8,contentW,1.5,'F');
       doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
-      doc.text(title.toUpperCase(),cx+4,cy+6);
-      // Chart body
+      doc.text(title.toUpperCase(),margin+4,y+6);
       doc.setFillColor(255,255,255); doc.setDrawColor(200,210,225);
-      doc.roundedRect(cx,cy+10,cw,ch2,2,2,'FD');
-      doc.addImage(imgData,'PNG',cx+2,cy+12,cw-4,ch2-4);
+      doc.roundedRect(margin,y+11,CHRTW,CHT,2,2,'FD');
+      doc.addImage(imgData,'PNG',margin+2,y+13,CHRTW-4,CHT-4);
+      drawSideTable(lbls,vals,clrs,tot,margin+CHRTW+4,y+11,TBLW,CHT);
+      y+=CHT+14;
     }
-    const half=(contentW-5)/2, ch2=66;
+
+    // ── Helper: full-width chart (no side table) ──
+    function addChartFull(imgData,title){
+      if(y+CHT+14>H-margin-10){doc.addPage();y=margin;}
+      doc.setFillColor(15,35,64); doc.roundedRect(margin,y,contentW,9,2,2,'F');
+      doc.setFillColor(245,158,11); doc.rect(margin,y+8,contentW,1.5,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text(title.toUpperCase(),margin+4,y+6);
+      doc.setFillColor(255,255,255); doc.setDrawColor(200,210,225);
+      doc.roundedRect(margin,y+11,contentW,CHT,2,2,'FD');
+      doc.addImage(imgData,'PNG',margin+2,y+13,contentW-4,CHT-4);
+      y+=CHT+14;
+    }
+
     setUpBar(55);
-
-    // Row 1: Estado + Motivos (side by side)
-    if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
-    addPDFChart(imgEstado,'Estado de Operaciones',margin,y,half,ch2);
-    if(imgMotivos) addPDFChart(imgMotivos,'Motivos de Traslado',margin+half+5,y,half,ch2);
-    y+=ch2+14;
-
-    // Row 2: Transportistas (full width)
-    if(imgTransp){
-      if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
-      addPDFChart(imgTransp,'Top Transportistas',margin,y,contentW,ch2);
-      y+=ch2+14;
-    }
-
-    // Row 3: Tendencia mensual (full width)
-    if(imgMensual){
-      if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
-      addPDFChart(imgMensual,'Tendencia Mensual de Operaciones',margin,y,contentW,ch2);
-      y+=ch2+14;
-    }
-
-    // Row 4: Rutas + Carga (side by side)
-    if(y+ch2+14>H-margin-10){doc.addPage();y=margin;}
-    if(imgRutas) addPDFChart(imgRutas,'Top Rutas',margin,y,half,ch2);
-    addPDFChart(imgCarga,'Carga Transportada',margin+half+5,y,half,ch2);
-    y+=ch2+14;
+    addChartRow(imgEstado,'Estado de Operaciones',
+      ['Completado','En Ruta','Pendiente','Cancelado'],[comp,enRuta,pend,cancel],
+      ['#22C55E','#3B82F6','#F59E0B','#EF4444'],total);
+    if(imgMotivos) addChartRow(imgMotivos,'Motivos de Traslado',
+      topMotivosP.map(([k])=>k),topMotivosP.map(([,v])=>v),
+      pcols.slice(0,topMotivosP.length),total);
+    if(imgTransp) addChartRow(imgTransp,'Top Transportistas',
+      topTranspP.map(([k])=>k),topTranspP.map(([,v])=>v),
+      Array(topTranspP.length).fill('#1D4ED8'),total);
+    if(imgMensual) addChartFull(imgMensual,'Tendencia Mensual de Operaciones');
+    if(imgRutas) addChartRow(imgRutas,'Top Rutas',
+      topRutasP.map(([k])=>k),topRutasP.map(([,v])=>v),
+      Array(topRutasP.length).fill('#7C3AED'),total);
+    addChartRow(imgCarga,'Carga Transportada',
+      ['Paletas','Cajas','Sobres'],[paletas,cajas,sobres],
+      ['#1D4ED8','#22C55E','#F59E0B'],paletas+cajas+sobres);
+    y+=2;
 
     // ── RECORDS TABLE ──
     setUpStep('Generando tabla de registros…'); setUpBar(70);
