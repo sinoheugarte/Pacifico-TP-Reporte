@@ -3359,10 +3359,8 @@ function generateRevealPresentation(){
          stroke="#f59e0b" stroke-width="11.5" stroke-linecap="butt" stroke-linejoin="miter"
          style="height:118px;display:inline-block;animation:ptGlow 2.5s ease-in-out infinite"
          xmlns="http://www.w3.org/2000/svg">
-      <!-- Vertical stem: full height, shared by P and T -->
-      <line x1="42" y1="0" x2="42" y2="185"/>
-      <!-- P bowl: horizontal right → proper semicircle arc → horizontal left -->
-      <path d="M 42,0 H 65 A 33,33 0 0 1 65,66 H 42" fill="none"/>
+      <!-- P + stem as single path: miter join at (42,0) closes the top-left corner -->
+      <path d="M 42,185 V 0 H 65 A 33,33 0 0 1 65,66 H 42" fill="none"/>
       <!-- T crossbar -->
       <line x1="4" y1="105" x2="86" y2="105"/>
     </svg>
