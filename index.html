@@ -3079,6 +3079,100 @@ async function generatePPTX(){
       }
     }
 
+    // ══ ANÁLISIS OPERACIONAL ══
+    setUpStep('Análisis Operacional'); setUpBar(89);
+    const sA=pptx.addSlide(); sA.background={color:BG};
+    addHdr(sA,'ANÁLISIS OPERACIONAL',`${total} operaciones · ${periodo}`); addFtr(sA,++pageN);
+
+    const pctCancelA=total?Math.round(cancel/total*100):0;
+    const pctPendA=total?Math.round(pend/total*100):0;
+    const rendLvl=pctComp>=80?'ÓPTIMO':pctComp>=60?'MODERADO':'BAJO';
+
+    // Mini-section header helper
+    const mSec=(sl,x,y,w,title)=>{
+      sl.addShape(pptx.ShapeType.rect,{x,y,w,h:.26,fill:{color:NAVY}});
+      sl.addShape(pptx.ShapeType.rect,{x,y,w:.06,h:.26,fill:{color:AMBER}});
+      sl.addText(title,{x:x+.1,y,w:w-.12,h:.26,fontSize:7.5,bold:true,color:WHITE,valign:'middle'});
+    };
+    const mTxt=(sl,x,y,w,txt)=>{
+      sl.addText(txt,{x,y,w,h:.62,fontSize:6.8,color:T2,wrap:true,valign:'top'});
+    };
+
+    const LX=ML, LW=4.45, RX=5.05, RW=4.62, SH=0.98, y0=CTX_Y+.04;
+
+    // Left column
+    mSec(sA,LX,y0,LW,'1.  RESUMEN EJECUTIVO');
+    mTxt(sA,LX,y0+.28,LW,`Período ${dateFrom} – ${dateTo}. Se registraron ${total} operación${total!==1?'es':''} con cumplimiento del ${pctComp}% — nivel ${rendLvl}. ${comp} completadas y ${enRuta} en ruta activa.`);
+
+    mSec(sA,LX,y0+SH,LW,'2.  ESTADO OPERACIONAL');
+    mTxt(sA,LX,y0+SH+.28,LW,`Completadas: ${comp} (${pctComp}%)  ·  En ruta: ${enRuta} (${pctRuta}%)  ·  Pendientes: ${pend} (${pctPendA}%)  ·  Canceladas: ${cancel} (${pctCancelA}%). ${pctCancelA>10?'Cancelaciones sobre umbral del 10%.':cancel===0?'Sin cancelaciones registradas.':'Cancelaciones en rango normal.'}`);
+
+    mSec(sA,LX,y0+SH*2,LW,'3.  TRANSPORTISTAS');
+    mTxt(sA,LX,y0+SH*2+.28,LW,topTransp[0]?`${topTransp.length} transportistas activos. Principal: "${topTransp[0][0]}" con ${topTransp[0][1]} viaje${topTransp[0][1]!==1?'s':''} (${Math.round(topTransp[0][1]/total*100)}%).${topTransp.length>1?' 2º: "'+topTransp[1][0]+'" con '+topTransp[1][1]+' viajes.':''}`:'Sin datos de transportistas.');
+
+    // Right column
+    mSec(sA,RX,y0,RW,'4.  ANÁLISIS DE RUTAS');
+    mTxt(sA,RX,y0+.28,RW,topRutas[0]?`${topRutas.length} rutas operadas. Corredor principal: "${topRutas[0][0]}" — ${topRutas[0][1]} traslado${topRutas[0][1]!==1?'s':''} (${Math.round(topRutas[0][1]/total*100)}%).${topRutas.length>1?' 2º: "'+topRutas[1][0]+'" ('+topRutas[1][1]+').':''}`:'Sin datos de rutas.');
+
+    mSec(sA,RX,y0+SH,RW,'5.  CARGA TRANSPORTADA');
+    mTxt(sA,RX,y0+SH+.28,RW,`Total: ${cargoTotal} unidades. Paletas: ${paletas} (${cargoTotal?Math.round(paletas/cargoTotal*100):0}%)  ·  Cajas: ${cajas} (${cargoTotal?Math.round(cajas/cargoTotal*100):0}%)  ·  Sobres: ${sobres} (${cargoTotal?Math.round(sobres/cargoTotal*100):0}%). ${paletas>=cajas&&paletas>=sobres?'Predominan paletas.':cajas>=paletas&&cajas>=sobres?'Predominan cajas.':'Predominan sobres.'}`);
+
+    mSec(sA,RX,y0+SH*2,RW,'6.  MOTIVOS DE TRASLADO');
+    mTxt(sA,RX,y0+SH*2+.28,RW,topMotivos[0]?`${topMotivos.length} motivo${topMotivos.length!==1?'s':''} identificados. Predominante: "${topMotivos[0][0]}" — ${topMotivos[0][1]} op. (${Math.round(topMotivos[0][1]/total*100)}%).${topMotivos.length>1?' 2º: "'+topMotivos[1][0]+'" ('+Math.round(topMotivos[1][1]/total*100)+'%).':''}`:'Sin datos de motivos.');
+
+    // Bottom summary bar
+    sA.addShape(pptx.ShapeType.rect,{x:ML,y:CTX_Y+4.0,w:CW,h:.38,fill:{color:NAVY}});
+    sA.addText(`Período: ${periodo}  ·  ${total} operaciones  ·  Cumplimiento: ${pctComp}%  ·  Carga total: ${cargoTotal} u.`,{x:ML,y:CTX_Y+4.0,w:CW,h:.38,fontSize:8,color:AMBER,align:'center',valign:'middle'});
+
+    // ══ CONCLUSIONES Y RECOMENDACIONES ══
+    setUpStep('Conclusiones'); setUpBar(91);
+    const sC=pptx.addSlide(); sC.background={color:BG};
+    addHdr(sC,'CONCLUSIONES Y RECOMENDACIONES',`Análisis basado en ${total} operaciones`); addFtr(sC,++pageN);
+
+    // Build conclusion items
+    const concls=[];
+    if(pctComp>=80) concls.push({t:`Cumplimiento del ${pctComp}%: desempeño ÓPTIMO superando el umbral del 80%.`,c:'22C55E'});
+    else if(pctComp>=60) concls.push({t:`Cumplimiento del ${pctComp}%: nivel MODERADO — meta: alcanzar ≥80%.`,c:'F59E0B'});
+    else concls.push({t:`Cumplimiento del ${pctComp}%: nivel BAJO — requiere intervención correctiva urgente.`,c:'EF4444'});
+    if(topTransp.length>0){const cn=Math.round(topTransp[0][1]/total*100);concls.push({t:cn>50?`Alta dependencia de "${topTransp[0][0]}" (${cn}%) — riesgo operacional.`:`Cartera de ${topTransp.length} transportistas equilibrada — bajo riesgo de dependencia.`,c:cn>50?'F59E0B':'22C55E'});}
+    if(cancel===0) concls.push({t:'Sin cancelaciones en el período — planificación efectiva y alta confiabilidad.',c:'22C55E'});
+    else if(pctCancelA>10) concls.push({t:`Cancelación del ${pctCancelA}% supera umbral del 10% — análisis de causa requerido.`,c:'EF4444'});
+    else concls.push({t:`Cancelación del ${pctCancelA}% dentro de parámetros normales (≤10%).`,c:'F59E0B'});
+    if(topRutas.length>0) concls.push({t:`Corredor principal: "${topRutas[0][0]}" concentra el ${Math.round(topRutas[0][1]/total*100)}% de las operaciones.`,c:'3B82F6'});
+    if(mensualValues.length>1){const up=mensualValues[mensualValues.length-1]>mensualValues[0];const eq=mensualValues[mensualValues.length-1]===mensualValues[0];concls.push({t:`Tendencia mensual ${up?'CRECIENTE ▲':eq?'ESTABLE →':'DECRECIENTE ▼'}: ${up?'actividad en expansión.':eq?'volumen estable.':'reducción a monitorear.'}`,c:up?'22C55E':eq?'3B82F6':'EF4444'});}
+
+    // Conclusions column (left)
+    sC.addShape(pptx.ShapeType.rect,{x:ML,y:CTX_Y,w:4.45,h:.3,fill:{color:GREEN}});
+    sC.addShape(pptx.ShapeType.rect,{x:ML,y:CTX_Y,w:.06,h:.3,fill:{color:'16803A'}});
+    sC.addText('CONCLUSIONES',{x:ML+.1,y:CTX_Y,w:4.3,h:.3,fontSize:9,bold:true,color:WHITE,valign:'middle'});
+    concls.slice(0,5).forEach(({t,c},i)=>{
+      const cy=CTX_Y+.38+i*.77;
+      sC.addShape(pptx.ShapeType.roundRect,{x:ML,y:cy,w:4.45,h:.7,fill:{color:WHITE},line:{color:c,width:.6}});
+      sC.addShape(pptx.ShapeType.rect,{x:ML,y:cy,w:.07,h:.7,fill:{color:c}});
+      sC.addText(t,{x:ML+.14,y:cy,w:4.24,h:.7,fontSize:7.3,color:T1,wrap:true,valign:'middle'});
+    });
+
+    // Build recommendations
+    const recs=[];
+    if(pctComp<80) recs.push(`Meta próximo período: cumplimiento del ${Math.min(pctComp+15,90)}% con revisión semanal de avance.`);
+    if(pend>0) recs.push(`Activar ${pend} operación${pend!==1?'es':''} pendientes asignando responsables con fechas límite claras.`);
+    if(topTransp.length>0&&Math.round(topTransp[0][1]/total*100)>50) recs.push('Ampliar cartera de transportistas para reducir riesgo de dependencia operacional.');
+    if(pctCancelA>5) recs.push('Implementar registro de causas de cancelación para identificar patrones recurrentes.');
+    recs.push('Actualizar el sistema diariamente para garantizar precisión de los indicadores.');
+    recs.push('Revisar KPIs mensualmente para detectar desviaciones y actuar oportunamente.');
+
+    // Recommendations column (right)
+    sC.addShape(pptx.ShapeType.rect,{x:RX,y:CTX_Y,w:4.62,h:.3,fill:{color:AMBER}});
+    sC.addShape(pptx.ShapeType.rect,{x:RX,y:CTX_Y,w:.06,h:.3,fill:{color:'B45309'}});
+    sC.addText('RECOMENDACIONES',{x:RX+.1,y:CTX_Y,w:4.46,h:.3,fontSize:9,bold:true,color:NAVY,valign:'middle'});
+    recs.slice(0,6).forEach((t,i)=>{
+      const cy=CTX_Y+.38+i*.67;
+      sC.addShape(pptx.ShapeType.roundRect,{x:RX,y:cy,w:4.62,h:.6,fill:{color:'FFFBEB'},line:{color:AMBER,width:.6}});
+      sC.addShape(pptx.ShapeType.rect,{x:RX,y:cy,w:.07,h:.6,fill:{color:AMBER}});
+      sC.addShape(pptx.ShapeType.ellipse,{x:RX+.15,y:cy+.2,w:.19,h:.19,fill:{color:AMBER},line:{color:AMBER}});
+      sC.addText(t,{x:RX+.4,y:cy,w:4.15,h:.6,fontSize:7.3,color:T1,wrap:true,valign:'middle'});
+    });
+
     // ══ SLIDE FINAL ══
     setUpStep('Diapositiva final'); setUpBar(94);
     const sf=pptx.addSlide(); sf.background={color:NAVY};
