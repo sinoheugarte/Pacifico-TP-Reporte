@@ -4238,8 +4238,20 @@ function openDetail(id){showDet(id);}
 
 /* ── EXPORT VISIBLE TABLE TO EXCEL ──────────────────── */
 /* ── EXPORT VISIBLE TABLE TO EXCEL (HTML-styled .xls) ── */
-function exportRecordsXLSX(){
+async function exportRecordsXLSX(){
   if(!records.length){toast('No hay registros');return;}
+
+  /* Load ExcelJS lazily */
+  if(!window.ExcelJS){
+    toast('Preparando exportación…');
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+      s.onload=res;s.onerror=rej;
+      document.head.appendChild(s);
+    });
+  }
+
   const visCols=_rtCols.filter(c=>_rtVisibleCols.has(c.k));
   let rows=[...records];
   const sc=_rtSort.col,sd=_rtSort.dir;
@@ -4251,37 +4263,91 @@ function exportRecordsXLSX(){
 
   function stripHtml(v){if(typeof v==='string'&&v.includes('<')){const d=document.createElement('div');d.innerHTML=v;return d.textContent.trim();}return String(v);}
 
-  /* Build AOA: header + data */
-  const header=visCols.map(c=>c.label);
-  const body=rows.map(r=>visCols.map(c=>{
-    const val=stripHtml(c.fmt(r));
-    const num=Number(val);
-    return ['cajas','paletas','sobres','viaje','photoCount'].includes(c.k)&&!isNaN(num)&&val!=='—'?num:val;
-  }));
+  const numCols=new Set(['cajas','paletas','sobres','viaje','photoCount']);
+  const statusColors={completado:'FF059669',['en-ruta']:'FF1D4ED8',pendiente:'FF92400E',cancelado:'FFDC2626'};
+  const thin={style:'thin',color:{argb:'FFCBD5E1'}};
+  const border={top:thin,bottom:thin,left:thin,right:thin};
+  const center={horizontal:'center',vertical:'middle'};
 
-  const ws=XLSX.utils.aoa_to_sheet([header,...body]);
+  const wb=new ExcelJS.Workbook();
+  wb.creator='Pacífico Transportation SAC';
+  wb.created=new Date();
 
-  /* Column widths */
-  ws['!cols']=visCols.map(()=>({wch:20}));
+  const ws=wb.addWorksheet('Registros',{views:[{state:'frozen',ySplit:1}]});
 
-  /* Row heights — header taller */
-  ws['!rows']=[{hpt:22},...rows.map(()=>({hpt:18}))];
+  /* Column definitions */
+  ws.columns=visCols.map(c=>({key:c.k,width:22}));
 
-  /* AutoFilter on header row — this works in SheetJS CE */
-  const lastCol=XLSX.utils.encode_col(visCols.length-1);
-  ws['!autofilter']={ref:`A1:${lastCol}1`};
+  /* Header row */
+  const hdrRow=ws.addRow(visCols.map(c=>c.label));
+  hdrRow.height=22;
+  hdrRow.eachCell(cell=>{
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2340'}};
+    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11,name:'Calibri'};
+    cell.alignment=center;
+    cell.border=border;
+  });
 
-  /* Freeze header row */
-  ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft'};
+  /* Data rows */
+  rows.forEach((r,ri)=>{
+    const bg=ri%2===0?'FFF0F4FA':'FFFFFFFF';
+    const st=(r.status||'').toLowerCase();
+    const stripeArgb={completado:'FF059669',['en-ruta']:'FF1D4ED8',pendiente:'FFF59E0B',cancelado:'FFDC2626'}[st]||'FFE2E8F0';
 
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+    const vals=visCols.map(c=>{
+      const raw=stripHtml(c.fmt(r));
+      const n=Number(raw);
+      return numCols.has(c.k)&&!isNaN(n)&&raw!=='—'?n:raw;
+    });
+    const row=ws.addRow(vals);
+    row.height=18;
 
-  /* Sheet properties: sheet name, tab colour */
-  wb.Workbook={Sheets:[{name:'Registros',Hidden:0}]};
+    row.eachCell({includeEmpty:true},(cell,colNum)=>{
+      const col=visCols[colNum-1];
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+      cell.alignment=center;
+      cell.border=border;
+      /* Status colour */
+      if(col&&col.k==='status'){
+        cell.font={bold:true,color:{argb:statusColors[st]||'FF334155'},size:10,name:'Calibri'};
+      } else if(col&&col.k==='orden'){
+        cell.font={bold:true,color:{argb:'FF0F2340'},size:10,name:'Courier New'};
+      } else {
+        cell.font={color:{argb:'FF0F172A'},size:10,name:'Calibri'};
+      }
+      /* Left stripe on first column */
+      if(colNum===1){
+        cell.border={...border,left:{style:'medium',color:{argb:stripeArgb}}};
+      }
+    });
+  });
 
-  const fname=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
-  XLSX.writeFile(wb,fname);
+  /* AutoFilter on header row */
+  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:visCols.length}};
+
+  /* Title row above table (row inserted at top) */
+  ws.spliceRows(1,0,[]);  // insert blank row at top
+  const titleRow=ws.getRow(1);
+  ws.mergeCells(1,1,1,visCols.length);
+  const titleCell=ws.getCell(1,1);
+  const now=new Date().toLocaleString('es-PE');
+  titleCell.value=`PACÍFICO TRANSPORTATION SAC — REGISTROS   |   ${rows.length} registros   |   ${now}`;
+  titleCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2340'}};
+  titleCell.font={bold:true,color:{argb:'FFFFFFFF'},size:13,name:'Calibri'};
+  titleCell.alignment={horizontal:'center',vertical:'middle'};
+  titleRow.height=28;
+
+  /* Re-apply autofilter to now-shifted header (row 2) */
+  ws.autoFilter={from:{row:2,column:1},to:{row:2,column:visCols.length}};
+  ws.views=[{state:'frozen',ySplit:2}];
+
+  /* Download */
+  const buffer=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click();URL.revokeObjectURL(url);
   toast('✓ Excel descargado');
 }
 
