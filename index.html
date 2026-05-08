@@ -4263,7 +4263,7 @@ async function exportRecordsXLSX(){
 
   function stripHtml(v){if(typeof v==='string'&&v.includes('<')){const d=document.createElement('div');d.innerHTML=v;return d.textContent.trim();}return String(v);}
 
-  const numCols=new Set(['cajas','paletas','sobres','viaje','photoCount']);
+  const numCols=new Set(['orden','cajas','paletas','sobres','viaje','photoCount']);
   const statusColors={completado:'FF059669',['en-ruta']:'FF1D4ED8',pendiente:'FF92400E',cancelado:'FFDC2626'};
   const thin={style:'thin',color:{argb:'FFCBD5E1'}};
   const border={top:thin,bottom:thin,left:thin,right:thin};
