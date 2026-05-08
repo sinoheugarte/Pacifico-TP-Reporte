@@ -3755,8 +3755,13 @@ Reveal.on('slidechanged',function(e){
   var cv=document.getElementById('intro-canvas');
   var W,H,ctx,raf,t=0;
 
-  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
-  resize();window.addEventListener('resize',resize);
+  function resize(){
+    W=cv.width=window.innerWidth;
+    H=cv.height=window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+  ctx=cv.getContext('2d');
 
   /* Stars */
   var NSTARS=260;
@@ -3914,8 +3919,7 @@ Reveal.on('slidechanged',function(e){
       ctx.shadowBlur=28;
       ctx.fillStyle='#f59e0b';
       ctx.font='700 '+fs+'px "DM Sans",sans-serif';
-      ctx.letterSpacing='0.18em';
-      ctx.fillText('PACÍFICO TRANSPORTATION',W*.5,H*.5-fs*.55);
+      ctx.fillText('PACÍFICO  TRANSPORTATION',W*.5,H*.5-fs*.55);
 
       ctx.shadowBlur=10;
       ctx.fillStyle='rgba(255,255,255,.82)';
