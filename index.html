@@ -2470,7 +2470,7 @@ async function generatePDF(){
     doc.setFont('helvetica','bold'); doc.setFontSize(22);
     doc.text('PACÍFICO TRANSPORTATION SAC', W/2, 22, {align:'center'});
     doc.setFontSize(13);
-    doc.text('REPORTE DE GESTIÓN DE TRASLADOS', W/2, 33, {align:'center'});
+    doc.text('REPORTE DE GESTIÓN DE TRANSPORTE', W/2, 33, {align:'center'});
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
     doc.text('Resumen Ejecutivo', W/2, 42, {align:'center'});
     doc.setFontSize(8); doc.setTextColor(148,163,184);
@@ -2923,7 +2923,7 @@ async function generatePPTX(){
     pptx.layout='LAYOUT_16x9';
     pptx.author='Pacífico Transportation SAC';
     pptx.company='Pacífico Transportation SAC';
-    pptx.subject='Reporte de Traslados';
+    pptx.subject='Reporte de Transporte';
     pptx.title='Reporte Ejecutivo - Pacífico Transportation';
 
     const NAVY='0F2340', AMBER='F59E0B', WHITE='FFFFFF';
@@ -2983,7 +2983,7 @@ async function generatePPTX(){
     };
     const addFtr=(sl,n)=>{
       sl.addShape(pptx.ShapeType.rect,{x:0,y:5.34,w:10,h:.24,fill:{color:'F1F5F9'}});
-      sl.addText('Pacífico Transportation SAC  ·  Reporte Operativo de Traslados',{x:ML,y:5.34,w:6.4,h:.24,fontSize:6.5,color:T3,valign:'middle'});
+      sl.addText('Pacífico Transportation SAC  ·  Reporte Operativo de Transporte',{x:ML,y:5.34,w:6.4,h:.24,fontSize:6.5,color:T3,valign:'middle'});
       sl.addText(`${new Date().toLocaleDateString('es-PE')}  ·  Pág. ${n}`,{x:6.8,y:5.34,w:2.9,h:.24,fontSize:6.5,color:T3,align:'right',valign:'middle'});
     };
     // Shared chart style
@@ -3000,7 +3000,7 @@ async function generatePPTX(){
     s1.addShape(pptx.ShapeType.roundRect,{x:ML+.22,y:.45,w:3.2,h:.85,fill:{color:'152234'},line:{color:AMBER,width:.8}});
     s1.addText('PACÍFICO  TRANSPORTATION  SAC',{x:ML+.22,y:.45,w:3.2,h:.85,fontSize:8,bold:true,color:AMBER,align:'center',valign:'middle'});
     s1.addText('REPORTE EJECUTIVO',{x:ML+.22,y:1.42,w:8.5,h:.78,fontSize:28,bold:true,color:WHITE});
-    s1.addText('DE OPERACIONES DE TRASLADO',{x:ML+.22,y:2.18,w:8.0,h:.56,fontSize:17,color:AMBER});
+    s1.addText('DE OPERACIONES DE TRANSPORTE',{x:ML+.22,y:2.18,w:8.0,h:.56,fontSize:17,color:AMBER});
     s1.addText(`Período: ${periodo}`,{x:ML+.22,y:2.85,w:7.5,h:.36,fontSize:11,color:'94A3B8'});
     s1.addShape(pptx.ShapeType.rect,{x:0,y:3.46,w:10,h:.03,fill:{color:'1E3A5F'}});
     // 4 cards centered: 4×2.2 + 3×0.27 gap, start x=0.3 → ends at 9.71
@@ -3369,7 +3369,7 @@ async function generatePPTX(){
     sf.addShape(pptx.ShapeType.ellipse,{x:7.2,y:-.6,w:3.8,h:3.8,fill:{color:'0B1929'},line:{color:'0B1929'}});
     sf.addShape(pptx.ShapeType.rect,{x:0,y:2.55,w:10,h:.06,fill:{color:AMBER}});
     sf.addText('Pacífico Transportation SAC',{x:.5,y:.42,w:9,h:.78,fontSize:22,bold:true,color:AMBER,align:'center'});
-    sf.addText('Sistema de Gestión de Traslados',{x:.5,y:1.22,w:9,h:.52,fontSize:13,color:'94A3B8',align:'center'});
+    sf.addText('Sistema de Gestión de Transporte',{x:.5,y:1.22,w:9,h:.52,fontSize:13,color:'94A3B8',align:'center'});
     sf.addText(`${total} operaciones  ·  ${comp} completadas  ·  ${pctComp}% de cumplimiento`,{x:.5,y:2.68,w:9,h:.44,fontSize:11,color:WHITE,align:'center'});
     sf.addText(`Período: ${periodo}`,{x:.5,y:3.18,w:9,h:.38,fontSize:10,color:'94A3B8',align:'center'});
     // 4 cards centered: 4×2.2 + 3×0.27 gap → total 9.61, start 0.2
@@ -3553,11 +3553,11 @@ function generateRevealPresentation(){
       <!-- T crossbar -->
       <line x1="4" y1="105" x2="86" y2="105"/>
     </svg>
-    <p style="font-size:.52em;letter-spacing:.24em;text-transform:uppercase;opacity:.32;margin:3px 0 0">Sistema de Gestión de Traslados · Perú</p>
+    <p style="font-size:.52em;letter-spacing:.24em;text-transform:uppercase;opacity:.32;margin:3px 0 0">Sistema de Gestión de Transporte · Perú</p>
   </div>
   <!-- Ticker at bottom -->
   <div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;z-index:2">
-    <div class="scroll-ticker" style="width:90%"><div class="scroll-ticker-inner">PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRASLADOS &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRASLADOS &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
+    <div class="scroll-ticker" style="width:90%"><div class="scroll-ticker-inner">PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRANSPORTE &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRANSPORTE &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
   </div>
 </section>
 
@@ -3565,7 +3565,7 @@ function generateRevealPresentation(){
 <section data-transition="zoom" data-background="linear-gradient(135deg,#0a1628 0%,#0f2340 40%,#1a3a5c 100%)">
   <div class="accent-line" style="margin-bottom:30px"></div>
   <h1 style="font-size:2.4em;margin:0">PACÍFICO<br><span class="gold">TRANSPORTATION</span> SAC</h1>
-  <p style="font-size:1.2em;opacity:.6;margin:20px 0">Reporte Ejecutivo de Gestión de Traslados</p>
+  <p style="font-size:1.2em;opacity:.6;margin:20px 0">Reporte Ejecutivo de Gestión de Transporte</p>
   <div class="accent-line"></div>
   <p style="font-size:.7em;opacity:.4;margin-top:30px">${new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'})} · ${user?.email||''}</p>
   <p style="font-size:.6em;opacity:.3">Use ← → para navegar · ESC para vista general · F para pantalla completa</p>
@@ -3714,7 +3714,7 @@ function generateRevealPresentation(){
   <div class="accent-line" style="margin-bottom:25px"></div>
   <h1 style="font-size:2.2em">¡Gracias!</h1>
   <p class="gold" style="font-size:1.3em;font-weight:700;margin:15px 0">Pacífico Transportation SAC</p>
-  <p style="opacity:.5;font-size:.9em">Sistema de Gestión de Traslados</p>
+  <p style="opacity:.5;font-size:.9em">Sistema de Gestión de Transporte</p>
   <div class="accent-line" style="margin:25px auto"></div>
   <p style="opacity:.3;font-size:.7em">${new Date().toLocaleString('es-PE')}</p>
 </section>
