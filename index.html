@@ -4148,17 +4148,30 @@ Reveal.on('slidechanged',function(e){
 /* ─── RECORDS TABLE ──────────────────────────────────── */
 var _rtSort={col:'fechaInicio',dir:'desc'};
 var _rtCols=[
-  {k:'fechaInicio',  label:'Fecha',         fmt:r=>formatDateToDDMMYYYY(r.fechaInicio)||'—',   cls:'td-date'},
-  {k:'orden',        label:'Orden',         fmt:r=>r.orden||'—',                                cls:'td-orden'},
-  {k:'viaje',        label:'Viaje',         fmt:r=>r.viaje||'—',                                cls:''},
-  {k:'transportista',label:'Transportista', fmt:r=>r.transportista||'—',                        cls:'td-trunc'},
-  {k:'ruta',         label:'Ruta',          fmt:r=>r.ruta||'—',                                 cls:'td-trunc'},
-  {k:'motivo',       label:'Motivo',        fmt:r=>r.motivo||'—',                               cls:'td-trunc'},
-  {k:'status',       label:'Estado',        fmt:r=>{const s=(r.status||'').toLowerCase();const map={completado:'b-completado',['en-ruta']:'b-en-ruta',pendiente:'b-pendiente',cancelado:'b-cancelado'};return `<span class="badge-sm ${map[s]||'b-default'}">${r.status||'—'}</span>`;}, cls:''},
-  {k:'cajas',        label:'Cajas',         fmt:r=>r.cajas||'—',                                cls:''},
-  {k:'paletas',      label:'Paletas',       fmt:r=>r.paletas||'—',                              cls:''},
+  {k:'fechaInicio',       label:'F. Inicio',       fmt:r=>formatDateToDDMMYYYY(r.fechaInicio)||'—',      cls:'td-date'},
+  {k:'fechaTermino',      label:'F. Término',      fmt:r=>formatDateToDDMMYYYY(r.fechaTermino)||'—',     cls:'td-date'},
+  {k:'horaInicio',        label:'H. Inicio',       fmt:r=>r.horaInicio||'—',                             cls:'td-date'},
+  {k:'horaTermino',       label:'H. Término',      fmt:r=>r.horaTermino||'—',                            cls:'td-date'},
+  {k:'turnoInicio',       label:'Turno Ini.',      fmt:r=>r.turnoInicio||'—',                            cls:''},
+  {k:'turnoTermino',      label:'Turno Tér.',      fmt:r=>r.turnoTermino||'—',                           cls:''},
+  {k:'orden',             label:'Orden',           fmt:r=>r.orden||'—',                                  cls:'td-orden'},
+  {k:'dam',               label:'DAM',             fmt:r=>r.dam||'—',                                    cls:'td-trunc'},
+  {k:'tipoUnidad',        label:'Tipo Unidad',     fmt:r=>r.tipoUnidad||'—',                             cls:'td-trunc'},
+  {k:'transportista',     label:'Transportista',   fmt:r=>r.transportista||'—',                          cls:'td-trunc'},
+  {k:'ruta',              label:'Ruta',            fmt:r=>r.ruta||'—',                                   cls:'td-trunc'},
+  {k:'motivo',            label:'Motivo',          fmt:r=>r.motivo||'—',                                 cls:'td-trunc'},
+  {k:'viaje',             label:'Viaje',           fmt:r=>r.viaje||'—',                                  cls:''},
+  {k:'guiaRemitente',     label:'Guía Remit.',     fmt:r=>r.guiaRemitente||'—',                          cls:'td-trunc'},
+  {k:'guiaTransportista', label:'Guía Transp.',    fmt:r=>r.guiaTransportista||'—',                      cls:'td-trunc'},
+  {k:'hojaIngreso',       label:'Hoja Ingreso',    fmt:r=>r.hojaIngreso||'—',                            cls:'td-trunc'},
+  {k:'paletas',           label:'Paletas',         fmt:r=>r.paletas||'—',                                cls:''},
+  {k:'cajas',             label:'Cajas',           fmt:r=>r.cajas||'—',                                  cls:''},
+  {k:'sobres',            label:'Sobres',          fmt:r=>r.sobres||'—',                                 cls:''},
+  {k:'status',            label:'Estado',          fmt:r=>{const s=(r.status||'').toLowerCase();const map={completado:'b-completado',['en-ruta']:'b-en-ruta',pendiente:'b-pendiente',cancelado:'b-cancelado'};return `<span class="badge-sm ${map[s]||'b-default'}">${r.status||'—'}</span>`;}, cls:''},
+  {k:'observaciones',     label:'Observaciones',   fmt:r=>r.observaciones||'—',                          cls:'td-trunc'},
 ];
-var _rtVisibleCols=new Set(_rtCols.map(c=>c.k));
+/* Default visible columns (the most useful at a glance) */
+var _rtVisibleCols=new Set(['fechaInicio','orden','viaje','transportista','ruta','motivo','status','cajas','paletas']);
 
 function renderRecordsTable(){
   /* column toggles */
