@@ -4249,58 +4249,39 @@ function exportRecordsXLSX(){
     return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
   });
 
-  function stripHtml(v){if(typeof v==='string'&&v.includes('<')){const d=document.createElement('div');d.innerHTML=v;return d.textContent.trim();}return v;}
-  function statusColor(s){return{completado:'#059669',['en-ruta']:'#1d4ed8',pendiente:'#92400e',cancelado:'#dc2626'}[s]||'#334155';}
+  function stripHtml(v){if(typeof v==='string'&&v.includes('<')){const d=document.createElement('div');d.innerHTML=v;return d.textContent.trim();}return String(v);}
 
-  const colW=Math.max(120,Math.floor(900/visCols.length));
-  /* Row 1=title, Row 2=subtitle, Row 3=header → autofilter on row 3 */
-  const filterRange=`R3C1:R3C${visCols.length}`;
-  const hdrCells=visCols.map(c=>`<td style="background:#0F2340;color:#fff;font-weight:700;font-size:11pt;padding:10px 12px;border:1px solid #1a3560;text-align:center;letter-spacing:0.04em;white-space:nowrap;width:${colW}px">${c.label}</td>`).join('');
+  /* Build AOA: header + data */
+  const header=visCols.map(c=>c.label);
+  const body=rows.map(r=>visCols.map(c=>{
+    const val=stripHtml(c.fmt(r));
+    const num=Number(val);
+    return ['cajas','paletas','sobres','viaje','photoCount'].includes(c.k)&&!isNaN(num)&&val!=='—'?num:val;
+  }));
 
-  const datRows=rows.map((r,ri)=>{
-    const bg=ri%2===0?'#F0F4FA':'#FFFFFF';
-    const st=(r.status||'').toLowerCase();
-    const stripe={completado:'#059669',['en-ruta']:'#1d4ed8',pendiente:'#f59e0b',cancelado:'#dc2626'}[st]||'#e2e8f0';
-    const cells=visCols.map((c,ci)=>{
-      let val=stripHtml(c.fmt(r));
-      /* center-align all cells; status and orden get colour */
-      let style=`background:${bg};color:#0f172a;font-size:10pt;padding:9px 12px;border:1px solid #CBD5E1;vertical-align:middle;text-align:center;`;
-      if(c.k==='status'){style+=`color:${statusColor(st)};font-weight:700;`;}
-      if(c.k==='orden'){style+=`font-weight:700;color:#0F2340;font-family:'Courier New',monospace;`;}
-      if(ci===0){style+=`border-left:4px solid ${stripe};`;}
-      return `<td style="${style}">${val}</td>`;
-    }).join('');
-    return `<tr>${cells}</tr>`;
-  }).join('');
+  const ws=XLSX.utils.aoa_to_sheet([header,...body]);
 
-  const now=new Date().toLocaleString('es-PE');
-  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8">
-<!--[if gte mso 9]><xml>
- <x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
-  <x:WorksheetOptions><x:Selected/></x:WorksheetOptions>
-  <x:AutoFilter x:Range="${filterRange}"/>
- </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
-</xml><![endif]-->
-<style>
-  body{font-family:Calibri,Arial,sans-serif}
-  table{border-collapse:collapse;width:100%}
-</style>
-</head>
-<body>
-<p style="font-size:14pt;font-weight:700;color:#0F2340;margin-bottom:2px">PACÍFICO TRANSPORTATION SAC — REGISTROS</p>
-<p style="font-size:9pt;color:#475569;margin-top:0;margin-bottom:12px">Generado: ${now} &nbsp;·&nbsp; Total: ${rows.length} registros</p>
-<table>
-<thead><tr>${hdrCells}</tr></thead>
-<tbody>${datRows}</tbody>
-</table>
-</body></html>`;
+  /* Column widths */
+  ws['!cols']=visCols.map(()=>({wch:20}));
 
-  const blob=new Blob(['﻿',html],{type:'application/vnd.ms-excel;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xls`;
-  a.click();URL.revokeObjectURL(url);
+  /* Row heights — header taller */
+  ws['!rows']=[{hpt:22},...rows.map(()=>({hpt:18}))];
+
+  /* AutoFilter on header row — this works in SheetJS CE */
+  const lastCol=XLSX.utils.encode_col(visCols.length-1);
+  ws['!autofilter']={ref:`A1:${lastCol}1`};
+
+  /* Freeze header row */
+  ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft'};
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+
+  /* Sheet properties: sheet name, tab colour */
+  wb.Workbook={Sheets:[{name:'Registros',Hidden:0}]};
+
+  const fname=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb,fname);
   toast('✓ Excel descargado');
 }
 
