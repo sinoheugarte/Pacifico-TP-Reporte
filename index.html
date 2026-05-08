@@ -3784,7 +3784,7 @@ Reveal.on('slidechanged',function(e){
   var rocketT=0; // 0..1 across screen
 
   /* Text phases */
-  var TOTAL_MS=5400;
+  var TOTAL_MS=10000;
   var start=null;
 
   function ease(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
@@ -3893,8 +3893,8 @@ Reveal.on('slidechanged',function(e){
       }
     });
 
-    /* Rocket — enters at t=0.8s, exits at t=3.5s */
-    var rStart=0.8/5.4, rEnd=3.5/5.4;
+    /* Rocket — enters at t=1.2s, exits at t=6.5s */
+    var rStart=1.2/10, rEnd=6.5/10;
     if(progress>rStart&&progress<rEnd){
       var rP=(progress-rStart)/(rEnd-rStart);
       var rx=-W*.12+rP*(W*1.24);
@@ -3905,10 +3905,10 @@ Reveal.on('slidechanged',function(e){
     }
 
     /* Title text */
-    var textStart=2.2/5.4;
+    var textStart=4.0/10;
     if(progress>textStart){
-      var tp=Math.min((progress-textStart)/(.35),1);
-      var textAlpha=ease(tp)*Math.min((1-progress)/.18,1);
+      var tp=Math.min((progress-textStart)/(.2),1);
+      var textAlpha=ease(tp)*Math.min((1-progress)/.1,1);
       var fs=Math.min(W*.075,36);
       ctx.save();
       ctx.globalAlpha=textAlpha;
@@ -3924,7 +3924,7 @@ Reveal.on('slidechanged',function(e){
       ctx.shadowBlur=10;
       ctx.fillStyle='rgba(255,255,255,.82)';
       ctx.font='400 '+(fs*.42)+'px "DM Sans",sans-serif';
-      ctx.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A S L A D O S',W*.5,H*.5+fs*.25);
+      ctx.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A N S P O R T E',W*.5,H*.5+fs*.25);
       ctx.restore();
     }
 

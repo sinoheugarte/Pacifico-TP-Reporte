@@ -1,4 +1,4 @@
-const CACHE = 'pacifico-v8';
+const CACHE = 'pacifico-v9';
 const ASSETS = [
   './index.html',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
