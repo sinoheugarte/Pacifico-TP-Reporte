@@ -4275,13 +4275,14 @@ async function exportRecordsXLSX(){
 
   const ws=wb.addWorksheet('Registros',{views:[{state:'frozen',ySplit:1}]});
 
-  /* Column definitions */
-  ws.columns=visCols.map(c=>({key:c.k,width:22}));
+  /* Column A: empty spacer width=1, then data columns from B */
+  ws.columns=[{key:'_spacer',width:1}, ...visCols.map(c=>({key:c.k,width:22}))];
 
-  /* Header row */
-  const hdrRow=ws.addRow(visCols.map(c=>c.label));
+  /* Header row — empty A, labels from B */
+  const hdrRow=ws.addRow(['', ...visCols.map(c=>c.label)]);
   hdrRow.height=22;
-  hdrRow.eachCell(cell=>{
+  hdrRow.eachCell((cell,col)=>{
+    if(col===1)return; // leave A blank
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2340'}};
     cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11,name:'Calibri'};
     cell.alignment=center;
@@ -4294,20 +4295,20 @@ async function exportRecordsXLSX(){
     const st=(r.status||'').toLowerCase();
     const stripeArgb={completado:'FF059669',['en-ruta']:'FF1D4ED8',pendiente:'FFF59E0B',cancelado:'FFDC2626'}[st]||'FFE2E8F0';
 
-    const vals=visCols.map(c=>{
+    const vals=['', ...visCols.map(c=>{  // empty A spacer
       const raw=stripHtml(c.fmt(r));
       const n=Number(raw);
       return numCols.has(c.k)&&!isNaN(n)&&raw!=='—'?n:raw;
-    });
+    })];
     const row=ws.addRow(vals);
     row.height=18;
 
     row.eachCell({includeEmpty:true},(cell,colNum)=>{
-      const col=visCols[colNum-1];
+      if(colNum===1)return; // leave column A blank
+      const col=visCols[colNum-2]; // offset by 1 for spacer col
       cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
       cell.alignment=center;
       cell.border=border;
-      /* Status colour */
       if(col&&col.k==='status'){
         cell.font={bold:true,color:{argb:statusColors[st]||'FF334155'},size:10,name:'Calibri'};
       } else if(col&&col.k==='orden'){
@@ -4315,21 +4316,22 @@ async function exportRecordsXLSX(){
       } else {
         cell.font={color:{argb:'FF0F172A'},size:10,name:'Calibri'};
       }
-      /* Left stripe on first column */
-      if(colNum===1){
+      /* Left stripe on first data column (B) */
+      if(colNum===2){
         cell.border={...border,left:{style:'medium',color:{argb:stripeArgb}}};
       }
     });
   });
 
-  /* AutoFilter on header row */
-  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:visCols.length}};
+  /* AutoFilter on header row — columns B onwards (col 2 to 2+N-1) */
+  ws.autoFilter={from:{row:1,column:2},to:{row:1,column:visCols.length+1}};
 
-  /* Title row above table (row inserted at top) */
-  ws.spliceRows(1,0,[]);  // insert blank row at top
+  /* Title row inserted above header */
+  ws.spliceRows(1,0,[]);
   const titleRow=ws.getRow(1);
-  ws.mergeCells(1,1,1,visCols.length);
-  const titleCell=ws.getCell(1,1);
+  /* Merge B1:last data col */
+  ws.mergeCells(1,2,1,visCols.length+1);
+  const titleCell=ws.getCell(1,2);
   const now=new Date().toLocaleString('es-PE');
   titleCell.value=`PACÍFICO TRANSPORTATION SAC — REGISTROS   |   ${rows.length} registros   |   ${now}`;
   titleCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2340'}};
@@ -4337,8 +4339,8 @@ async function exportRecordsXLSX(){
   titleCell.alignment={horizontal:'center',vertical:'middle'};
   titleRow.height=28;
 
-  /* Re-apply autofilter to now-shifted header (row 2) */
-  ws.autoFilter={from:{row:2,column:1},to:{row:2,column:visCols.length}};
+  /* Re-apply autofilter to shifted header (row 2), B2 onwards */
+  ws.autoFilter={from:{row:2,column:2},to:{row:2,column:visCols.length+1}};
   ws.views=[{state:'frozen',ySplit:2}];
 
   /* Download */
