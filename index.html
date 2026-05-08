@@ -421,6 +421,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .rtbl-col-toggle{display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px}
 .rtbl-col-btn{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--text2);cursor:pointer}
 .rtbl-col-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.rtbl-dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.rtbl-dl-xlsx{background:#1d6f42;color:#fff}
+.rtbl-dl-pdf{background:#c0392b;color:#fff}
+.rtbl-dl-btn:hover{opacity:.85}
 
 #qr-modal{display:none;position:fixed;inset:0;z-index:8000;background:#000;
   flex-direction:column;align-items:center;justify-content:center}
@@ -855,6 +859,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <div class="rtbl-meta">
       <span id="rtbl-count">—</span>
       <span id="rtbl-sum" style="font-family:'DM Mono',monospace"></span>
+      <div style="display:flex;gap:7px;margin-left:auto">
+        <button class="rtbl-dl-btn rtbl-dl-xlsx" onclick="exportRecordsXLSX()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Excel
+        </button>
+        <button class="rtbl-dl-btn rtbl-dl-pdf" onclick="exportRecordsPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h3"/></svg>
+          PDF
+        </button>
+      </div>
     </div>
     <div class="rtbl-wrap"><table class="rtbl" id="rtbl"><thead id="rtbl-head"></thead><tbody id="rtbl-body"></tbody></table></div>
   </div>
@@ -4221,6 +4235,146 @@ function toggleRtCol(k,btn){
 }
 
 function openDetail(id){showDet(id);}
+
+/* ── EXPORT VISIBLE TABLE TO EXCEL ──────────────────── */
+function exportRecordsXLSX(){
+  if(!records.length){toast('No hay registros');return;}
+  const visCols=_rtCols.filter(c=>_rtVisibleCols.has(c.k));
+
+  /* Sort same as current table */
+  let rows=[...records];
+  const sc=_rtSort.col,sd=_rtSort.dir;
+  rows.sort((a,b)=>{
+    let av=a[sc]||'',bv=b[sc]||'';
+    if(sc==='cajas'||sc==='paletas'||sc==='sobres'){av=parseInt(av)||0;bv=parseInt(bv)||0;}
+    return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
+  });
+
+  /* Build AOA: header row + data rows */
+  const header=visCols.map(c=>c.label);
+  const body=rows.map(r=>visCols.map(c=>{
+    /* strip HTML tags from badge cells */
+    const raw=c.fmt(r);
+    if(typeof raw==='string'&&raw.includes('<')){
+      const d=document.createElement('div');d.innerHTML=raw;return d.textContent.trim();
+    }
+    /* numeric cols */
+    const num=parseInt(raw);
+    return (c.k==='cajas'||c.k==='paletas'||c.k==='sobres'||c.k==='viaje'||c.k==='photoCount')&&!isNaN(num)?num:raw;
+  }));
+  const aoa=[header,...body];
+
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+  /* Column widths */
+  ws['!cols']=visCols.map(()=>({wch:18}));
+
+  /* Table style */
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let R=range.s.r;R<=range.e.r;R++){
+    for(let C=range.s.c;C<=range.e.c;C++){
+      const addr=XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[addr])ws[addr]={t:'s',v:''};
+      ws[addr].s={
+        font:{bold:R===0,color:{rgb:R===0?'FFFFFF':'000000'},name:'Calibri',sz:11},
+        fill:{fgColor:{rgb:R===0?'0F2340':R%2===0?'F0F4FA':'FFFFFF'},patternType:'solid'},
+        alignment:{horizontal:R===0?'center':'left',vertical:'center',wrapText:false},
+        border:{top:{style:'thin',color:{rgb:'CBD5E1'}},bottom:{style:'thin',color:{rgb:'CBD5E1'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}}
+      };
+    }
+  }
+  ws['!autofilter']={ref:ws['!ref']};
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+  const fname=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb,fname);
+  toast('✓ Excel descargado');
+}
+
+/* ── EXPORT VISIBLE TABLE TO PDF ────────────────────── */
+function exportRecordsPDF(){
+  if(!records.length){toast('No hay registros');return;}
+  const {jsPDF}=window.jspdf;
+  const visCols=_rtCols.filter(c=>_rtVisibleCols.has(c.k));
+
+  let rows=[...records];
+  const sc=_rtSort.col,sd=_rtSort.dir;
+  rows.sort((a,b)=>{
+    let av=a[sc]||'',bv=b[sc]||'';
+    if(sc==='cajas'||sc==='paletas'||sc==='sobres'){av=parseInt(av)||0;bv=parseInt(bv)||0;}
+    return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
+  });
+
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const PW=doc.internal.pageSize.getWidth();
+  const PH=doc.internal.pageSize.getHeight();
+  const NAVY=[15,35,64], AMBER=[245,158,11], GREY=[248,250,252], DARK=[15,23,42];
+  const now=new Date().toLocaleString('es-PE');
+  const colW=Math.min(38,Math.floor((PW-20)/visCols.length));
+
+  /* Header bar */
+  doc.setFillColor(...NAVY);doc.rect(0,0,PW,16,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('PACÍFICO TRANSPORTATION SAC — REGISTROS',PW/2,10,{align:'center'});
+  doc.setFontSize(7);doc.setFont('helvetica','normal');
+  doc.text(`Generado: ${now}   ·   Total: ${rows.length} registros`,PW/2,14,{align:'center'});
+
+  /* Table */
+  const startY=20, rowH=7, hdrH=8;
+  let y=startY, page=1;
+  const startX=10;
+
+  function drawHeader(){
+    doc.setFillColor(...NAVY);doc.rect(startX,y,colW*visCols.length,hdrH,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+    visCols.forEach((c,i)=>{
+      doc.text(c.label.toUpperCase(),startX+colW*i+1.5,y+5.2,{maxWidth:colW-3});
+    });
+    y+=hdrH;
+  }
+  function newPage(){
+    doc.addPage();
+    doc.setFillColor(...NAVY);doc.rect(0,0,PW,10,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','bold');
+    doc.text('PACÍFICO TRANSPORTATION SAC — REGISTROS',PW/2,6.5,{align:'center'});
+    y=14;page++;drawHeader();
+  }
+
+  drawHeader();
+  rows.forEach((r,ri)=>{
+    if(y+rowH>PH-10)newPage();
+    doc.setFillColor(...(ri%2===0?GREY:[255,255,255]));
+    doc.rect(startX,y,colW*visCols.length,rowH,'F');
+    /* status colour stripe */
+    const st=(r.status||'').toLowerCase();
+    const sc2=st==='completado'?[5,150,105]:st==='en-ruta'?[29,78,216]:st==='pendiente'?[180,83,9]:st==='cancelado'?[220,38,38]:null;
+    if(sc2){doc.setFillColor(...sc2);doc.rect(startX,y,1.5,rowH,'F');}
+    doc.setTextColor(...DARK);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+    visCols.forEach((c,i)=>{
+      const raw=c.fmt(r);
+      let txt=typeof raw==='string'&&raw.includes('<')?(()=>{const d=document.createElement('div');d.innerHTML=raw;return d.textContent.trim();})():String(raw);
+      doc.text(txt,startX+colW*i+2,y+4.5,{maxWidth:colW-3});
+    });
+    /* row border */
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
+    doc.rect(startX,y,colW*visCols.length,rowH,'S');
+    y+=rowH;
+  });
+
+  /* Footer */
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFillColor(...NAVY);doc.rect(0,PH-8,PW,8,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+    doc.text(`Pacífico Transportation SAC  ·  ${now}`,14,PH-3.2);
+    doc.text(`Página ${p} / ${totalPages}`,PW-14,PH-3.2,{align:'right'});
+  }
+
+  doc.save(`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('✓ PDF descargado');
+}
 
 loadCfg(); loadCacheRecords(); renderList(); showScr('list');
 tryAutoLogin().catch(()=>{});
