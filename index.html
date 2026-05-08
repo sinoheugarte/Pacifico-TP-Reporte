@@ -392,6 +392,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── QR SCANNER MODAL ─────────────────────────────── */
+#qr-modal{display:none;position:fixed;inset:0;z-index:8000;background:#000;
+  flex-direction:column;align-items:center;justify-content:center}
+#qr-modal.on{display:flex}
+#qr-video{width:100%;max-width:480px;height:auto;display:block;object-fit:cover}
+#qr-canvas{display:none}
+.qr-overlay{position:absolute;inset:0;pointer-events:none}
+.qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-56%);
+  width:220px;height:220px;border:3px solid #f59e0b;border-radius:18px;
+  box-shadow:0 0 0 2000px rgba(0,0,0,.55)}
+.qr-frame::before,.qr-frame::after{content:'';position:absolute;width:36px;height:36px;border-color:#f59e0b;border-style:solid}
+.qr-frame::before{top:-3px;left:-3px;border-width:4px 0 0 4px;border-radius:14px 0 0 0}
+.qr-frame::after{bottom:-3px;right:-3px;border-width:0 4px 4px 0;border-radius:0 0 14px 0}
+.qr-label{position:absolute;top:calc(50% + 58px);left:50%;transform:translateX(-50%);
+  color:#fff;font-size:13px;letter-spacing:.04em;opacity:.82;white-space:nowrap;text-align:center}
+.qr-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);
+  border:none;color:#fff;font-size:26px;width:44px;height:44px;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qr-close:hover{background:rgba(255,255,255,.28)}
+.qr-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.55);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
@@ -1610,12 +1632,77 @@ function triggerDocUpload(type, source) {
   inp.click();
 }
 
-function triggerQR(typeName) {
-  const url = prompt(`Pega aquí la URL escaneada del código QR de la ${typeName}:`);
-  if(url && url.trim() !== '') {
-      const obs = document.getElementById('f-observaciones');
-      obs.value = (obs.value ? obs.value + '\n' : '') + `[Enlace ${typeName}]: ${url.trim()}`;
-      toast('✓ URL guardada en Observaciones');
+/* ── QR SCANNER ─────────────────────────────────────── */
+var _qrStream=null, _qrRAF=null, _qrDetector=null, _qrJsQR=null, _qrActive=false;
+
+function closeQR(){
+  _qrActive=false;
+  if(_qrRAF){cancelAnimationFrame(_qrRAF);_qrRAF=null;}
+  if(_qrStream){_qrStream.getTracks().forEach(t=>t.stop());_qrStream=null;}
+  document.getElementById('qr-modal').classList.remove('on');
+}
+
+function _onQRDetected(url){
+  closeQR();
+  toast('✓ QR detectado — abriendo documento…');
+  setTimeout(()=>window.open(url,'_blank'),400);
+}
+
+function _qrScanFrame(video,canvas,ctx,detector,jsqr){
+  if(!_qrActive)return;
+  if(video.readyState===video.HAVE_ENOUGH_DATA){
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    if(detector){
+      detector.detect(canvas).then(codes=>{
+        if(codes.length&&codes[0].rawValue){_onQRDetected(codes[0].rawValue);}
+        else{_qrRAF=requestAnimationFrame(()=>_qrScanFrame(video,canvas,ctx,detector,jsqr));}
+      }).catch(()=>{_qrRAF=requestAnimationFrame(()=>_qrScanFrame(video,canvas,ctx,detector,jsqr));});
+      return;
+    }
+    if(jsqr){
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsqr(img.data,img.width,img.height);
+      if(code&&code.data){_onQRDetected(code.data);return;}
+    }
+  }
+  _qrRAF=requestAnimationFrame(()=>_qrScanFrame(video,canvas,ctx,detector,jsqr));
+}
+
+async function triggerQR(typeName){
+  const modal=document.getElementById('qr-modal');
+  const video=document.getElementById('qr-video');
+  const canvas=document.getElementById('qr-canvas');
+  const ctx=canvas.getContext('2d');
+  modal.classList.add('on');
+  _qrActive=true;
+  try{
+    _qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    video.srcObject=_qrStream;
+    await video.play();
+    /* Prefer native BarcodeDetector */
+    let detector=null, jsqr=null;
+    if('BarcodeDetector' in window){
+      try{detector=new BarcodeDetector({formats:['qr_code']});}catch(e){}
+    }
+    /* Fallback: load jsQR dynamically */
+    if(!detector){
+      if(!_qrJsQR){
+        await new Promise((res,rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+          s.onload=()=>{_qrJsQR=window.jsQR;res();};
+          s.onerror=rej;
+          document.head.appendChild(s);
+        });
+      }
+      jsqr=_qrJsQR;
+    }
+    _qrScanFrame(video,canvas,ctx,detector,jsqr);
+  }catch(err){
+    closeQR();
+    toast('⚠ No se pudo acceder a la cámara: '+err.message);
   }
 }
 
@@ -4017,5 +4104,17 @@ loadCfg(); loadCacheRecords(); renderList(); showScr('list');
 tryAutoLogin().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
+
+<!-- ════════════ QR SCANNER MODAL ════════════ -->
+<div id="qr-modal">
+  <video id="qr-video" autoplay playsinline muted></video>
+  <canvas id="qr-canvas"></canvas>
+  <div class="qr-overlay">
+    <div class="qr-frame"></div>
+    <div class="qr-label">Apunta al código QR del documento</div>
+    <div class="qr-hint">El enlace se abrirá automáticamente al detectarlo</div>
+  </div>
+  <button class="qr-close" onclick="closeQR()">✕</button>
+</div>
 </body>
 </html>
