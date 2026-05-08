@@ -4169,6 +4169,7 @@ var _rtCols=[
   {k:'sobres',            label:'Sobres',          fmt:r=>r.sobres||'—',                                 cls:''},
   {k:'status',            label:'Estado',          fmt:r=>{const s=(r.status||'').toLowerCase();const map={completado:'b-completado',['en-ruta']:'b-en-ruta',pendiente:'b-pendiente',cancelado:'b-cancelado'};return `<span class="badge-sm ${map[s]||'b-default'}">${r.status||'—'}</span>`;}, cls:''},
   {k:'observaciones',     label:'Observaciones',   fmt:r=>r.observaciones||'—',                          cls:'td-trunc'},
+  {k:'photoCount',        label:'N° Fotos',        fmt:r=>{const n=r.images?.length||r.photoCount||0;return n?`📷 ${n}`:'—';}, cls:''},
 ];
 /* Default visible columns (the most useful at a glance) */
 var _rtVisibleCols=new Set(['fechaInicio','orden','viaje','transportista','ruta','motivo','status','cajas','paletas']);
