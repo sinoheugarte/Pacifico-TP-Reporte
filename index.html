@@ -144,6 +144,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .sbar-wrap svg{width:15px;height:15px;color:var(--text2);flex-shrink:0}
 .sbar-inp{flex:1;border:none;outline:none;padding:10px 0;font-size:14px;
   background:none;font-family:'DM Sans',sans-serif;color:var(--text)}
+.sbar-dates{display:flex;gap:8px;margin-top:8px;align-items:center}
+.sbar-date-grp{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:0 10px;flex:1}
+.sbar-date-grp span{font-size:11px;color:var(--text2);white-space:nowrap;font-weight:500}
+.sbar-date-inp{border:none;outline:none;padding:8px 0;font-size:13px;background:none;font-family:'DM Sans',sans-serif;color:var(--text);width:100%}
+.sbar-date-clear{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;padding:4px;border-radius:6px;flex-shrink:0}
+.sbar-date-clear:hover{background:var(--bg2);color:var(--text)}
 
 .fpills{padding:8px 14px 4px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .fpills::-webkit-scrollbar{display:none}
@@ -498,6 +504,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input class="sbar-inp" id="srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderList()">
+    </div>
+    <div class="sbar-dates">
+      <div class="sbar-date-grp">
+        <span>Desde</span>
+        <input class="sbar-date-inp" type="date" id="srch-desde" oninput="renderList()">
+      </div>
+      <div class="sbar-date-grp">
+        <span>Hasta</span>
+        <input class="sbar-date-inp" type="date" id="srch-hasta" oninput="renderList()">
+      </div>
+      <button class="sbar-date-clear" title="Limpiar fechas" onclick="clearDateFilter()">×</button>
     </div>
   </div>
   <div class="fpills">
@@ -1504,9 +1521,23 @@ function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr(
 
 function setFil(el){document.querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');activeFilter=el.dataset.f;renderList();}
 
+function clearDateFilter(){
+  document.getElementById('srch-desde').value='';
+  document.getElementById('srch-hasta').value='';
+  renderList();
+}
 function renderList(){
   const q=(document.getElementById('srch').value||'').toLowerCase();
-  let fil=records.filter(r=>{ if(activeFilter!=='todos'&&(r.status||'').toLowerCase()!==activeFilter)return false; return !(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q)); });
+  const desde=document.getElementById('srch-desde').value||'';
+  const hasta=document.getElementById('srch-hasta').value||'';
+  let fil=records.filter(r=>{
+    if(activeFilter!=='todos'&&(r.status||'').toLowerCase()!==activeFilter)return false;
+    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    const f=r.fechaInicio||'';
+    if(desde&&f&&f<desde)return false;
+    if(hasta&&f&&f>hasta)return false;
+    return true;
+  });
   const total    = records.length;
   const comp     = records.filter(r=>r.status==='completado').length;
   const enRuta   = records.filter(r=>r.status==='en-ruta').length;
