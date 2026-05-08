@@ -3937,6 +3937,80 @@ Reveal.on('slidechanged',function(e){
     }
   }
   raf=requestAnimationFrame(frame);
+
+  /* ── Rocket sound via Web Audio API ─────────────────────────── */
+  function playRocketSound(){
+    try{
+      var ac=new(window.AudioContext||window.webkitAudioContext)();
+      var resume=ac.state==='suspended'?ac.resume():Promise.resolve();
+      resume.then(function(){
+        var dur=5.3; /* matches rocket on-screen time (1.2s→6.5s) */
+        var t0=ac.currentTime;
+
+        /* ── White-noise thrust rumble ── */
+        var bufSz=Math.ceil(ac.sampleRate*(dur+0.5));
+        var buf=ac.createBuffer(1,bufSz,ac.sampleRate);
+        var d=buf.getChannelData(0);
+        for(var i=0;i<bufSz;i++)d[i]=Math.random()*2-1;
+        var noise=ac.createBufferSource();
+        noise.buffer=buf;
+
+        /* Low-pass → band-pass chain for engine roar */
+        var lpf=ac.createBiquadFilter();
+        lpf.type='lowpass';
+        /* Doppler sweep: pitch rises as rocket approaches, falls as it recedes */
+        lpf.frequency.setValueAtTime(90,t0);
+        lpf.frequency.linearRampToValueAtTime(320,t0+dur*0.45);
+        lpf.frequency.linearRampToValueAtTime(90,t0+dur);
+
+        var bpf=ac.createBiquadFilter();
+        bpf.type='bandpass';
+        bpf.frequency.setValueAtTime(600,t0);
+        bpf.frequency.linearRampToValueAtTime(1200,t0+dur*0.45);
+        bpf.frequency.linearRampToValueAtTime(600,t0+dur);
+        bpf.Q.value=1.8;
+
+        /* Noise envelope */
+        var ng=ac.createGain();
+        ng.gain.setValueAtTime(0,t0);
+        ng.gain.linearRampToValueAtTime(0.55,t0+0.7);
+        ng.gain.setValueAtTime(0.55,t0+dur-1.1);
+        ng.gain.linearRampToValueAtTime(0,t0+dur);
+
+        noise.connect(lpf);lpf.connect(ng);ng.connect(ac.destination);
+        /* thin hiss layer */
+        var n2=ac.createBufferSource();n2.buffer=buf;
+        n2.connect(bpf);bpf.connect(ng);
+
+        /* ── Low oscillator for deep mechanical rumble ── */
+        var osc=ac.createOscillator();
+        osc.type='sawtooth';
+        osc.frequency.setValueAtTime(48,t0);
+        osc.frequency.linearRampToValueAtTime(72,t0+dur*0.45);
+        osc.frequency.linearRampToValueAtTime(48,t0+dur);
+
+        /* Soft distortion to make it gritty */
+        var ws=ac.createWaveShaper();
+        var curve=new Float32Array(256);
+        for(var j=0;j<256;j++){var x=j*2/255-1;curve[j]=(Math.PI+180)*x/(Math.PI+180*Math.abs(x));}
+        ws.curve=curve;
+
+        var og=ac.createGain();
+        og.gain.setValueAtTime(0,t0);
+        og.gain.linearRampToValueAtTime(0.18,t0+0.7);
+        og.gain.setValueAtTime(0.18,t0+dur-1.1);
+        og.gain.linearRampToValueAtTime(0,t0+dur);
+
+        osc.connect(ws);ws.connect(og);og.connect(ac.destination);
+
+        noise.start(t0);noise.stop(t0+dur+0.1);
+        n2.start(t0);n2.stop(t0+dur+0.1);
+        osc.start(t0);osc.stop(t0+dur+0.1);
+      }).catch(function(){});
+    }catch(e){}
+  }
+  /* Trigger when rocket enters the screen (~1.2 s after animation start) */
+  setTimeout(playRocketSound,1200);
 })();
 
 loadCfg(); loadCacheRecords(); renderList(); showScr('list');
