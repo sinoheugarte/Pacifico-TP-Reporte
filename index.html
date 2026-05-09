@@ -3833,20 +3833,36 @@ function globeFrame(){
 
   /* Pulsing glow matching ptGlow CSS animation */
   var gp=0.5+0.5*Math.abs(Math.sin(globeFr*0.044));
+
+  /* Helper: draw the ₚ paths once (reused for both glow passes) */
+  function drawPT(){
+    globeCtx.beginPath();
+    globeCtx.moveTo(lx+42*sc2,ly+185*sc2);globeCtx.lineTo(lx+42*sc2,ly);
+    globeCtx.lineTo(lx+65*sc2,ly);
+    globeCtx.arc(lx+98*sc2,ly+33*sc2,33*sc2,-Math.PI/2,Math.PI/2,false);
+    globeCtx.lineTo(lx+42*sc2,ly+66*sc2);
+    globeCtx.stroke();
+    globeCtx.beginPath();
+    globeCtx.moveTo(lx+4*sc2,ly+105*sc2);globeCtx.lineTo(lx+86*sc2,ly+105*sc2);
+    globeCtx.stroke();
+  }
+
+  /* Pass 1 — wide ambient halo: large blur spreads light across the globe */
   globeCtx.save();
-  globeCtx.shadowColor='rgba(245,158,11,'+(0.5+0.45*gp).toFixed(2)+')';
-  globeCtx.shadowBlur=R*(0.07+0.17*gp);
+  globeCtx.shadowColor='rgba(245,158,11,'+(0.35+0.30*gp).toFixed(2)+')';
+  globeCtx.shadowBlur=R*(0.45+0.45*gp);   /* max ≈ 0.90 R — covers most of globe */
+  globeCtx.strokeStyle='rgba(245,158,11,0)'; /* transparent stroke; only the shadow matters */
+  globeCtx.lineWidth=11.5*sc2;globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
+  drawPT();
+  globeCtx.restore();
+
+  /* Pass 2 — tight bright glow + solid stroke */
+  globeCtx.save();
+  globeCtx.shadowColor='rgba(245,158,11,'+(0.80+0.20*gp).toFixed(2)+')';
+  globeCtx.shadowBlur=R*(0.10+0.20*gp);   /* max ≈ 0.30 R — crisp halo around strokes */
   globeCtx.strokeStyle='#F59E0B';globeCtx.lineWidth=11.5*sc2;
   globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
-  globeCtx.beginPath();
-  globeCtx.moveTo(lx+42*sc2,ly+185*sc2);globeCtx.lineTo(lx+42*sc2,ly);
-  globeCtx.lineTo(lx+65*sc2,ly);
-  globeCtx.arc(lx+98*sc2,ly+33*sc2,33*sc2,-Math.PI/2,Math.PI/2,false);
-  globeCtx.lineTo(lx+42*sc2,ly+66*sc2);
-  globeCtx.stroke();
-  globeCtx.beginPath();
-  globeCtx.moveTo(lx+4*sc2,ly+105*sc2);globeCtx.lineTo(lx+86*sc2,ly+105*sc2);
-  globeCtx.stroke();
+  drawPT();
   globeCtx.restore();
 
   /* Subtitle in bold below logo */
