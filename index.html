@@ -2,8 +2,6 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- Create AudioContext as early as possible to catch the PWA launch gesture on Android -->
-<script>try{window._pwaAC=new(window.AudioContext||window.webkitAudioContext)();window._pwaAC.resume().catch(function(){});}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3536,7 +3534,6 @@ function generateRevealPresentation(){
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pacífico Transportation — Presentación Ejecutiva</title>
-<script>try{window._presAC=new(window.AudioContext||window.webkitAudioContext)();window._presAC.resume().catch(function(){});}catch(e){}<\/script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
@@ -3928,71 +3925,25 @@ function stopGlobe(){
   stopHeartbeat();
 }
 
-/* ── Heartbeat audio — synchronized with visual beatPer=72 frames ≈ 1.2 s ── */
-var heartAC=null,heartIntv=null,nextBeat=0;
-var BEAT_PERIOD=1.2; /* must match 72/60 from visual oscillator */
-
-function beatTone(t,freq,peak,dur){
-  if(!heartAC)return;
-  var o=heartAC.createOscillator(),g=heartAC.createGain();
-  /* Low-pass filter softens the sine into a dull organic thump */
-  var lp=heartAC.createBiquadFilter();
-  lp.type='lowpass';lp.frequency.value=freq*2.2;lp.Q.value=0.8;
-  o.connect(lp);lp.connect(g);g.connect(heartAC.destination);
-  o.type='sine';o.frequency.value=freq;
-  g.gain.setValueAtTime(0,t);
-  g.gain.linearRampToValueAtTime(peak,t+0.009);   /* fast attack */
-  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-  o.start(t);o.stop(t+dur+0.04);
-}
-
-function scheduleBeats(){
-  if(!heartAC||heartAC.state==='suspended')return;
-  var now=heartAC.currentTime;
-  while(nextBeat<now+0.6){
-    beatTone(nextBeat,      52, 0.82, 0.11); /* lub — S1, mitral/tricuspid */
-    beatTone(nextBeat+0.25, 68, 0.48, 0.09); /* dub — S2, aortic/pulmonary */
-    nextBeat+=BEAT_PERIOD;
-  }
-}
+/* ── Heartbeat audio ── */
+var heartAudio=null;
 
 function startHeartbeat(){
-  stopHeartbeat();
-  try{
-    /* Reuse the AudioContext created early in <head> — it has the best
-       chance of being within the user-gesture window on Android. */
-    heartAC=window._presAC||new(window.AudioContext||window.webkitAudioContext)();
-    function _seed(){
-      nextBeat=heartAC.currentTime+0.06;
-      scheduleBeats();
-    }
-    if(heartAC.state==='running'){
-      _seed();
-    } else {
-      heartAC.resume().catch(function(){});
-      /* When Android eventually unlocks audio (on first touch), seed immediately */
-      heartAC.addEventListener('statechange',function _sc(){
-        if(heartAC&&heartAC.state==='running'){
-          heartAC.removeEventListener('statechange',_sc);
-          _seed();
-        }
-      });
-    }
-    heartIntv=setInterval(function(){
-      if(heartAC&&heartAC.state==='suspended')heartAC.resume().catch(function(){});
-      scheduleBeats();
-    },200);
-    /* Any touch/click resumes suspended context on Android */
-    document.addEventListener('touchstart',function(){
-      if(heartAC&&heartAC.state==='suspended')heartAC.resume().catch(function(){});
-    },{passive:true});
-  }catch(e){}
+  if(heartAudio)return;
+  var a=document.createElement('audio');
+  a.src='${window.location.origin}/heartbeat.mp3';
+  a.loop=true;
+  a.volume=0.75;
+  document.body.appendChild(a);
+  heartAudio=a;
+  a.play().catch(function(){});
 }
 
 function stopHeartbeat(){
-  if(heartIntv){clearInterval(heartIntv);heartIntv=null;}
-  /* Don't close _presAC — it's shared; just detach the reference */
-  heartAC=null;
+  if(!heartAudio)return;
+  heartAudio.pause();
+  try{document.body.removeChild(heartAudio);}catch(e){}
+  heartAudio=null;
 }
 
 Chart.register(ChartDataLabels);
@@ -4155,16 +4106,6 @@ window.addEventListener('resize',function(){
   window.addEventListener('resize',resize);
   ctx=cv.getContext('2d');
 
-  /* Use the AudioContext created at page-top (<head> script) — it has the best
-     chance of catching the PWA launch gesture before Android suspends audio.
-     Fall back to creating a new one here if _pwaAC is unavailable. */
-  var introAC=window._pwaAC||null;
-  if(!introAC){try{introAC=new(window.AudioContext||window.webkitAudioContext)();introAC.resume().catch(function(){});}catch(e){}}
-  /* Touchstart fallback: resume if Android suspended after the launch gesture */
-  document.addEventListener('touchstart',function _acResume(){
-    if(introAC&&introAC.state==='suspended')introAC.resume().catch(function(){});
-    document.removeEventListener('touchstart',_acResume);
-  },{once:true,passive:true});
 
   /* Stars */
   var NSTARS=260;
@@ -4343,72 +4284,10 @@ window.addEventListener('resize',function(){
   }
   raf=requestAnimationFrame(frame);
 
-  /* ── Rocket sound via Web Audio API ─────────────────────────── */
-  var _rocketSoundPlayed=false;
-  function _playRocketSoundNow(ac){
-    if(_rocketSoundPlayed)return; _rocketSoundPlayed=true;
-    try{
-      var dur=5.3;
-      var t0=ac.currentTime;
-      var bufSz=Math.ceil(ac.sampleRate*(dur+0.5));
-      var buf=ac.createBuffer(1,bufSz,ac.sampleRate);
-      var d=buf.getChannelData(0);
-      for(var i=0;i<bufSz;i++)d[i]=Math.random()*2-1;
-      var noise=ac.createBufferSource(); noise.buffer=buf;
-      var lpf=ac.createBiquadFilter(); lpf.type='lowpass';
-      lpf.frequency.setValueAtTime(90,t0);
-      lpf.frequency.linearRampToValueAtTime(320,t0+dur*0.45);
-      lpf.frequency.linearRampToValueAtTime(90,t0+dur);
-      var bpf=ac.createBiquadFilter(); bpf.type='bandpass';
-      bpf.frequency.setValueAtTime(600,t0);
-      bpf.frequency.linearRampToValueAtTime(1200,t0+dur*0.45);
-      bpf.frequency.linearRampToValueAtTime(600,t0+dur);
-      bpf.Q.value=1.8;
-      var ng=ac.createGain();
-      ng.gain.setValueAtTime(0,t0);
-      ng.gain.linearRampToValueAtTime(0.55,t0+0.7);
-      ng.gain.setValueAtTime(0.55,t0+dur-1.1);
-      ng.gain.linearRampToValueAtTime(0,t0+dur);
-      noise.connect(lpf);lpf.connect(ng);ng.connect(ac.destination);
-      var n2=ac.createBufferSource(); n2.buffer=buf;
-      n2.connect(bpf);bpf.connect(ng);
-      var osc=ac.createOscillator(); osc.type='sawtooth';
-      osc.frequency.setValueAtTime(48,t0);
-      osc.frequency.linearRampToValueAtTime(72,t0+dur*0.45);
-      osc.frequency.linearRampToValueAtTime(48,t0+dur);
-      var ws=ac.createWaveShaper();
-      var curve=new Float32Array(256);
-      for(var j=0;j<256;j++){var x=j*2/255-1;curve[j]=(Math.PI+180)*x/(Math.PI+180*Math.abs(x));}
-      ws.curve=curve;
-      var og=ac.createGain();
-      og.gain.setValueAtTime(0,t0);
-      og.gain.linearRampToValueAtTime(0.18,t0+0.7);
-      og.gain.setValueAtTime(0.18,t0+dur-1.1);
-      og.gain.linearRampToValueAtTime(0,t0+dur);
-      osc.connect(ws);ws.connect(og);og.connect(ac.destination);
-      noise.start(t0);noise.stop(t0+dur+0.1);
-      n2.start(t0);n2.stop(t0+dur+0.1);
-      osc.start(t0);osc.stop(t0+dur+0.1);
-    }catch(e){}
-  }
-  function playRocketSound(){
-    try{
-      var ac=introAC; if(!ac)return;
-      if(ac.state==='running'){_playRocketSoundNow(ac);return;}
-      /* Android: context suspended — resume and retry when it unlocks */
-      ac.resume().catch(function(){});
-      ac.addEventListener('statechange',function _sc(){
-        if(ac.state==='running'){ac.removeEventListener('statechange',_sc);_playRocketSoundNow(ac);}
-      });
-      /* Also retry on first touch (covers devices that need a tap to unlock) */
-      document.addEventListener('touchstart',function _ts(){
-        document.removeEventListener('touchstart',_ts);
-        ac.resume().then(function(){_playRocketSoundNow(ac);}).catch(function(){});
-      },{once:true,passive:true});
-    }catch(e){}
-  }
-  /* Trigger when rocket enters the screen (~1.2 s after animation start) */
-  setTimeout(playRocketSound,1200);
+  /* ── Rocket sound ── */
+  var _rocketAu=new Audio('rocket-whoosh.mp3');
+  _rocketAu.volume=0.6;
+  setTimeout(function(){_rocketAu.play().catch(function(){});},1200);
 })();
 
 /* ─── RECORDS TABLE ──────────────────────────────────── */
