@@ -2,7 +2,7 @@
   "name": "Reporte de Transporte — Pacífico",
   "short_name": "Reporte TP",
   "description": "Pacífico Transportation SAC — Sistema de Gestión de Transporte",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f2340",
