@@ -4465,7 +4465,9 @@ function exportRecordsPDF(){
   toast('✓ PDF descargado');
 }
 
-loadCfg(); loadCacheRecords(); renderList(); showScr('list');
+loadCfg(); loadCacheRecords();
+(function(){ var d=new Date(); var s=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-'+(String(d.getDate()).padStart(2,'0')); document.getElementById('srch-desde').value=s; })();
+renderList(); showScr('list');
 tryAutoLogin().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
