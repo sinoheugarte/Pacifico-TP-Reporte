@@ -3903,6 +3903,7 @@ function globeFrame(){
 }
 function startGlobe(){
   if(globeRAF)cancelAnimationFrame(globeRAF);
+  globeFr=0; /* reset so visual and audio beats start in phase */
   var vw=window.innerWidth||960,vh=window.innerHeight||540;
   if(!globeGC){
     var bg=document.querySelectorAll('.reveal .backgrounds .slide-background')[0];
@@ -3915,12 +3916,63 @@ function startGlobe(){
     bg.appendChild(globeGC);
     globeCtx=globeGC.getContext('2d');
   }
+  startHeartbeat();
   globeFrame();
 }
 function stopGlobe(){
   if(globeRAF){cancelAnimationFrame(globeRAF);globeRAF=null;}
   /* Remove canvas so it is re-created with current viewport dimensions on next call */
   if(globeGC){if(globeGC.parentElement)globeGC.parentElement.removeChild(globeGC);globeGC=null;globeCtx=null;}
+  stopHeartbeat();
+}
+
+/* ── Heartbeat audio — synchronized with visual beatPer=72 frames ≈ 1.2 s ── */
+var heartAC=null,heartIntv=null,nextBeat=0;
+var BEAT_PERIOD=1.2; /* must match 72/60 from visual oscillator */
+
+function beatTone(t,freq,peak,dur){
+  if(!heartAC)return;
+  var o=heartAC.createOscillator(),g=heartAC.createGain();
+  /* Low-pass filter softens the sine into a dull organic thump */
+  var lp=heartAC.createBiquadFilter();
+  lp.type='lowpass';lp.frequency.value=freq*2.2;lp.Q.value=0.8;
+  o.connect(lp);lp.connect(g);g.connect(heartAC.destination);
+  o.type='sine';o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(peak,t+0.009);   /* fast attack */
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t);o.stop(t+dur+0.04);
+}
+
+function scheduleBeats(){
+  if(!heartAC||heartAC.state==='suspended')return;
+  var now=heartAC.currentTime;
+  while(nextBeat<now+0.6){
+    beatTone(nextBeat,      52, 0.50, 0.11); /* lub — S1, mitral/tricuspid */
+    beatTone(nextBeat+0.25, 68, 0.28, 0.09); /* dub — S2, aortic/pulmonary */
+    nextBeat+=BEAT_PERIOD;
+  }
+}
+
+function startHeartbeat(){
+  stopHeartbeat(); /* clear any previous instance */
+  try{
+    heartAC=new(window.AudioContext||window.webkitAudioContext)();
+    heartAC.resume().catch(function(){});
+    nextBeat=heartAC.currentTime+0.06; /* tiny lead so first beat aligns with frame 0 */
+    scheduleBeats(); /* seed immediately */
+    heartIntv=setInterval(scheduleBeats,200);
+    /* Fallback: resume on first user touch if Android suspended the context */
+    document.addEventListener('touchstart',function _hbr(){
+      if(heartAC&&heartAC.state==='suspended')heartAC.resume().catch(function(){});
+      document.removeEventListener('touchstart',_hbr);
+    },{once:true,passive:true});
+  }catch(e){}
+}
+
+function stopHeartbeat(){
+  if(heartIntv){clearInterval(heartIntv);heartIntv=null;}
+  if(heartAC){try{heartAC.close();}catch(e){}heartAC=null;}
 }
 
 Chart.register(ChartDataLabels);
