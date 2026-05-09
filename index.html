@@ -3832,9 +3832,16 @@ function globeFrame(){
   var lx=CX-55*sc2, ly=logoCY-szH/2;
 
   /* Pulsing glow matching ptGlow CSS animation */
-  var gp=0.5+0.5*Math.abs(Math.sin(globeFr*0.044));
+  /* Heartbeat pulse: two quick beats (lub-dub) then silence
+     Period ≈ 72 frames @ 60 fps = 1.2 s ≈ 50 bpm */
+  var beatPer=72, bp=(globeFr%beatPer)/beatPer, gp;
+  if     (bp<0.07) gp=bp/0.07;                          /* beat 1 — rise  0→1   */
+  else if(bp<0.17) gp=1-(bp-0.07)/0.10;                 /* beat 1 — fall  1→0   */
+  else if(bp<0.23) gp=0.65*(bp-0.17)/0.06;              /* beat 2 — rise  0→0.65*/
+  else if(bp<0.33) gp=0.65*(1-(bp-0.23)/0.10);          /* beat 2 — fall  0.65→0*/
+  else             gp=0;                                 /* silence              */
 
-  /* Helper: draw the ₚ paths once (reused for both glow passes) */
+  /* Helper: draw the ₚ paths once (reused for all glow passes) */
   function drawPT(){
     globeCtx.beginPath();
     globeCtx.moveTo(lx+42*sc2,ly+185*sc2);globeCtx.lineTo(lx+42*sc2,ly);
@@ -3847,19 +3854,19 @@ function globeFrame(){
     globeCtx.stroke();
   }
 
-  /* Pass 1 — wide ambient halo: large blur spreads light across the globe */
+  /* Pass 1 — broad flash halo: at beat peak the light bursts across the globe */
   globeCtx.save();
-  globeCtx.shadowColor='rgba(245,158,11,'+(0.35+0.30*gp).toFixed(2)+')';
-  globeCtx.shadowBlur=R*(0.45+0.45*gp);   /* max ≈ 0.90 R — covers most of globe */
-  globeCtx.strokeStyle='rgba(245,158,11,0)'; /* transparent stroke; only the shadow matters */
+  globeCtx.shadowColor='rgba(245,158,11,'+(0.05+0.75*gp).toFixed(2)+')';
+  globeCtx.shadowBlur=R*(0.08+1.30*gp); /* max ≈ 1.38 R — extends well beyond globe */
+  globeCtx.strokeStyle='rgba(245,158,11,0)'; /* transparent; only shadow contributes */
   globeCtx.lineWidth=11.5*sc2;globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
   drawPT();
   globeCtx.restore();
 
-  /* Pass 2 — tight bright glow + solid stroke */
+  /* Pass 2 — tight crisp glow + solid stroke, always visible at low baseline */
   globeCtx.save();
-  globeCtx.shadowColor='rgba(245,158,11,'+(0.80+0.20*gp).toFixed(2)+')';
-  globeCtx.shadowBlur=R*(0.10+0.20*gp);   /* max ≈ 0.30 R — crisp halo around strokes */
+  globeCtx.shadowColor='rgba(245,158,11,'+(0.30+0.70*gp).toFixed(2)+')';
+  globeCtx.shadowBlur=R*(0.06+0.32*gp); /* max ≈ 0.38 R */
   globeCtx.strokeStyle='#F59E0B';globeCtx.lineWidth=11.5*sc2;
   globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
   drawPT();
