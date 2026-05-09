@@ -3586,24 +3586,6 @@ function generateRevealPresentation(){
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
 </style>
 </head><body>
-<audio id="hb-audio" src="heartbeat.mp3" loop preload="auto" style="display:none"></audio>
-<script>
-/* Runs synchronously inside document.write() — still within the user gesture
-   of the "Live" button tap, so play() with sound is allowed on Android.     */
-(function(){
-  var a=document.getElementById('hb-audio');
-  if(!a)return;
-  a.volume=0;   /* start at 0; startHeartbeat() will raise it on slide 0 */
-  a.play().catch(function(){
-    /* Gesture didn't transfer — fall back to muted until first touch */
-    a.muted=true;
-    a.play().catch(function(){});
-    function _unmute(){a.muted=false;}
-    document.addEventListener('touchstart',_unmute,{once:true,passive:true});
-    document.addEventListener('click',_unmute,{once:true});
-  });
-})();
-<\/script>
 <button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
 <div class="reveal"><div class="slides">
 
@@ -3943,14 +3925,17 @@ function stopGlobe(){
   stopHeartbeat();
 }
 
-/* ── Heartbeat audio — volume-only control (play() called in inline script) */
-function startHeartbeat(){
-  var a=document.getElementById('hb-audio'); if(!a)return;
-  a.volume=0.75;
-}
-function stopHeartbeat(){
-  var a=document.getElementById('hb-audio'); if(a)a.volume=0;
-}
+/* ── Heartbeat audio — controlled via window.opener._presHbAudio
+   Audio lives in the main window (started with the Live button gesture),
+   so no user-gesture restriction applies here.                          */
+function _hb(){try{return window.opener&&window.opener._presHbAudio||null;}catch(e){return null;}}
+function startHeartbeat(){var a=_hb();if(a)a.volume=1.0;}
+function stopHeartbeat(){var a=_hb();if(a)a.volume=0;}
+
+/* Stop the heartbeat when the presentation tab is closed */
+window.addEventListener('unload',function(){
+  try{var a=window.opener&&window.opener._presHbAudio;if(a){a.pause();window.opener._presHbAudio=null;}}catch(e){}
+});
 
 Chart.register(ChartDataLabels);
 
@@ -4094,7 +4079,20 @@ window.addEventListener('resize',function(){
 </body></html>`;
 
   const win=window.open('','_blank');
-  if(win){win.document.write(html);win.document.close();}
+  if(win){
+    /* Start heartbeat here — we have the user gesture from the Live button tap.
+       The audio object lives in the main window; the presentation controls it
+       via window.opener._presHbAudio so no gesture is needed in the new tab. */
+    try{
+      if(window._presHbAudio){window._presHbAudio.pause();window._presHbAudio=null;}
+      var _hb=new Audio('heartbeat.mp3');
+      _hb.loop=true;
+      _hb.volume=0; /* silenced until slide 0 activates it via startHeartbeat() */
+      _hb.play().catch(function(){});
+      window._presHbAudio=_hb;
+    }catch(e){}
+    win.document.write(html);win.document.close();
+  }
   else toast('⚠ Permite las ventanas emergentes para ver la presentación');
 }
 
