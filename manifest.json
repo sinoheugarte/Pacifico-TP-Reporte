@@ -8,6 +8,9 @@
   "background_color": "#0f2340",
   "theme_color": "#0f2340",
   "lang": "es",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "/reporte-transporte/",
   "icons": [
     {
       "src": "icon-192.png",
@@ -38,7 +41,20 @@
     "business",
     "productivity"
   ],
-  "dir": "ltr",
-  "scope": "/",
-  "id": "/reporte-transporte/"
+  "screenshots": [
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Registros y reportes en Pacífico Transportation"
+    },
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sistema de Gestión de Transporte — Pacífico"
+    }
+  ]
 }
