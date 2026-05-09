@@ -3827,9 +3827,8 @@ function globeFrame(){
   /* Logo size matches the HTML SVG at reveal.js landscape scale:
      118 px * 0.72 ≈ 85 px  →  R*0.70 for R=121 = 85 px ✓ */
   var szH=R*0.70, sc2=szH/185;
-  /* Logo center is placed at CY-0.93*R, same distance above globe center
-     as the HTML logo at top:18px in landscape. */
-  var logoCY=CY-0.93*R;
+  /* Logo centered at globe center CY */
+  var logoCY=CY;
   var lx=CX-55*sc2, ly=logoCY-szH/2;
 
   /* Pulsing glow matching ptGlow CSS animation */
@@ -3850,32 +3849,31 @@ function globeFrame(){
   globeCtx.stroke();
   globeCtx.restore();
 
-  /* Subtitle: "SISTEMA DE GESTIÓN DE TRANSPORTE · PERÚ" below logo */
+  /* Subtitle in bold below logo */
   var subFS=Math.max(7,R*0.064);
   globeCtx.save();
-  globeCtx.font=subFS+'px "Segoe UI",Calibri,sans-serif';
+  globeCtx.font='bold '+subFS+'px "Segoe UI",Calibri,sans-serif';
   if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0.22em';
-  globeCtx.fillStyle='rgba(255,255,255,0.30)';globeCtx.textAlign='center';
+  globeCtx.fillStyle='rgba(255,255,255,0.85)';globeCtx.textAlign='center';
   globeCtx.fillText('SISTEMA DE GESTIÓN DE TRANSPORTE  ·  PERÚ',CX,ly+szH+subFS*2.0);
   if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0px';
   globeCtx.restore();
 
-  /* Scrolling ticker: same position as HTML bottom:18px in landscape
-     (≈ CY + R*1.73) but capped so it stays on screen */
+  /* Scrolling ticker in bold */
   var tickFS=Math.max(7,R*0.060);
   var tickY=Math.min(CY+R*1.73, H-tickFS*0.5-4);
   var tickStr='PACIFICO TRANSPORTATION SAC  ·  LOGÍSTICA  ·  DISTRIBUCIÓN  ·  TRANSPORTE  ·  PERÚ     ';
   globeCtx.save();
-  globeCtx.font=tickFS+'px "Segoe UI",Calibri,sans-serif';
+  globeCtx.font='bold '+tickFS+'px "Segoe UI",Calibri,sans-serif';
   if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0.20em';
-  globeCtx.fillStyle='rgba(255,255,255,0.22)';globeCtx.textAlign='left';
+  globeCtx.fillStyle='rgba(255,255,255,0.75)';globeCtx.textAlign='left';
   var tw2=globeCtx.measureText(tickStr).width;
   var tx3=-(globeTick%tw2);
   /* draw enough copies to always fill canvas width */
   for(var ci=0;ci<=Math.ceil(W/tw2)+1;ci++)globeCtx.fillText(tickStr,tx3+ci*tw2,tickY);
   if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0px';
   globeCtx.restore();
-  globeTick+=0.55; /* ≈30 px/s at 60 fps, similar to CSS 12 s animation */
+  globeTick+=0.55;
 
   globeRot+=0.22;globeFr++;
   globeRAF=requestAnimationFrame(globeFrame);
