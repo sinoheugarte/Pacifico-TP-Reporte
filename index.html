@@ -3586,6 +3586,7 @@ function generateRevealPresentation(){
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
 </style>
 </head><body>
+<audio id="hb-audio" src="${window.location.href.replace(/\/[^\/]*$/,'')}/heartbeat.mp3" loop muted preload="auto" autoplay style="display:none"></audio>
 <button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
 <div class="reveal"><div class="slides">
 
@@ -3925,41 +3926,32 @@ function stopGlobe(){
   stopHeartbeat();
 }
 
-/* ── Heartbeat audio ────────────────────────────────────────────────────
-   Single persistent <audio> element that lives for the entire presentation.
-   Never destroyed — only silenced — so we never need to call play() again
-   after the first user gesture unlocks audio on Android.                  */
-var heartAudio=null,_hbUnlocked=false;
+/* ── Heartbeat audio ─────────────────────────────────────────────────────
+   The <audio id="hb-audio"> element is embedded in the HTML with autoplay
+   + muted. The browser starts loading/playing it during page load (muted
+   autoplay is always allowed on Android). We just control volume + muted. */
+var _hbUnlocked=false;
+function _hbEl(){return document.getElementById('hb-audio');}
 
-/* One persistent listener: first touch unlocks audio for all time */
+/* First touch/click unmutes for the rest of the session */
 document.addEventListener('touchstart',function(){
-  _hbUnlocked=true;
-  if(heartAudio&&heartAudio.muted){heartAudio.muted=false;}
+  if(_hbUnlocked)return; _hbUnlocked=true;
+  var a=_hbEl(); if(a){a.muted=false;}
 },{passive:true});
 document.addEventListener('click',function(){
-  _hbUnlocked=true;
-  if(heartAudio&&heartAudio.muted){heartAudio.muted=false;}
+  if(_hbUnlocked)return; _hbUnlocked=true;
+  var a=_hbEl(); if(a){a.muted=false;}
 });
 
 function startHeartbeat(){
-  if(!heartAudio){
-    /* Build absolute URL from the opener page so it works in the new window */
-    var base='${window.location.href.replace(/\/[^\/]*$/,"")}';
-    var a=document.createElement('audio');
-    a.src=base+'/heartbeat.mp3';
-    a.loop=true;
-    a.muted=true; /* muted autoplay always allowed */
-    document.body.appendChild(a);
-    heartAudio=a;
-    a.play().catch(function(){});
-  }
-  heartAudio.volume=0.75;
-  if(_hbUnlocked)heartAudio.muted=false;
+  var a=_hbEl(); if(!a)return;
+  if(a.paused){a.play().catch(function(){});}
+  a.volume=0.75;
+  if(_hbUnlocked)a.muted=false;
 }
 
 function stopHeartbeat(){
-  /* Silence only — never pause/remove so play() is never called again */
-  if(heartAudio)heartAudio.volume=0;
+  var a=_hbEl(); if(a)a.volume=0;
 }
 
 Chart.register(ChartDataLabels);
