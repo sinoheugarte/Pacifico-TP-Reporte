@@ -3854,18 +3854,18 @@ function globeFrame(){
     globeCtx.stroke();
   }
 
-  /* Pass 1 — broad flash halo: at beat peak the light bursts across the globe */
+  /* Pass 1 — broad flash halo: sun-ray yellow burst at beat peak */
   globeCtx.save();
-  globeCtx.shadowColor='rgba(245,158,11,'+(0.05+0.75*gp).toFixed(2)+')';
+  globeCtx.shadowColor='rgba(255,225,30,'+(0.05+0.80*gp).toFixed(2)+')';
   globeCtx.shadowBlur=R*(0.08+1.30*gp); /* max ≈ 1.38 R — extends well beyond globe */
-  globeCtx.strokeStyle='rgba(245,158,11,0)'; /* transparent; only shadow contributes */
+  globeCtx.strokeStyle='rgba(255,225,30,0)'; /* transparent; only shadow contributes */
   globeCtx.lineWidth=11.5*sc2;globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
   drawPT();
   globeCtx.restore();
 
   /* Pass 2 — tight crisp glow + solid stroke, always visible at low baseline */
   globeCtx.save();
-  globeCtx.shadowColor='rgba(245,158,11,'+(0.30+0.70*gp).toFixed(2)+')';
+  globeCtx.shadowColor='rgba(255,210,20,'+(0.30+0.70*gp).toFixed(2)+')';
   globeCtx.shadowBlur=R*(0.06+0.32*gp); /* max ≈ 0.38 R */
   globeCtx.strokeStyle='#F59E0B';globeCtx.lineWidth=11.5*sc2;
   globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
