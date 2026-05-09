@@ -3586,7 +3586,7 @@ function generateRevealPresentation(){
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
 </style>
 </head><body>
-<audio id="hb-audio" src="${window.location.href.replace(/\/[^\/]*$/,'')}/heartbeat.mp3" loop muted preload="auto" autoplay style="display:none"></audio>
+<audio id="hb-audio" src="heartbeat.mp3" loop muted preload="auto" autoplay style="display:none"></audio>
 <button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
 <div class="reveal"><div class="slides">
 
