@@ -3820,9 +3820,28 @@ function globeFrame(){
   sh.addColorStop(0,'rgba(255,255,255,0.16)');sh.addColorStop(1,'rgba(255,255,255,0)');
   globeCtx.beginPath();globeCtx.arc(CX,CY,R,0,Math.PI*2);globeCtx.fillStyle=sh;globeCtx.fill();
 
-  /* ── ₚ logo drawn on canvas so it stays aligned to the globe in any orientation ── */
+  /* ── Canvas overlay: ticker ABOVE logo, logo at globe center, subtitle BELOW ── */
   var szH=R*0.72,sc2=szH/185;
-  var lx=CX-55*sc2,ly=CY-R*0.95; /* logo top is ~0.95R above globe center */
+  /* Logo geometric center (y=92.5 in symbol) placed at globe center CY */
+  var lx=CX-55*sc2,ly=CY-92.5*sc2;
+
+  /* Ticker — scrolls across the upper portion of the globe (CY - R*0.43) */
+  var tickFS=Math.max(8,R*0.068);
+  var tickStr='SAC  ·  LOGÍSTICA  ·  DISTRIBUCIÓN  ·  TRANSPORTE  ·  PERÚ      ';
+  globeCtx.save();
+  globeCtx.font=tickFS+'px "Segoe UI",Calibri,sans-serif';
+  if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0.18em';
+  globeCtx.fillStyle='rgba(255,255,255,0.22)';globeCtx.textAlign='left';
+  var tw2=globeCtx.measureText(tickStr).width;
+  var tx3=-(globeTick%tw2);
+  var tickY=CY-R*0.43;
+  globeCtx.fillText(tickStr,tx3,tickY);
+  globeCtx.fillText(tickStr,tx3+tw2,tickY);
+  if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0px';
+  globeCtx.restore();
+  globeTick+=1.0;
+
+  /* ₚ logo — centered at globe center */
   var glowPulse=0.5+0.5*Math.abs(Math.sin(globeFr*0.04));
   globeCtx.save();
   globeCtx.shadowColor='rgba(245,158,11,'+(0.5+0.45*glowPulse).toFixed(2)+')';
@@ -3840,27 +3859,15 @@ function globeFrame(){
   globeCtx.stroke();
   globeCtx.restore();
 
-  /* ── Subtitle text below logo ── */
-  var subFS=Math.max(8,R*0.085);
+  /* Subtitle — below logo, inside the lower globe */
+  var subFS=Math.max(8,R*0.082);
   globeCtx.save();
-  globeCtx.font='lighter '+subFS+'px "Segoe UI",Calibri,sans-serif';
-  globeCtx.fillStyle='rgba(255,255,255,0.32)';globeCtx.textAlign='center';
-  globeCtx.fillText('SISTEMA DE GESTIÓN DE TRANSPORTE  ·  PERÚ',CX,ly+szH+subFS*1.8);
+  globeCtx.font=subFS+'px "Segoe UI",Calibri,sans-serif';
+  if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0.18em';
+  globeCtx.fillStyle='rgba(255,255,255,0.28)';globeCtx.textAlign='center';
+  globeCtx.fillText('SISTEMA DE GESTIÓN DE TRANSPORTE  ·  PERÚ',CX,CY+R*0.55);
+  if('letterSpacing' in globeCtx)globeCtx.letterSpacing='0px';
   globeCtx.restore();
-
-  /* ── Scrolling ticker below globe ── */
-  var tickFS=Math.max(8,R*0.078);
-  var tickY=CY+R*1.12+tickFS*2;if(tickY>H-6)tickY=H-6;
-  var tickStr='PACIFICO TRANSPORTATION SAC  ·  LOGÍSTICA  ·  DISTRIBUCIÓN  ·  TRANSPORTE  ·  PERÚ      ';
-  globeCtx.save();
-  globeCtx.font='lighter '+tickFS+'px "Segoe UI",Calibri,sans-serif';
-  globeCtx.fillStyle='rgba(255,255,255,0.20)';globeCtx.textAlign='left';
-  var tw2=globeCtx.measureText(tickStr).width;
-  var tx3=-(globeTick%tw2);
-  globeCtx.fillText(tickStr,tx3,tickY);
-  globeCtx.fillText(tickStr,tx3+tw2,tickY);
-  globeCtx.restore();
-  globeTick+=1.0;
 
   globeRot+=0.22;globeFr++;
   globeRAF=requestAnimationFrame(globeFrame);
