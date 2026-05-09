@@ -3586,7 +3586,24 @@ function generateRevealPresentation(){
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
 </style>
 </head><body>
-<audio id="hb-audio" src="heartbeat.mp3" loop muted preload="auto" autoplay style="display:none"></audio>
+<audio id="hb-audio" src="heartbeat.mp3" loop preload="auto" style="display:none"></audio>
+<script>
+/* Runs synchronously inside document.write() — still within the user gesture
+   of the "Live" button tap, so play() with sound is allowed on Android.     */
+(function(){
+  var a=document.getElementById('hb-audio');
+  if(!a)return;
+  a.volume=0;   /* start at 0; startHeartbeat() will raise it on slide 0 */
+  a.play().catch(function(){
+    /* Gesture didn't transfer — fall back to muted until first touch */
+    a.muted=true;
+    a.play().catch(function(){});
+    function _unmute(){a.muted=false;}
+    document.addEventListener('touchstart',_unmute,{once:true,passive:true});
+    document.addEventListener('click',_unmute,{once:true});
+  });
+})();
+<\/script>
 <button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
 <div class="reveal"><div class="slides">
 
@@ -3926,32 +3943,13 @@ function stopGlobe(){
   stopHeartbeat();
 }
 
-/* ── Heartbeat audio ─────────────────────────────────────────────────────
-   The <audio id="hb-audio"> element is embedded in the HTML with autoplay
-   + muted. The browser starts loading/playing it during page load (muted
-   autoplay is always allowed on Android). We just control volume + muted. */
-var _hbUnlocked=false;
-function _hbEl(){return document.getElementById('hb-audio');}
-
-/* First touch/click unmutes for the rest of the session */
-document.addEventListener('touchstart',function(){
-  if(_hbUnlocked)return; _hbUnlocked=true;
-  var a=_hbEl(); if(a){a.muted=false;}
-},{passive:true});
-document.addEventListener('click',function(){
-  if(_hbUnlocked)return; _hbUnlocked=true;
-  var a=_hbEl(); if(a){a.muted=false;}
-});
-
+/* ── Heartbeat audio — volume-only control (play() called in inline script) */
 function startHeartbeat(){
-  var a=_hbEl(); if(!a)return;
-  if(a.paused){a.play().catch(function(){});}
+  var a=document.getElementById('hb-audio'); if(!a)return;
   a.volume=0.75;
-  if(_hbUnlocked)a.muted=false;
 }
-
 function stopHeartbeat(){
-  var a=_hbEl(); if(a)a.volume=0;
+  var a=document.getElementById('hb-audio'); if(a)a.volume=0;
 }
 
 Chart.register(ChartDataLabels);
