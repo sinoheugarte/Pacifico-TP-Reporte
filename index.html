@@ -3592,23 +3592,8 @@ function generateRevealPresentation(){
 
 <!-- SLIDE 1: GLOBE INTRO -->
 <section data-transition="zoom" data-background-color="#020814" style="padding:0">
-  <!-- PT logo positioned ABOVE the globe -->
-  <div style="position:absolute;top:18px;left:0;right:0;text-align:center;z-index:2">
-    <svg viewBox="0 0 110 185" overflow="visible" fill="none"
-         stroke="#f59e0b" stroke-width="11.5" stroke-linecap="butt" stroke-linejoin="miter"
-         style="height:118px;display:inline-block;animation:ptGlow 2.5s ease-in-out infinite"
-         xmlns="http://www.w3.org/2000/svg">
-      <!-- P + stem as single path: miter join at (42,0) closes the top-left corner -->
-      <path d="M 42,185 V 0 H 65 A 33,33 0 0 1 65,66 H 42" fill="none"/>
-      <!-- T crossbar -->
-      <line x1="4" y1="105" x2="86" y2="105"/>
-    </svg>
-    <p style="font-size:.52em;letter-spacing:.24em;text-transform:uppercase;opacity:.32;margin:3px 0 0">Sistema de Gestión de Transporte · Perú</p>
-  </div>
-  <!-- Ticker at bottom -->
-  <div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;z-index:2">
-    <div class="scroll-ticker" style="width:90%"><div class="scroll-ticker-inner">PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRANSPORTE &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PACIFICO TRANSPORTATION SAC &nbsp;·&nbsp; LOGÍSTICA &nbsp;·&nbsp; DISTRIBUCIÓN &nbsp;·&nbsp; TRANSPORTE &nbsp;·&nbsp; PERÚ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div></div>
-  </div>
+  <!-- Globe, logo, subtitle and ticker are all drawn on the canvas by globeFrame()
+       so they stay proportional in both portrait and landscape orientations -->
 </section>
 
 <!-- SLIDE 2: PORTADA -->
@@ -3785,12 +3770,15 @@ Reveal.initialize({
 });
 
 /* ── Globe ── */
-var globeRAF=null,globeRot=0,globeFr=0,globeGC=null,globeCtx=null;
+var globeRAF=null,globeRot=0,globeFr=0,globeGC=null,globeCtx=null,globeTick=0;
 /* Stars stored as fractions (0-1) so they scale to any canvas size */
 var globeStars=Array.from({length:220},function(){return{fx:Math.random(),fy:Math.random(),r:Math.random()*1.4+0.3,a:Math.random()*Math.PI*2};});
 function globeFrame(){
   if(!globeGC||!globeCtx)return;
-  var W=globeGC.width,H=globeGC.height,CX=W/2,CY=H*0.43,R=Math.min(W,H)*0.31;
+  var W=globeGC.width,H=globeGC.height,CX=W/2;
+  /* In portrait use a larger globe and lower center so it fills the screen better */
+  var isPortrait=H>W*1.2;
+  var CY=H*(isPortrait?0.40:0.43),R=Math.min(W,H)*(isPortrait?0.44:0.31);
   globeCtx.fillStyle='#020814';globeCtx.fillRect(0,0,W,H);
   globeStars.forEach(function(s){
     var tw=0.35+0.65*Math.abs(Math.sin(globeFr*0.018+s.a));
@@ -3831,6 +3819,49 @@ function globeFrame(){
   var sh=globeCtx.createRadialGradient(CX-R*.38,CY-R*.38,1,CX-R*.22,CY-R*.22,R*.68);
   sh.addColorStop(0,'rgba(255,255,255,0.16)');sh.addColorStop(1,'rgba(255,255,255,0)');
   globeCtx.beginPath();globeCtx.arc(CX,CY,R,0,Math.PI*2);globeCtx.fillStyle=sh;globeCtx.fill();
+
+  /* ── ₚ logo drawn on canvas so it stays aligned to the globe in any orientation ── */
+  var szH=R*0.72,sc2=szH/185;
+  var lx=CX-55*sc2,ly=CY-R*0.95; /* logo top is ~0.95R above globe center */
+  var glowPulse=0.5+0.5*Math.abs(Math.sin(globeFr*0.04));
+  globeCtx.save();
+  globeCtx.shadowColor='rgba(245,158,11,'+(0.5+0.45*glowPulse).toFixed(2)+')';
+  globeCtx.shadowBlur=R*(0.08+0.18*glowPulse);
+  globeCtx.strokeStyle='#F59E0B';globeCtx.lineWidth=11.5*sc2;
+  globeCtx.lineCap='butt';globeCtx.lineJoin='miter';
+  globeCtx.beginPath();
+  globeCtx.moveTo(lx+42*sc2,ly+185*sc2);globeCtx.lineTo(lx+42*sc2,ly);
+  globeCtx.lineTo(lx+65*sc2,ly);
+  globeCtx.arc(lx+98*sc2,ly+33*sc2,33*sc2,-Math.PI/2,Math.PI/2,false);
+  globeCtx.lineTo(lx+42*sc2,ly+66*sc2);
+  globeCtx.stroke();
+  globeCtx.beginPath();
+  globeCtx.moveTo(lx+4*sc2,ly+105*sc2);globeCtx.lineTo(lx+86*sc2,ly+105*sc2);
+  globeCtx.stroke();
+  globeCtx.restore();
+
+  /* ── Subtitle text below logo ── */
+  var subFS=Math.max(8,R*0.085);
+  globeCtx.save();
+  globeCtx.font='lighter '+subFS+'px "Segoe UI",Calibri,sans-serif';
+  globeCtx.fillStyle='rgba(255,255,255,0.32)';globeCtx.textAlign='center';
+  globeCtx.fillText('SISTEMA DE GESTIÓN DE TRANSPORTE  ·  PERÚ',CX,ly+szH+subFS*1.8);
+  globeCtx.restore();
+
+  /* ── Scrolling ticker below globe ── */
+  var tickFS=Math.max(8,R*0.078);
+  var tickY=CY+R*1.12+tickFS*2;if(tickY>H-6)tickY=H-6;
+  var tickStr='PACIFICO TRANSPORTATION SAC  ·  LOGÍSTICA  ·  DISTRIBUCIÓN  ·  TRANSPORTE  ·  PERÚ      ';
+  globeCtx.save();
+  globeCtx.font='lighter '+tickFS+'px "Segoe UI",Calibri,sans-serif';
+  globeCtx.fillStyle='rgba(255,255,255,0.20)';globeCtx.textAlign='left';
+  var tw2=globeCtx.measureText(tickStr).width;
+  var tx3=-(globeTick%tw2);
+  globeCtx.fillText(tickStr,tx3,tickY);
+  globeCtx.fillText(tickStr,tx3+tw2,tickY);
+  globeCtx.restore();
+  globeTick+=1.0;
+
   globeRot+=0.22;globeFr++;
   globeRAF=requestAnimationFrame(globeFrame);
 }
