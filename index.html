@@ -1159,6 +1159,31 @@ function setEl(id,html){const e=document.getElementById(id);if(e)e.innerHTML=htm
 function fd(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}catch{return d;}}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3000);}
 function blobToDataUrl(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(blob);});}
+function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxW||h>maxH){const s=Math.min(maxW/w,maxH/h);w=Math.round(w*s);h=Math.round(h*s);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      res(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>res(dataUrl);
+    img.src=dataUrl;
+  });
+}
+function downloadBlob(blob,filename){
+  /* On Android, using octet-stream prevents the browser from opening files inline */
+  const isAndroid=/Android/i.test(navigator.userAgent);
+  const dlBlob=isAndroid?blob.slice(0,blob.size,'application/octet-stream'):blob;
+  const url=URL.createObjectURL(dlBlob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+}
 function dataUrlToBlob(dataUrl,fname){
   const[hdr,data]=dataUrl.split(',');const mime=hdr.match(/:(.*?);/)[1];
   const bin=atob(data);const arr=new Uint8Array(bin.length);
@@ -2561,16 +2586,21 @@ async function generatePDF(){
       }
     };
 
-    // ── Offscreen Chart.js renderer — 2K resolution ──
+    // ── Offscreen Chart.js renderer — adaptive resolution for mobile ──
+    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const chartScale=isMobile?0.5:1.0;
+    const chartFmt=isMobile?'image/jpeg':'image/png';
+    const chartQ=isMobile?0.82:1.0;
     function renderChartImg(type,labels,datasets,extraOpts={},legendOpts={display:false},w=2400,h=1000){
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const cw=Math.round(w*chartScale), ch2=Math.round(h*chartScale);
+      const c=document.createElement('canvas'); c.width=cw; c.height=ch2;
       const baseOpts={responsive:false,animation:false,
                       plugins:{legend:{...legendOpts},tooltip:{enabled:false}}};
       const{plugins:eplug,...rest}=extraOpts;
       Object.assign(baseOpts,rest);
       if(eplug) Object.assign(baseOpts.plugins,eplug);
       const ch=new Chart(c.getContext('2d'),{type,data:{labels,datasets},options:baseOpts,plugins:[pdfLabelPlugin]});
-      const img=c.toDataURL('image/png',1.0); ch.destroy(); return img;
+      const img=c.toDataURL(chartFmt,chartQ); ch.destroy(); return img;
     }
     const pcols=['#22C55E','#3B82F6','#F59E0B','#EF4444','#1D4ED8','#7C3AED','#0EA5E9','#F97316','#14B8A6','#EC4899'];
     const axisHD={grid:{color:'#E2E8F0'},ticks:{font:{size:24},color:'#475569'}};
@@ -2897,17 +2927,16 @@ async function generatePDF(){
       doc.text(`Página ${p} de ${totalPages}`,W-margin,H-4,{align:'right'});
     }
 
-    setUpBar(90); setUpStep('Subiendo PDF a OneDrive…');
+    setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    try{
-      const tk=await freshToken();
-      await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
-        {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob});
-      toast(`✓ PDF guardado en OneDrive: ${pdfName}`);
-    }catch(e){ console.warn('PDF OD upload:',e); }
-    doc.save(pdfName);
+    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
+    downloadBlob(pdfBlob,pdfName);
     hideUp(); toast('✓ PDF generado y descargado');
+    freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
+      {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
+      .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
+      .catch(e=>console.warn('PDF OD upload:',e));
   }catch(e){hideUp();toast('⚠ Error PDF: '+e.message);console.error(e);}
 }
 
@@ -3237,7 +3266,16 @@ async function generatePPTX(){
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
+    // Load photos that are not yet in memory (common on Android after a fresh session)
+    const recsNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
+    if(recsNeedPhotos.length>0){
+      for(let i=0;i<recsNeedPhotos.length;i++){
+        setUpStep(`Cargando fotos ${i+1}/${recsNeedPhotos.length}…`); setUpBar(78+Math.round(i/recsNeedPhotos.length*7));
+        try{ await loadPhotosForRec(recsNeedPhotos[i]); }catch(e){ console.warn('PPTX photo load:',e); }
+      }
+    }
     setUpStep('Sección fotográfica'); setUpBar(85);
+    const isMobilePptx=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const recsWithPhotos=records.filter(r=>r.images&&r.images.length>0);
     if(recsWithPhotos.length>0){
       const sfSlide=pptx.addSlide(); sfSlide.background={color:NAVY};
@@ -3248,7 +3286,11 @@ async function generatePPTX(){
       sfSlide.addText('Registro fotográfico por operación de traslado',{x:.5,y:2.58,w:9,h:.45,fontSize:12,color:'94A3B8',align:'center'});
       sfSlide.addText(`${recsWithPhotos.length} registro${recsWithPhotos.length!==1?'s':''} con evidencia fotográfica`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
       for(const rec of recsWithPhotos){
-        const photos=rec.images.slice(0,6);
+        const rawPhotos=rec.images.slice(0,6);
+        /* On mobile, resize photos to max 1200×900 to avoid memory exhaustion in PptxGenJS */
+        const photos=isMobilePptx
+          ? await Promise.all(rawPhotos.map(d=>resizeDataUrl(d,1200,900,0.82)))
+          : rawPhotos;
         const ps=pptx.addSlide(); ps.background={color:BG};
         ps.addShape(pptx.ShapeType.rect,{x:0,y:0,w:10,h:.62,fill:{color:NAVY}});
         ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
@@ -3381,16 +3423,15 @@ async function generatePPTX(){
     sf.addText(`Generado: ${new Date().toLocaleString('es-PE')}`,{x:.5,y:4.94,w:9,h:.28,fontSize:8,color:'475569',align:'center'});
 
     // ── Guardar ──
-    setUpStep('Guardando…'); setUpBar(97);
+    setUpStep('Preparando descarga…'); setUpBar(97);
     const pptxName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pptx`;
     const pptxBlob=await pptx.write({outputType:'blob'});
-    try{
-      const tk=await freshToken();
-      await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
-        {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob});
-    }catch(e){console.warn('PPTX OD upload:',e);}
-    await pptx.writeFile({fileName:pptxName});
+    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
+    downloadBlob(pptxBlob,pptxName);
     hideUp(); toast(`✓ PowerPoint generado · ${recsWithPhotos?recsWithPhotos.length:0} registros con fotos`);
+    freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
+      {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
+      .catch(e=>console.warn('PPTX OD upload:',e));
   }catch(e){hideUp();toast('⚠ Error PPTX: '+e.message);console.error(e);}
 }
 
@@ -4346,10 +4387,7 @@ async function exportRecordsXLSX(){
   /* Download */
   const buffer=await wb.xlsx.writeBuffer();
   const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
-  a.click();URL.revokeObjectURL(url);
+  downloadBlob(blob,`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('✓ Excel descargado');
 }
 
@@ -4461,7 +4499,8 @@ function exportRecordsPDF(){
     doc.text(`Página ${p} / ${totalPages}`,PW-MARGIN-2,PH-3.2,{align:'right'});
   }
 
-  doc.save(`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.pdf`);
+  const recsPdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+  downloadBlob(recsPdfBlob,`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.pdf`);
   toast('✓ PDF descargado');
 }
 
