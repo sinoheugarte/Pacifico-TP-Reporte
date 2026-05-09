@@ -3934,9 +3934,14 @@ function startHeartbeat(){
   a.src='${window.location.origin}/heartbeat.mp3';
   a.loop=true;
   a.volume=0.75;
+  a.muted=true; /* muted autoplay allowed on Android */
   document.body.appendChild(a);
   heartAudio=a;
   a.play().catch(function(){});
+  /* Unmute on first user interaction (tap/swipe to navigate slides) */
+  function _unmute(){if(heartAudio)heartAudio.muted=false;}
+  document.addEventListener('touchstart',_unmute,{once:true,passive:true});
+  document.addEventListener('click',_unmute,{once:true});
 }
 
 function stopHeartbeat(){
@@ -4285,9 +4290,16 @@ window.addEventListener('resize',function(){
   raf=requestAnimationFrame(frame);
 
   /* ── Rocket sound ── */
+  /* Rocket sound: start muted (Android allows muted autoplay), unmute on first touch */
   var _rocketAu=new Audio('rocket-whoosh.mp3');
   _rocketAu.volume=0.6;
-  setTimeout(function(){_rocketAu.play().catch(function(){});},1200);
+  _rocketAu.muted=true;
+  _rocketAu.play().catch(function(){});
+  document.addEventListener('touchstart',function(){_rocketAu.muted=false;},{once:true,passive:true});
+  setTimeout(function(){
+    _rocketAu.currentTime=0;
+    _rocketAu.play().catch(function(){});
+  },1200);
 })();
 
 /* ─── RECORDS TABLE ──────────────────────────────────── */
