@@ -3925,30 +3925,41 @@ function stopGlobe(){
   stopHeartbeat();
 }
 
-/* ── Heartbeat audio ── */
-var heartAudio=null;
+/* ── Heartbeat audio ────────────────────────────────────────────────────
+   Single persistent <audio> element that lives for the entire presentation.
+   Never destroyed — only silenced — so we never need to call play() again
+   after the first user gesture unlocks audio on Android.                  */
+var heartAudio=null,_hbUnlocked=false;
+
+/* One persistent listener: first touch unlocks audio for all time */
+document.addEventListener('touchstart',function(){
+  _hbUnlocked=true;
+  if(heartAudio&&heartAudio.muted){heartAudio.muted=false;}
+},{passive:true});
+document.addEventListener('click',function(){
+  _hbUnlocked=true;
+  if(heartAudio&&heartAudio.muted){heartAudio.muted=false;}
+});
 
 function startHeartbeat(){
-  if(heartAudio)return;
-  var a=document.createElement('audio');
-  a.src='${window.location.origin}/heartbeat.mp3';
-  a.loop=true;
-  a.volume=0.75;
-  a.muted=true; /* muted autoplay allowed on Android */
-  document.body.appendChild(a);
-  heartAudio=a;
-  a.play().catch(function(){});
-  /* Unmute on first user interaction (tap/swipe to navigate slides) */
-  function _unmute(){if(heartAudio)heartAudio.muted=false;}
-  document.addEventListener('touchstart',_unmute,{once:true,passive:true});
-  document.addEventListener('click',_unmute,{once:true});
+  if(!heartAudio){
+    /* Build absolute URL from the opener page so it works in the new window */
+    var base='${window.location.href.replace(/\/[^\/]*$/,"")}';
+    var a=document.createElement('audio');
+    a.src=base+'/heartbeat.mp3';
+    a.loop=true;
+    a.muted=true; /* muted autoplay always allowed */
+    document.body.appendChild(a);
+    heartAudio=a;
+    a.play().catch(function(){});
+  }
+  heartAudio.volume=0.75;
+  if(_hbUnlocked)heartAudio.muted=false;
 }
 
 function stopHeartbeat(){
-  if(!heartAudio)return;
-  heartAudio.pause();
-  try{document.body.removeChild(heartAudio);}catch(e){}
-  heartAudio=null;
+  /* Silence only — never pause/remove so play() is never called again */
+  if(heartAudio)heartAudio.volume=0;
 }
 
 Chart.register(ChartDataLabels);
