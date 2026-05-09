@@ -3948,8 +3948,8 @@ function scheduleBeats(){
   if(!heartAC||heartAC.state==='suspended')return;
   var now=heartAC.currentTime;
   while(nextBeat<now+0.6){
-    beatTone(nextBeat,      52, 0.50, 0.11); /* lub — S1, mitral/tricuspid */
-    beatTone(nextBeat+0.25, 68, 0.28, 0.09); /* dub — S2, aortic/pulmonary */
+    beatTone(nextBeat,      52, 0.82, 0.11); /* lub — S1, mitral/tricuspid */
+    beatTone(nextBeat+0.25, 68, 0.48, 0.09); /* dub — S2, aortic/pulmonary */
     nextBeat+=BEAT_PERIOD;
   }
 }
@@ -4059,9 +4059,88 @@ Reveal.on('ready',function(){
   });
 });
 
+/* ── Background music (slides 2 → end) ─────────────────────────────────
+   Synthesised disco-synth melody using Web Audio API.
+   Key: A minor  |  Tempo: 116 BPM  |  Loop: 4 bars (≈ 8.3 s)
+   Melody arpeggio: Am – F – C – E  (ascending + descending phrases)
+   Bass:           root notes A2 / F2 / C2 / E2                        */
+var bgAC=null,bgGainNode=null,bgIntv=null,bgMelNext=0,bgBassNext=0,bgMelIdx=0,bgBassIdx=0;
+var BG_BEAT=60/116; /* 0.517 s per beat at 116 BPM */
+
+/* Melody: [Hz, beats] — A minor arpeggio, 4 bars */
+var bgMel=[
+  [440,1],[523,1],[659,1],[880,1],         /* bar 1 Am  ↑  A4 C5 E5 A5 */
+  [784,1],[659,1],[523,1],[440,1],         /* bar 2     ↓  G5 E5 C5 A4 */
+  [349,1],[440,1],[523,1],[698,1],         /* bar 3 F   ↑  F4 A4 C5 F5 */
+  [659,1.5],[523,.5],[440,1],[330,1]       /* bar 4 E   phrase end      */
+];
+/* Bass: [Hz, beats] — one root per bar */
+var bgBass=[[110,4],[110,4],[87,4],[82,4]]; /* A2 A2 F2 E2 */
+
+function bgNote(t,freq,beats,type,vol){
+  if(!bgAC||!bgGainNode)return;
+  var o=bgAC.createOscillator(),lp=bgAC.createBiquadFilter(),g=bgAC.createGain();
+  o.type=type;o.frequency.value=freq;
+  lp.type='lowpass';lp.frequency.value=freq*3.5;lp.Q.value=1.0;
+  o.connect(lp);lp.connect(g);g.connect(bgGainNode);
+  var dur=beats*BG_BEAT;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.018);
+  g.gain.setValueAtTime(vol,t+dur*0.72);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t);o.stop(t+dur+0.05);
+}
+
+function scheduleBg(){
+  if(!bgAC||!bgGainNode)return;
+  var now=bgAC.currentTime;
+  while(bgMelNext<now+0.8){
+    var m=bgMel[bgMelIdx%bgMel.length];
+    bgNote(bgMelNext,m[0],m[1],'sawtooth',0.13);
+    bgMelNext+=m[1]*BG_BEAT;bgMelIdx++;
+  }
+  while(bgBassNext<now+0.8){
+    var b=bgBass[bgBassIdx%bgBass.length];
+    bgNote(bgBassNext,b[0],b[1],'sine',0.18);
+    bgBassNext+=b[1]*BG_BEAT;bgBassIdx++;
+  }
+}
+
+function startBgMusic(){
+  if(bgAC)return; /* already running */
+  try{
+    bgAC=new(window.AudioContext||window.webkitAudioContext)();
+    bgGainNode=bgAC.createGain();
+    bgGainNode.gain.setValueAtTime(0,bgAC.currentTime);
+    bgGainNode.gain.linearRampToValueAtTime(0.9,bgAC.currentTime+1.8); /* fade in */
+    bgGainNode.connect(bgAC.destination);
+    bgAC.resume().catch(function(){});
+    bgMelNext=bgBassNext=bgAC.currentTime+0.15;
+    bgMelIdx=bgBassIdx=0;
+    scheduleBg();
+    bgIntv=setInterval(scheduleBg,200);
+    document.addEventListener('touchstart',function _bgr(){
+      if(bgAC&&bgAC.state==='suspended')bgAC.resume().catch(function(){});
+      document.removeEventListener('touchstart',_bgr);
+    },{once:true,passive:true});
+  }catch(e){}
+}
+
+function stopBgMusic(){
+  if(bgIntv){clearInterval(bgIntv);bgIntv=null;}
+  if(bgAC){
+    var ac=bgAC;bgAC=null;bgGainNode=null;
+    try{
+      var g=ac.createGain();g.gain.setValueAtTime(0.9,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+1.2);
+      setTimeout(function(){try{ac.close();}catch(e){}},1300);
+    }catch(e){try{ac.close();}catch(e2){}}
+  }
+}
+
 Reveal.on('slidechanged',function(e){
-  if(e.indexh===0){setTimeout(startGlobe,50);}
-  else{stopGlobe();}
+  if(e.indexh===0){setTimeout(startGlobe,50);stopBgMusic();}
+  else{stopGlobe();startBgMusic();}
 });
 /* Recreate globe canvas on orientation change so it uses current viewport size */
 window.addEventListener('resize',function(){
