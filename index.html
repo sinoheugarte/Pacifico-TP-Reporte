@@ -2572,16 +2572,21 @@ async function generatePDF(){
       }
     };
 
-    // ── Offscreen Chart.js renderer — 2K resolution ──
+    // ── Offscreen Chart.js renderer — adaptive resolution for mobile ──
+    const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const chartScale=isMobile?0.5:1.0;
+    const chartFmt=isMobile?'image/jpeg':'image/png';
+    const chartQ=isMobile?0.82:1.0;
     function renderChartImg(type,labels,datasets,extraOpts={},legendOpts={display:false},w=2400,h=1000){
-      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const cw=Math.round(w*chartScale), ch2=Math.round(h*chartScale);
+      const c=document.createElement('canvas'); c.width=cw; c.height=ch2;
       const baseOpts={responsive:false,animation:false,
                       plugins:{legend:{...legendOpts},tooltip:{enabled:false}}};
       const{plugins:eplug,...rest}=extraOpts;
       Object.assign(baseOpts,rest);
       if(eplug) Object.assign(baseOpts.plugins,eplug);
       const ch=new Chart(c.getContext('2d'),{type,data:{labels,datasets},options:baseOpts,plugins:[pdfLabelPlugin]});
-      const img=c.toDataURL('image/png',1.0); ch.destroy(); return img;
+      const img=c.toDataURL(chartFmt,chartQ); ch.destroy(); return img;
     }
     const pcols=['#22C55E','#3B82F6','#F59E0B','#EF4444','#1D4ED8','#7C3AED','#0EA5E9','#F97316','#14B8A6','#EC4899'];
     const axisHD={grid:{color:'#E2E8F0'},ticks:{font:{size:24},color:'#475569'}};
@@ -2908,17 +2913,16 @@ async function generatePDF(){
       doc.text(`Página ${p} de ${totalPages}`,W-margin,H-4,{align:'right'});
     }
 
-    setUpBar(90); setUpStep('Subiendo PDF a OneDrive…');
+    setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    try{
-      const tk=await freshToken();
-      await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
-        {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob});
-      toast(`✓ PDF guardado en OneDrive: ${pdfName}`);
-    }catch(e){ console.warn('PDF OD upload:',e); }
+    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pdfBlob,pdfName);
     hideUp(); toast('✓ PDF generado y descargado');
+    freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
+      {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
+      .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
+      .catch(e=>console.warn('PDF OD upload:',e));
   }catch(e){hideUp();toast('⚠ Error PDF: '+e.message);console.error(e);}
 }
 
@@ -3392,16 +3396,15 @@ async function generatePPTX(){
     sf.addText(`Generado: ${new Date().toLocaleString('es-PE')}`,{x:.5,y:4.94,w:9,h:.28,fontSize:8,color:'475569',align:'center'});
 
     // ── Guardar ──
-    setUpStep('Guardando…'); setUpBar(97);
+    setUpStep('Preparando descarga…'); setUpBar(97);
     const pptxName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pptx`;
     const pptxBlob=await pptx.write({outputType:'blob'});
-    try{
-      const tk=await freshToken();
-      await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
-        {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob});
-    }catch(e){console.warn('PPTX OD upload:',e);}
+    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pptxBlob,pptxName);
     hideUp(); toast(`✓ PowerPoint generado · ${recsWithPhotos?recsWithPhotos.length:0} registros con fotos`);
+    freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
+      {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
+      .catch(e=>console.warn('PPTX OD upload:',e));
   }catch(e){hideUp();toast('⚠ Error PPTX: '+e.message);console.error(e);}
 }
 
