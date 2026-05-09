@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Create AudioContext as early as possible to catch the PWA launch gesture on Android -->
+<script>try{window._pwaAC=new(window.AudioContext||window.webkitAudioContext)();window._pwaAC.resume().catch(function(){});}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3834,22 +3836,25 @@ function globeFrame(){
 }
 function startGlobe(){
   if(globeRAF)cancelAnimationFrame(globeRAF);
-  // Inject canvas into the first slide-background element (Reveal's background layer)
+  var vw=window.innerWidth||960,vh=window.innerHeight||540;
   if(!globeGC){
     var bg=document.querySelectorAll('.reveal .backgrounds .slide-background')[0];
     if(!bg){globeGC=null;return;}
     globeGC=document.createElement('canvas');
-    /* Use actual viewport dimensions — bg.offsetWidth can be unreliable
-       when reveal.js hasn't finished layout yet */
-    globeGC.width=window.innerWidth||960;
-    globeGC.height=window.innerHeight||540;
-    globeGC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%';
+    globeGC.width=vw; globeGC.height=vh;
+    /* position:fixed + explicit px size so the canvas covers the real viewport
+       regardless of the CSS layout size reveal.js assigns to .slide-background */
+    globeGC.style.cssText='position:fixed;top:0;left:0;width:'+vw+'px;height:'+vh+'px;pointer-events:none;z-index:0;';
     bg.appendChild(globeGC);
     globeCtx=globeGC.getContext('2d');
   }
   globeFrame();
 }
-function stopGlobe(){if(globeRAF){cancelAnimationFrame(globeRAF);globeRAF=null;}}
+function stopGlobe(){
+  if(globeRAF){cancelAnimationFrame(globeRAF);globeRAF=null;}
+  /* Remove canvas so it is re-created with current viewport dimensions on next call */
+  if(globeGC){if(globeGC.parentElement)globeGC.parentElement.removeChild(globeGC);globeGC=null;globeCtx=null;}
+}
 
 Chart.register(ChartDataLabels);
 
@@ -3939,6 +3944,10 @@ Reveal.on('slidechanged',function(e){
   if(e.indexh===0){setTimeout(startGlobe,50);}
   else{stopGlobe();}
 });
+/* Recreate globe canvas on orientation change so it uses current viewport size */
+window.addEventListener('resize',function(){
+  if(Reveal.getState&&Reveal.getState().indexh===0){stopGlobe();setTimeout(startGlobe,80);}
+});
 <\/script>
 </body></html>`;
 
@@ -3961,11 +3970,16 @@ Reveal.on('slidechanged',function(e){
   window.addEventListener('resize',resize);
   ctx=cv.getContext('2d');
 
-  /* Pre-create AudioContext NOW while the PWA-launch gesture is still active.
-     On Android Chrome, creating it inside a setTimeout (1200 ms later) results
-     in a permanently-suspended context that cannot play without a tap. */
-  var introAC=null;
-  try{introAC=new(window.AudioContext||window.webkitAudioContext)();introAC.resume().catch(function(){});}catch(e){}
+  /* Use the AudioContext created at page-top (<head> script) — it has the best
+     chance of catching the PWA launch gesture before Android suspends audio.
+     Fall back to creating a new one here if _pwaAC is unavailable. */
+  var introAC=window._pwaAC||null;
+  if(!introAC){try{introAC=new(window.AudioContext||window.webkitAudioContext)();introAC.resume().catch(function(){});}catch(e){}}
+  /* Touchstart fallback: resume if Android suspended after the launch gesture */
+  document.addEventListener('touchstart',function _acResume(){
+    if(introAC&&introAC.state==='suspended')introAC.resume().catch(function(){});
+    document.removeEventListener('touchstart',_acResume);
+  },{once:true,passive:true});
 
   /* Stars */
   var NSTARS=260;
@@ -4147,9 +4161,10 @@ Reveal.on('slidechanged',function(e){
   /* ── Rocket sound via Web Audio API ─────────────────────────── */
   function playRocketSound(){
     try{
-      /* Use the pre-warmed context; skip silently if browser still blocks audio */
       var ac=introAC;
-      if(!ac||ac.state==='suspended')return;
+      if(!ac)return;
+      /* Try to resume if still suspended (e.g. Android didn't honour launch gesture) */
+      if(ac.state==='suspended'){ac.resume().catch(function(){});return;}
       (function(){
         var dur=5.3; /* matches rocket on-screen time (1.2s→6.5s) */
         var t0=ac.currentTime;
