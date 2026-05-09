@@ -1159,6 +1159,17 @@ function setEl(id,html){const e=document.getElementById(id);if(e)e.innerHTML=htm
 function fd(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}catch{return d;}}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3000);}
 function blobToDataUrl(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(blob);});}
+function downloadBlob(blob,filename){
+  /* On Android, using octet-stream prevents the browser from opening files inline */
+  const isAndroid=/Android/i.test(navigator.userAgent);
+  const dlBlob=isAndroid?blob.slice(0,blob.size,'application/octet-stream'):blob;
+  const url=URL.createObjectURL(dlBlob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+}
 function dataUrlToBlob(dataUrl,fname){
   const[hdr,data]=dataUrl.split(',');const mime=hdr.match(/:(.*?);/)[1];
   const bin=atob(data);const arr=new Uint8Array(bin.length);
@@ -2906,7 +2917,7 @@ async function generatePDF(){
         {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob});
       toast(`✓ PDF guardado en OneDrive: ${pdfName}`);
     }catch(e){ console.warn('PDF OD upload:',e); }
-    doc.save(pdfName);
+    downloadBlob(pdfBlob,pdfName);
     hideUp(); toast('✓ PDF generado y descargado');
   }catch(e){hideUp();toast('⚠ Error PDF: '+e.message);console.error(e);}
 }
@@ -3389,7 +3400,7 @@ async function generatePPTX(){
       await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
         {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob});
     }catch(e){console.warn('PPTX OD upload:',e);}
-    await pptx.writeFile({fileName:pptxName});
+    downloadBlob(pptxBlob,pptxName);
     hideUp(); toast(`✓ PowerPoint generado · ${recsWithPhotos?recsWithPhotos.length:0} registros con fotos`);
   }catch(e){hideUp();toast('⚠ Error PPTX: '+e.message);console.error(e);}
 }
@@ -4346,10 +4357,7 @@ async function exportRecordsXLSX(){
   /* Download */
   const buffer=await wb.xlsx.writeBuffer();
   const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`;
-  a.click();URL.revokeObjectURL(url);
+  downloadBlob(blob,`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('✓ Excel descargado');
 }
 
@@ -4461,7 +4469,8 @@ function exportRecordsPDF(){
     doc.text(`Página ${p} / ${totalPages}`,PW-MARGIN-2,PH-3.2,{align:'right'});
   }
 
-  doc.save(`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.pdf`);
+  const recsPdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+  downloadBlob(recsPdfBlob,`Registros_PacificoTP_${new Date().toISOString().slice(0,10)}.pdf`);
   toast('✓ PDF descargado');
 }
 
