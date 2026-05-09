@@ -3835,9 +3835,10 @@ function startGlobe(){
     var bg=document.querySelectorAll('.reveal .backgrounds .slide-background')[0];
     if(!bg){globeGC=null;return;}
     globeGC=document.createElement('canvas');
-    /* Match actual display dimensions so globe is never distorted in portrait mode */
-    var dw=bg.offsetWidth||window.innerWidth, dh=bg.offsetHeight||window.innerHeight;
-    globeGC.width=Math.max(dw,1); globeGC.height=Math.max(dh,1);
+    /* Use actual viewport dimensions — bg.offsetWidth can be unreliable
+       when reveal.js hasn't finished layout yet */
+    globeGC.width=window.innerWidth||960;
+    globeGC.height=window.innerHeight||540;
     globeGC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%';
     bg.appendChild(globeGC);
     globeCtx=globeGC.getContext('2d');
@@ -3955,6 +3956,12 @@ Reveal.on('slidechanged',function(e){
   resize();
   window.addEventListener('resize',resize);
   ctx=cv.getContext('2d');
+
+  /* Pre-create AudioContext NOW while the PWA-launch gesture is still active.
+     On Android Chrome, creating it inside a setTimeout (1200 ms later) results
+     in a permanently-suspended context that cannot play without a tap. */
+  var introAC=null;
+  try{introAC=new(window.AudioContext||window.webkitAudioContext)();introAC.resume().catch(function(){});}catch(e){}
 
   /* Stars */
   var NSTARS=260;
@@ -4102,15 +4109,13 @@ Reveal.on('slidechanged',function(e){
     if(progress>textStart){
       var tp=Math.min((progress-textStart)/(.2),1);
       var textAlpha=ease(tp)*Math.min((1-progress)/.1,1);
-      var fs=Math.min(W*.075,36);
+      /* Cap font-size so "PACÍFICO  TRANSPORTATION" (24 bold chars, ~0.65 em each)
+         always fits in 88 % of the canvas width regardless of DM Sans load state */
+      var fs=Math.min(W*0.88/(24*0.65),36);
       ctx.save();
       ctx.globalAlpha=textAlpha;
       ctx.textAlign='center';ctx.textBaseline='middle';
-
-      /* Shrink font until the main line fits within 90 % of canvas width */
       ctx.font='700 '+fs+'px "DM Sans",sans-serif';
-      var tw=ctx.measureText('PACÍFICO  TRANSPORTATION').width;
-      if(tw>W*.9){fs=fs*(W*.9/tw);ctx.font='700 '+fs+'px "DM Sans",sans-serif';}
 
       /* Glow */
       ctx.shadowColor='rgba(245,158,11,.9)';
@@ -4138,9 +4143,10 @@ Reveal.on('slidechanged',function(e){
   /* ── Rocket sound via Web Audio API ─────────────────────────── */
   function playRocketSound(){
     try{
-      var ac=new(window.AudioContext||window.webkitAudioContext)();
-      var resume=ac.state==='suspended'?ac.resume():Promise.resolve();
-      resume.then(function(){
+      /* Use the pre-warmed context; skip silently if browser still blocks audio */
+      var ac=introAC;
+      if(!ac||ac.state==='suspended')return;
+      (function(){
         var dur=5.3; /* matches rocket on-screen time (1.2s→6.5s) */
         var t0=ac.currentTime;
 
@@ -4203,7 +4209,7 @@ Reveal.on('slidechanged',function(e){
         noise.start(t0);noise.stop(t0+dur+0.1);
         n2.start(t0);n2.stop(t0+dur+0.1);
         osc.start(t0);osc.stop(t0+dur+0.1);
-      }).catch(function(){});
+      })();
     }catch(e){}
   }
   /* Trigger when rocket enters the screen (~1.2 s after animation start) */
