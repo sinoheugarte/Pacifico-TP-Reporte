@@ -3930,7 +3930,7 @@ function stopGlobe(){
    Audio lives in the main window (started with the Live button gesture),
    so no user-gesture restriction applies here.                          */
 function _hb(){try{return window.opener&&window.opener._presHbAudio||null;}catch(e){return null;}}
-function startHeartbeat(){var a=_hb();if(a)a.volume=1.0;}
+function startHeartbeat(){var a=_hb();if(!a)return;a.volume=1.0;a.muted=bgMuted;if(a.paused)a.play().catch(function(){});}
 function stopHeartbeat(){var a=_hb();if(a)a.volume=0;}
 
 /* Stop the heartbeat when the presentation tab is closed */
