@@ -926,11 +926,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 </div>
 
 <div class="toast" id="toast"></div>
-<div id="dl-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:1500;background:#0f2340;color:#fff;padding:14px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -2px 16px rgba(0,0,0,.45);font-family:'DM Sans',sans-serif;font-size:14px">
-  <span id="dl-banner-msg" style="flex:1;font-weight:500"></span>
-  <button id="dl-banner-open" style="background:#f59e0b;color:#0f2340;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">Abrir Descargas</button>
-  <button onclick="hideDlBanner()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;line-height:1;padding:0 4px">✕</button>
-</div>
 
 <script>
 /* ════════════════════════════════════════════════════════
@@ -1162,24 +1157,7 @@ async function signOut(){
 ════════════════════════════════════════════════════════ */
 function setEl(id,html){const e=document.getElementById(id);if(e)e.innerHTML=html;}
 function fd(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}catch{return d;}}
-function toast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),dur);}
-let _dlBannerTimer=null;
-function showDlBanner(filename){
-  hideDlBanner();
-  const b=document.getElementById('dl-banner');
-  document.getElementById('dl-banner-msg').textContent=`✓ ${filename} descargado`;
-  /* On Android open the Downloads app; on desktop show file manager hint */
-  const openBtn=document.getElementById('dl-banner-open');
-  const isAndroid=/Android/i.test(navigator.userAgent);
-  if(isAndroid){openBtn.style.display='';openBtn.onclick=function(){window.open('content://com.android.providers.downloads.documents/document/downloads','_blank');};}
-  else{openBtn.style.display='none';}
-  b.style.display='flex';
-  _dlBannerTimer=setTimeout(hideDlBanner,12000);
-}
-function hideDlBanner(){
-  if(_dlBannerTimer){clearTimeout(_dlBannerTimer);_dlBannerTimer=null;}
-  document.getElementById('dl-banner').style.display='none';
-}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3000);}
 function blobToDataUrl(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(blob);});}
 function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
   return new Promise(res=>{
@@ -1204,7 +1182,8 @@ function downloadBlob(blob,filename){
   a.href=url;a.download=filename;a.style.display='none';
   document.body.appendChild(a);
   a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+  /* Keep URL alive long enough for browser download manager to read the full file */
+  setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},60000);
 }
 function dataUrlToBlob(dataUrl,fname){
   const[hdr,data]=dataUrl.split(',');const mime=hdr.match(/:(.*?);/)[1];
@@ -2961,7 +2940,7 @@ async function generatePDF(){
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
     /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pdfBlob,pdfName);
-    hideUp(); showDlBanner(pdfName);
+    hideUp(); toast('✓ PDF generado y descargado');
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
       .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
@@ -3457,7 +3436,7 @@ async function generatePPTX(){
     const pptxBlob=await pptx.write({outputType:'blob'});
     /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pptxBlob,pptxName);
-    hideUp(); showDlBanner(pptxName);
+    hideUp(); toast('✓ PowerPoint generado y descargado');
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
