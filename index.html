@@ -3587,6 +3587,7 @@ function generateRevealPresentation(){
 </style>
 </head><body>
 <button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
+<button id="closeBtn" onclick="window.close()" title="Cerrar presentación" style="position:fixed;bottom:20px;right:142px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">✕</button>
 <div class="reveal"><div class="slides">
 
 <!-- SLIDE 1: GLOBE INTRO -->
@@ -4027,6 +4028,7 @@ var bgAudio=null,bgFadeIn=null,bgFadeOut=null,bgMuted=false;
 function toggleMute(){
   bgMuted=!bgMuted;
   if(bgAudio)bgAudio.muted=bgMuted;
+  var hb=_hb();if(hb)hb.muted=bgMuted;
   var btn=document.getElementById('muteBtn');
   if(btn)btn.textContent=bgMuted?'🔇':'🔊';
 }
@@ -4068,8 +4070,8 @@ function stopBgMusic(){
 }
 
 Reveal.on('slidechanged',function(e){
-  if(e.indexh===0){setTimeout(startGlobe,50);stopBgMusic();}
-  else{stopGlobe();startBgMusic();}
+  if(e.indexh===0){startHeartbeat();setTimeout(startGlobe,50);stopBgMusic();}
+  else{stopGlobe();stopHeartbeat();startBgMusic();}
 });
 /* Recreate globe canvas on orientation change so it uses current viewport size */
 window.addEventListener('resize',function(){
