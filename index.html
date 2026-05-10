@@ -3933,9 +3933,12 @@ function _hb(){try{return window.opener&&window.opener._presHbAudio||null;}catch
 function startHeartbeat(){var a=_hb();if(!a)return;a.volume=1.0;a.muted=bgMuted;if(a.paused)a.play().catch(function(){});}
 function stopHeartbeat(){var a=_hb();if(a)a.volume=0;}
 
-/* Stop the heartbeat when the presentation tab is closed */
+/* Stop heartbeat + bg music when the presentation tab is closed */
 window.addEventListener('unload',function(){
-  try{var a=window.opener&&window.opener._presHbAudio;if(a){a.pause();window.opener._presHbAudio=null;}}catch(e){}
+  try{
+    var hb=window.opener&&window.opener._presHbAudio;if(hb){hb.pause();window.opener._presHbAudio=null;}
+    var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}
+  }catch(e){}
 });
 
 Chart.register(ChartDataLabels);
@@ -4023,49 +4026,42 @@ Reveal.on('ready',function(){
 });
 
 /* ── Background music (slides 2 → end) ──────────────────────────────── */
-var bgAudio=null,bgFadeIn=null,bgFadeOut=null,bgMuted=false;
+/* Audio lives in the main window (created with Live button gesture),
+   controlled here via window.opener._presBgAudio — same pattern as heartbeat. */
+var bgFadeIn=null,bgFadeOut=null,bgMuted=false;
+function _bg(){try{return window.opener&&window.opener._presBgAudio||null;}catch(e){return null;}}
 
 function toggleMute(){
   bgMuted=!bgMuted;
-  if(bgAudio)bgAudio.muted=bgMuted;
   var hb=_hb();if(hb)hb.muted=bgMuted;
+  var bg=_bg();if(bg)bg.muted=bgMuted;
   var btn=document.getElementById('muteBtn');
   if(btn)btn.textContent=bgMuted?'🔇':'🔊';
 }
 
 function startBgMusic(){
-  if(bgAudio)return;
-  var a=document.createElement('audio');
-  a.src='026_ON%20THE%20RADIOER.mp3';
-  a.loop=true;
-  a.volume=0;
+  var a=_bg();
+  if(!a)return;
+  if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
   a.muted=bgMuted;
-  document.body.appendChild(a);
-  bgAudio=a;
-  a.play().then(function(){
-    if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
-    bgFadeIn=setInterval(function(){
-      if(!bgAudio){clearInterval(bgFadeIn);bgFadeIn=null;return;}
-      bgAudio.volume=Math.min(0.75,bgAudio.volume+0.015);
-      if(bgAudio.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
-    },80);
-  }).catch(function(){
-    try{document.body.removeChild(a);}catch(e){}
-    bgAudio=null;
-  });
+  if(a.paused)a.play().catch(function(){});
+  bgFadeIn=setInterval(function(){
+    var b=_bg();
+    if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
+    b.volume=Math.min(0.75,b.volume+0.015);
+    if(b.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
+  },80);
 }
 
 function stopBgMusic(){
-  if(!bgAudio)return;
-  var a=bgAudio;bgAudio=null;
+  var a=_bg();
   if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
+  if(!a)return;
   bgFadeOut=setInterval(function(){
-    a.volume=Math.max(0,a.volume-0.025);
-    if(a.volume<=0){
-      clearInterval(bgFadeOut);bgFadeOut=null;
-      a.pause();
-      try{document.body.removeChild(a);}catch(e){}
-    }
+    var b=_bg();
+    if(!b){clearInterval(bgFadeOut);bgFadeOut=null;return;}
+    b.volume=Math.max(0,b.volume-0.025);
+    if(b.volume<=0){clearInterval(bgFadeOut);bgFadeOut=null;}
   },80);
 }
 
@@ -4089,9 +4085,16 @@ window.addEventListener('resize',function(){
       if(window._presHbAudio){window._presHbAudio.pause();window._presHbAudio=null;}
       var _hb=new Audio('heartbeat.mp3');
       _hb.loop=true;
-      _hb.volume=0; /* silenced until slide 0 activates it via startHeartbeat() */
+      _hb.volume=0;
       _hb.play().catch(function(){});
       window._presHbAudio=_hb;
+
+      if(window._presBgAudio){window._presBgAudio.pause();window._presBgAudio=null;}
+      var _bg=new Audio('026_ON THE RADIOER.mp3');
+      _bg.loop=true;
+      _bg.volume=0;
+      _bg.play().catch(function(){});
+      window._presBgAudio=_bg;
     }catch(e){}
     win.document.write(html);win.document.close();
   }
