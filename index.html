@@ -4134,15 +4134,18 @@ window.addEventListener('resize',function(){
 /* ─── INTRO ANIMATION ─────────────────────────────── */
 /* Called by the presplash "Entrar" button — guarantees user gesture for audio */
 function startIntro(){
-  /* 1. Play rocket sound NOW inside the user gesture */
+  /* Unlock audio within the user gesture (required on Android),
+     then pause immediately — sound will start at the exact frame
+     the rocket enters the screen (1200 ms into the animation). */
   var _rocketAu=new Audio('rocket-whoosh.mp3');
   _rocketAu.volume=0.6;
-  _rocketAu.play().catch(function(){});
-  /* 2. Fade out presplash */
+  var _p=_rocketAu.play();
+  if(_p)_p.then(function(){_rocketAu.pause();_rocketAu.currentTime=0;}).catch(function(){});
+  /* Fade out presplash */
   var ps=document.getElementById('presplash');
   ps.classList.add('fade-out');
   setTimeout(function(){ps.style.display='none';},650);
-  /* 3. Show and start intro animation */
+  /* Show and start intro animation */
   var scr=document.getElementById('intro-screen');
   scr.style.display='';
   _beginIntroAnimation(scr,_rocketAu);
@@ -4179,6 +4182,7 @@ function _beginIntroAnimation(scr,_rocketAu){
 
   /* Rocket shape drawn as canvas path, moving left→right */
   var rocketT=0; // 0..1 across screen
+  var _rocketSounded=false; // fire sound exactly once when rocket enters
 
   /* Text phases */
   var TOTAL_MS=10000;
@@ -4293,6 +4297,11 @@ function _beginIntroAnimation(scr,_rocketAu){
     /* Rocket — enters at t=1.2s, exits at t=6.5s */
     var rStart=1.2/10, rEnd=6.5/10;
     if(progress>rStart&&progress<rEnd){
+      /* Play sound on the exact frame the rocket enters */
+      if(!_rocketSounded){
+        _rocketSounded=true;
+        if(_rocketAu){_rocketAu.currentTime=0;_rocketAu.play().catch(function(){});}
+      }
       var rP=(progress-rStart)/(rEnd-rStart);
       var rx=-W*.12+rP*(W*1.24);
       var ry=H*.42+Math.sin(rP*Math.PI)*H*.06;
@@ -4336,10 +4345,6 @@ function _beginIntroAnimation(scr,_rocketAu){
     }
   }
   raf=requestAnimationFrame(frame);
-  /* Replay rocket sound at the moment the rocket appears (~1.2s into animation) */
-  setTimeout(function(){
-    if(_rocketAu){_rocketAu.currentTime=0;_rocketAu.play().catch(function(){});}
-  },1200);
 }
 
 /* ─── RECORDS TABLE ──────────────────────────────────── */
