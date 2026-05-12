@@ -3617,6 +3617,9 @@ function generateRevealPresentation(){
   #pres-controls{position:fixed;right:14px;bottom:80px;z-index:9999;display:flex;flex-direction:column;gap:10px;align-items:center}
   .pres-btn{background:rgba(10,22,40,0.85);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.5);color:#fff;transition:transform .12s;padding:0;line-height:1}
   .pres-btn:hover{transform:scale(1.12)}
+  #music-bar-wrap{position:fixed;top:0;left:0;right:0;z-index:9998;height:4px;opacity:0;transition:opacity .6s}
+  #music-bar-track{width:100%;height:100%;background:rgba(255,255,255,.12)}
+  #music-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#b8860b,#f5c842,#fde68a);transition:width .5s linear}
 </style>
 </head><body>
 <div id="pres-controls">
@@ -3624,6 +3627,7 @@ function generateRevealPresentation(){
   <button class="pres-btn" id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar">🔊</button>
   <button class="pres-btn" id="pauseBtn" onclick="toggleBgPause()" title="Pausar / Reanudar música">⏸</button>
 </div>
+<div id="music-bar-wrap"><div id="music-bar-track"><div id="music-bar-fill"></div></div></div>
 <div class="reveal"><div class="slides">
 
 <!-- SLIDE 1: GLOBE INTRO -->
@@ -4113,35 +4117,26 @@ function startBgMusic(){
   var a=_bg();
   if(!a)return;
   a.muted=bgMuted;
-  /* Only restart from beginning if the track hasn't started yet (currentTime===0)
-     or has already ended. If it's mid-play just let it continue. */
+  startMusicBar();
   var needsStart=a.paused&&(a.currentTime===0||a.ended);
+  if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
   if(needsStart){
     a.volume=0;
     a.currentTime=0;
     a.play().catch(function(){});
-    if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
-    bgFadeIn=setInterval(function(){
-      var b=_bg();
-      if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
-      b.volume=Math.min(0.75,b.volume+0.015);
-      if(b.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
-    },80);
-  } else if(!a.paused&&a.volume<0.75){
-    /* Already playing (user navigated between slides 2+): just restore volume */
-    if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
-    bgFadeIn=setInterval(function(){
-      var b=_bg();
-      if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
-      b.volume=Math.min(0.75,b.volume+0.015);
-      if(b.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
-    },80);
   }
+  bgFadeIn=setInterval(function(){
+    var b=_bg();
+    if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
+    b.volume=Math.min(0.75,b.volume+0.015);
+    if(b.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
+  },80);
 }
 
 function stopBgMusic(){
   if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
   if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
+  stopMusicBar();
   var a=_bg();
   if(!a)return;
   bgFadeOut=setInterval(function(){
@@ -4154,6 +4149,28 @@ function stopBgMusic(){
       b.currentTime=0;
     }
   },80);
+}
+
+/* ── Music progress bar ─────────────────────────────── */
+var _mBarTimer=null;
+function startMusicBar(){
+  var wrap=document.getElementById('music-bar-wrap');
+  if(wrap)wrap.style.opacity='1';
+  if(_mBarTimer)return;
+  _mBarTimer=setInterval(function(){
+    var a=_bg();
+    var fill=document.getElementById('music-bar-fill');
+    if(!fill)return;
+    if(!a||!a.duration||isNaN(a.duration)){return;}
+    fill.style.width=(a.currentTime/a.duration*100)+'%';
+  },500);
+}
+function stopMusicBar(){
+  var wrap=document.getElementById('music-bar-wrap');
+  if(wrap)wrap.style.opacity='0';
+  if(_mBarTimer){clearInterval(_mBarTimer);_mBarTimer=null;}
+  var fill=document.getElementById('music-bar-fill');
+  if(fill)fill.style.width='0%';
 }
 
 Reveal.on('slidechanged',function(e){
@@ -4364,7 +4381,8 @@ function _beginIntroAnimation(scr,_rocketAu){
       /* Play sound on the exact frame the rocket enters */
       if(!_rocketSounded){
         _rocketSounded=true;
-        if(_rocketAu){_rocketAu.currentTime=0;_rocketAu.play().catch(function(){});}
+        /* Skip silent intro of the audio file so whoosh lands on rocket entry */
+        if(_rocketAu){_rocketAu.currentTime=1.5;_rocketAu.play().catch(function(){});}
       }
       var rP=(progress-rStart)/(rEnd-rStart);
       var rx=-W*.12+rP*(W*1.24);
