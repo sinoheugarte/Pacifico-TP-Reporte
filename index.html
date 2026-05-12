@@ -3614,10 +3614,16 @@ function generateRevealPresentation(){
   .rec-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);margin-bottom:6px;text-align:left}
   .rec-arrow{color:var(--amber);font-size:15px;flex-shrink:0;font-weight:700}
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
+  #pres-controls{position:fixed;right:14px;bottom:80px;z-index:9999;display:flex;flex-direction:column;gap:10px;align-items:center}
+  .pres-btn{background:rgba(10,22,40,0.85);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.5);color:#fff;transition:transform .12s;padding:0;line-height:1}
+  .pres-btn:hover{transform:scale(1.12)}
 </style>
 </head><body>
-<button id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar música" style="position:fixed;bottom:20px;right:90px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">🔊</button>
-<button id="closeBtn" onclick="window.close()" title="Cerrar presentación" style="position:fixed;bottom:20px;right:142px;z-index:9999;background:rgba(10,22,40,0.82);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.45);transition:transform .12s,opacity .12s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='scale(1)'">✕</button>
+<div id="pres-controls">
+  <button class="pres-btn" onclick="window.close()" title="Cerrar presentación">✕</button>
+  <button class="pres-btn" id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar">🔊</button>
+  <button class="pres-btn" id="pauseBtn" onclick="toggleBgPause()" title="Pausar / Reanudar música">⏸</button>
+</div>
 <div class="reveal"><div class="slides">
 
 <!-- SLIDE 1: GLOBE INTRO -->
@@ -4058,7 +4064,7 @@ Reveal.on('ready',function(){
 /* ── Background music (slides 2 → end) ──────────────────────────────── */
 /* Audio lives in the main window (created with Live button gesture),
    controlled here via window.opener._presBgAudio — same pattern as heartbeat. */
-var bgFadeIn=null,bgFadeOut=null,bgMuted=false;
+var bgFadeIn=null,bgFadeOut=null,bgMuted=false,bgPaused=false;
 function _bg(){try{return window.opener&&window.opener._presBgAudio||null;}catch(e){return null;}}
 
 function toggleMute(){
@@ -4069,12 +4075,37 @@ function toggleMute(){
   if(btn)btn.textContent=bgMuted?'🔇':'🔊';
 }
 
+function toggleBgPause(){
+  var a=_bg();
+  bgPaused=!bgPaused;
+  var btn=document.getElementById('pauseBtn');
+  if(bgPaused){
+    if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
+    if(a&&!a.paused)a.pause();
+    if(btn)btn.textContent='▶';
+  } else {
+    if(a){a.muted=bgMuted;a.play().catch(function(){});}
+    bgFadeIn=setInterval(function(){
+      var b=_bg();
+      if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
+      b.volume=Math.min(0.75,b.volume+0.015);
+      if(b.volume>=0.75){clearInterval(bgFadeIn);bgFadeIn=null;}
+    },80);
+    if(btn)btn.textContent='⏸';
+  }
+}
+
 function startBgMusic(){
+  bgPaused=false;
+  var btn=document.getElementById('pauseBtn');if(btn)btn.textContent='⏸';
+  if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
+  if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
   var a=_bg();
   if(!a)return;
-  if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
   a.muted=bgMuted;
-  if(a.paused)a.play().catch(function(){});
+  a.currentTime=0;
+  a.volume=0;
+  a.play().catch(function(){});
   bgFadeIn=setInterval(function(){
     var b=_bg();
     if(!b){clearInterval(bgFadeIn);bgFadeIn=null;return;}
@@ -4084,14 +4115,19 @@ function startBgMusic(){
 }
 
 function stopBgMusic(){
-  var a=_bg();
   if(bgFadeIn){clearInterval(bgFadeIn);bgFadeIn=null;}
+  if(bgFadeOut){clearInterval(bgFadeOut);bgFadeOut=null;}
+  var a=_bg();
   if(!a)return;
   bgFadeOut=setInterval(function(){
     var b=_bg();
     if(!b){clearInterval(bgFadeOut);bgFadeOut=null;return;}
-    b.volume=Math.max(0,b.volume-0.025);
-    if(b.volume<=0){clearInterval(bgFadeOut);bgFadeOut=null;}
+    b.volume=Math.max(0,b.volume-0.04);
+    if(b.volume<=0){
+      clearInterval(bgFadeOut);bgFadeOut=null;
+      b.pause();
+      b.currentTime=0;
+    }
   },80);
 }
 
