@@ -4281,6 +4281,13 @@ function _beginIntroAnimation(scr,_rocketAu){
   var _bgGrad=null;
   /* Cached text canvas — shadowBlur se aplica una sola vez, luego drawImage por frame */
   var _textOC=null;
+  /* Cached star canvas — 90 arc+fill → 1 drawImage */
+  var _starOC=null;
+  /* Cached nebula canvas — radialGradient fill → 1 drawImage */
+  var _nebOC=null;
+  /* Cached rocket canvas — 5 gradients → 1 drawImage */
+  var _rocketOC=null;
+
   function _buildTextCanvas(){
     var fs=Math.min(W*0.88/(24*0.65),36);
     var oc=document.createElement('canvas');
@@ -4297,12 +4304,46 @@ function _beginIntroAnimation(scr,_rocketAu){
     ox.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A N S P O R T E',W*.5,H*.5+fs*.25);
     return oc;
   }
+  function _buildStarCanvas(){
+    var oc=document.createElement('canvas');
+    oc.width=W;oc.height=H;
+    var ox=oc.getContext('2d');
+    ox.fillStyle='#fff';
+    stars.forEach(function(s){
+      ox.globalAlpha=0.4+0.6*s.bri;
+      ox.beginPath();ox.arc(s.sx,s.sy,(1.2+s.bri*1.8)*.5,0,Math.PI*2);ox.fill();
+    });
+    return oc;
+  }
+  function _buildNebCanvas(){
+    var oc=document.createElement('canvas');
+    oc.width=W;oc.height=H;
+    var ox=oc.getContext('2d');
+    for(var ni=0;ni<nebulaCount;ni++){
+      var n=nebulae[ni];
+      var gr=ox.createRadialGradient(n.x*W,n.y*H,0,n.x*W,n.y*H,n.r*Math.max(W,H));
+      gr.addColorStop(0,n.c+'0.45)');gr.addColorStop(1,'rgba(0,0,0,0)');
+      ox.fillStyle=gr;ox.fillRect(0,0,W,H);
+    }
+    return oc;
+  }
+  function _buildRocketCanvas(){
+    var sc=Math.min(W,H)/520;
+    /* cohete: local x de -70 a 60, local y de -36 a 36 */
+    var padX=Math.ceil(72*sc)+2,padY=Math.ceil(38*sc)+2;
+    var rW=Math.ceil(130*sc)+padX+2,rH=padY*2;
+    var oc=document.createElement('canvas');
+    oc.width=rW;oc.height=rH;
+    oc._ox=padX;oc._oy=padY; // offset del origen dentro del canvas
+    var octx=oc.getContext('2d');
+    drawRocket(octx,padX,padY,sc,1.0);
+    return oc;
+  }
 
   function resize(){
     W=cv.width=window.innerWidth;
     H=cv.height=window.innerHeight;
-    _bgGrad=null;
-    _textOC=null; // invalidar canvas de texto cacheado
+    _bgGrad=null;_textOC=null;_starOC=null;_nebOC=null;_rocketOC=null;
     updateStarPos();
   }
   resize();
@@ -4323,48 +4364,48 @@ function _beginIntroAnimation(scr,_rocketAu){
 
   function ease(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
 
-  function drawRocket(cx,cy,scale,alpha){
-    ctx.save();
-    ctx.globalAlpha=alpha;
-    ctx.translate(cx,cy);
-    ctx.scale(scale,scale);
+  function drawRocket(tc,cx,cy,scale,alpha){
+    tc.save();
+    tc.globalAlpha=alpha;
+    tc.translate(cx,cy);
+    tc.scale(scale,scale);
 
-    var eg=ctx.createLinearGradient(-70,0,-10,0);
+    var eg=tc.createLinearGradient(-70,0,-10,0);
     eg.addColorStop(0,'rgba(255,140,0,0)');
     eg.addColorStop(.4,'rgba(255,200,60,.9)');
     eg.addColorStop(1,'rgba(255,255,200,0)');
-    ctx.beginPath();
-    ctx.moveTo(-10,-10);ctx.lineTo(-70,0);ctx.lineTo(-10,10);
-    ctx.closePath();ctx.fillStyle=eg;ctx.fill();
+    tc.beginPath();
+    tc.moveTo(-10,-10);tc.lineTo(-70,0);tc.lineTo(-10,10);
+    tc.closePath();tc.fillStyle=eg;tc.fill();
 
-    var bg=ctx.createLinearGradient(0,-18,0,18);
+    var bg=tc.createLinearGradient(0,-18,0,18);
     bg.addColorStop(0,'#e2e8f0');bg.addColorStop(1,'#94a3b8');
-    ctx.beginPath();
-    ctx.moveTo(60,0);ctx.bezierCurveTo(60,-4,10,-18,-10,-18);
-    ctx.lineTo(-10,18);ctx.bezierCurveTo(10,18,60,4,60,0);
-    ctx.closePath();ctx.fillStyle=bg;ctx.fill();
+    tc.beginPath();
+    tc.moveTo(60,0);tc.bezierCurveTo(60,-4,10,-18,-10,-18);
+    tc.lineTo(-10,18);tc.bezierCurveTo(10,18,60,4,60,0);
+    tc.closePath();tc.fillStyle=bg;tc.fill();
 
-    var ng=ctx.createLinearGradient(40,-12,60,0);
+    var ng=tc.createLinearGradient(40,-12,60,0);
     ng.addColorStop(0,'#f59e0b');ng.addColorStop(1,'#d97706');
-    ctx.beginPath();
-    ctx.moveTo(60,0);ctx.bezierCurveTo(60,-4,44,-10,40,-12);
-    ctx.lineTo(40,12);ctx.bezierCurveTo(44,10,60,4,60,0);
-    ctx.closePath();ctx.fillStyle=ng;ctx.fill();
+    tc.beginPath();
+    tc.moveTo(60,0);tc.bezierCurveTo(60,-4,44,-10,40,-12);
+    tc.lineTo(40,12);tc.bezierCurveTo(44,10,60,4,60,0);
+    tc.closePath();tc.fillStyle=ng;tc.fill();
 
-    var wg=ctx.createRadialGradient(18,-4,1,18,-4,8);
+    var wg=tc.createRadialGradient(18,-4,1,18,-4,8);
     wg.addColorStop(0,'#bfdbfe');wg.addColorStop(1,'#1e40af');
-    ctx.beginPath();ctx.ellipse(18,-4,8,7,0,0,Math.PI*2);
-    ctx.fillStyle=wg;ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.stroke();
+    tc.beginPath();tc.ellipse(18,-4,8,7,0,0,Math.PI*2);
+    tc.fillStyle=wg;tc.fill();
+    tc.strokeStyle='rgba(255,255,255,.4)';tc.lineWidth=1;tc.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(-10,-18);ctx.lineTo(-30,-36);ctx.lineTo(-10,-10);
-    ctx.closePath();ctx.fillStyle='#475569';ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-10,18);ctx.lineTo(-30,36);ctx.lineTo(-10,10);
-    ctx.closePath();ctx.fillStyle='#475569';ctx.fill();
+    tc.beginPath();
+    tc.moveTo(-10,-18);tc.lineTo(-30,-36);tc.lineTo(-10,-10);
+    tc.closePath();tc.fillStyle='#475569';tc.fill();
+    tc.beginPath();
+    tc.moveTo(-10,18);tc.lineTo(-30,36);tc.lineTo(-10,10);
+    tc.closePath();tc.fillStyle='#475569';tc.fill();
 
-    ctx.restore();
+    tc.restore();
   }
 
   function frame(ts){
@@ -4382,22 +4423,17 @@ function _beginIntroAnimation(scr,_rocketAu){
     }
     ctx.fillStyle=_bgGrad;ctx.fillRect(0,0,W,H);
 
-    /* Nebulae */
-    for(var ni=0;ni<nebulaCount;ni++){
-      var n=nebulae[ni];
-      var nalpha=Math.min(progress*2,.45)*(0.7+0.3*Math.sin(t*.4+ni));
-      var gr=ctx.createRadialGradient(n.x*W,n.y*H,0,n.x*W,n.y*H,n.r*Math.max(W,H));
-      gr.addColorStop(0,n.c+nalpha+')');
-      gr.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
-    }
+    /* Nebulae — canvas pre-renderizado, 1 drawImage por frame */
+    if(!_nebOC)_nebOC=_buildNebCanvas();
+    var nalpha=Math.min(progress*2,1)*(0.7+0.3*Math.sin(t*.4));
+    ctx.save();ctx.globalAlpha=nalpha;ctx.drawImage(_nebOC,0,0);ctx.restore();
 
-    /* Stars — avoid save()/restore() per star; use direct globalAlpha assignment.
-       On mobile skip warp stretch (3× cheaper: arc+fill vs save+stroke+restore). */
+    /* Stars — canvas pre-renderizado (1 drawImage) con shimmer colectivo.
+       En escritorio durante el warp se dibujan individualmente para el efecto de estiramiento. */
     var warpP=Math.max(0,1-progress/.55);
-    var savedAlpha=ctx.globalAlpha;
     if(warpP>.01&&!isSmall){
-      /* Desktop warp: stretch lines from center */
+      /* Desktop warp: trazar líneas individuales desde el centro */
+      var savedAlpha=ctx.globalAlpha;
       ctx.strokeStyle='#fff';
       stars.forEach(function(s){
         var size=1.2+s.bri*1.8;
@@ -4406,26 +4442,18 @@ function _beginIntroAnimation(scr,_rocketAu){
         var stretch=1+warpP*18*(1-s.z);
         ctx.globalAlpha=(.4+.6*s.bri)*twinkle*.85;
         ctx.lineWidth=size*.7;
-        ctx.beginPath();
-        ctx.moveTo(s.sx,s.sy);
-        ctx.lineTo(W*.5+dx*stretch,H*.5+dy*stretch);
-        ctx.stroke();
+        ctx.beginPath();ctx.moveTo(s.sx,s.sy);
+        ctx.lineTo(W*.5+dx*stretch,H*.5+dy*stretch);ctx.stroke();
       });
+      ctx.globalAlpha=savedAlpha;
     } else {
-      /* Static twinkle dots (mobile always, desktop post-warp) */
-      ctx.fillStyle='#fff';
-      stars.forEach(function(s){
-        var size=1.2+s.bri*1.8;
-        var twinkle=.5+.5*Math.sin(t*3.2+s.bri*9);
-        ctx.globalAlpha=(.4+.6*s.bri)*twinkle;
-        ctx.beginPath();
-        ctx.arc(s.sx,s.sy,size*.5,0,Math.PI*2);
-        ctx.fill();
-      });
+      /* Móvil y post-warp: un solo drawImage con brillo suave colectivo */
+      if(!_starOC)_starOC=_buildStarCanvas();
+      var shimmer=0.6+0.4*Math.sin(t*1.6);
+      ctx.save();ctx.globalAlpha=shimmer;ctx.drawImage(_starOC,0,0);ctx.restore();
     }
-    ctx.globalAlpha=savedAlpha;
 
-    /* Rocket — enters at t=1.2s, exits at t=6.5s */
+    /* Rocket — canvas pre-renderizado, 1 drawImage por frame mientras está visible */
     var rStart=1.2/10,rEnd=6.5/10;
     if(progress>rStart&&progress<rEnd){
       if(!_rocketSounded){
@@ -4435,9 +4463,11 @@ function _beginIntroAnimation(scr,_rocketAu){
       var rP=(progress-rStart)/(rEnd-rStart);
       var rx=-W*.12+rP*(W*1.24);
       var ry=H*.42+Math.sin(rP*Math.PI)*H*.06;
-      var scale=Math.min(W,H)/520;
       var rAlpha=Math.min(rP*8,1)*Math.min((1-rP)*8,1);
-      drawRocket(rx,ry,scale,rAlpha);
+      if(!_rocketOC)_rocketOC=_buildRocketCanvas();
+      ctx.save();ctx.globalAlpha=rAlpha;
+      ctx.drawImage(_rocketOC,Math.round(rx-_rocketOC._ox),Math.round(ry-_rocketOC._oy));
+      ctx.restore();
     }
 
     /* Title text — se renderiza con shadowBlur a un canvas offline UNA vez,
