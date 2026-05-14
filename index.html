@@ -4431,11 +4431,11 @@ function _beginIntroAnimation(scr,_rocketAu){
       ctx.globalAlpha=textAlpha;
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font='700 '+fs+'px "DM Sans",sans-serif';
-      ctx.shadowColor='rgba(245,158,11,.9)';
-      ctx.shadowBlur=28;
+      /* shadowBlur es muy costoso en GPU móvil — se omite en pantalla pequeña */
+      if(!isSmall){ctx.shadowColor='rgba(245,158,11,.9)';ctx.shadowBlur=28;}
       ctx.fillStyle='#f59e0b';
       ctx.fillText('PACÍFICO  TRANSPORTATION',W*.5,H*.5-fs*.55);
-      ctx.shadowBlur=10;
+      if(!isSmall){ctx.shadowBlur=10;}
       ctx.fillStyle='rgba(255,255,255,.82)';
       ctx.font='400 '+(fs*.42)+'px "DM Sans",sans-serif';
       ctx.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A N S P O R T E',W*.5,H*.5+fs*.25);
