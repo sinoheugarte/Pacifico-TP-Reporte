@@ -4262,37 +4262,43 @@ function _beginIntroAnimation(scr,_rocketAu){
   var cv=document.getElementById('intro-canvas');
   var W,H,ctx,raf,t=0;
 
+  /* Detect mobile/small screen to reduce workload */
+  var isSmall=Math.min(window.innerWidth,window.innerHeight)<560;
+
+  /* Fewer stars on mobile: 90 vs 260 */
+  var NSTARS=isSmall?90:260;
+  function mkStar(){
+    return{x:(Math.random()-.5)*2,y:(Math.random()-.5)*2,z:Math.random(),bri:Math.random(),sx:0,sy:0};
+  }
+  var stars=Array.from({length:NSTARS},function(){return mkStar();});
+
+  /* Pre-compute pixel positions; called after every resize */
+  function updateStarPos(){
+    stars.forEach(function(s){s.sx=(s.x*.5+.5)*W;s.sy=(s.y*.5+.5)*H;});
+  }
+
+  /* Cached background gradient — recreated only on resize */
+  var _bgGrad=null;
+
   function resize(){
     W=cv.width=window.innerWidth;
     H=cv.height=window.innerHeight;
+    _bgGrad=null;
+    updateStarPos();
   }
   resize();
   window.addEventListener('resize',resize);
   ctx=cv.getContext('2d');
 
-
-  /* Stars */
-  var NSTARS=260;
-  var stars=Array.from({length:NSTARS},function(){return mkStar();});
-  function mkStar(){
-    return {
-      x:(Math.random()-0.5)*2,y:(Math.random()-0.5)*2,
-      z:Math.random(),bri:Math.random()
-    };
-  }
-
-  /* Nebulae */
+  /* Nebulae — 1 on mobile (each does a full-screen fillRect) */
   var nebulae=[
     {x:.28,y:.35,r:.38,c:'rgba(80,40,160,'},
     {x:.72,y:.62,r:.32,c:'rgba(20,80,160,'},
     {x:.5,y:.5,r:.55,c:'rgba(160,30,80,'}
   ];
+  var nebulaCount=isSmall?1:3;
 
-  /* Rocket shape drawn as canvas path, moving left→right */
-  var rocketT=0; // 0..1 across screen
-  var _rocketSounded=false; // fire sound exactly once when rocket enters
-
-  /* Text phases */
+  var _rocketSounded=false;
   var TOTAL_MS=10000;
   var start=null;
 
@@ -4304,17 +4310,14 @@ function _beginIntroAnimation(scr,_rocketAu){
     ctx.translate(cx,cy);
     ctx.scale(scale,scale);
 
-    /* Exhaust flame */
     var eg=ctx.createLinearGradient(-70,0,-10,0);
     eg.addColorStop(0,'rgba(255,140,0,0)');
     eg.addColorStop(.4,'rgba(255,200,60,.9)');
     eg.addColorStop(1,'rgba(255,255,200,0)');
     ctx.beginPath();
     ctx.moveTo(-10,-10);ctx.lineTo(-70,0);ctx.lineTo(-10,10);
-    ctx.closePath();
-    ctx.fillStyle=eg;ctx.fill();
+    ctx.closePath();ctx.fillStyle=eg;ctx.fill();
 
-    /* Body */
     var bg=ctx.createLinearGradient(0,-18,0,18);
     bg.addColorStop(0,'#e2e8f0');bg.addColorStop(1,'#94a3b8');
     ctx.beginPath();
@@ -4322,7 +4325,6 @@ function _beginIntroAnimation(scr,_rocketAu){
     ctx.lineTo(-10,18);ctx.bezierCurveTo(10,18,60,4,60,0);
     ctx.closePath();ctx.fillStyle=bg;ctx.fill();
 
-    /* Nose cone */
     var ng=ctx.createLinearGradient(40,-12,60,0);
     ng.addColorStop(0,'#f59e0b');ng.addColorStop(1,'#d97706');
     ctx.beginPath();
@@ -4330,18 +4332,15 @@ function _beginIntroAnimation(scr,_rocketAu){
     ctx.lineTo(40,12);ctx.bezierCurveTo(44,10,60,4,60,0);
     ctx.closePath();ctx.fillStyle=ng;ctx.fill();
 
-    /* Window */
     var wg=ctx.createRadialGradient(18,-4,1,18,-4,8);
     wg.addColorStop(0,'#bfdbfe');wg.addColorStop(1,'#1e40af');
     ctx.beginPath();ctx.ellipse(18,-4,8,7,0,0,Math.PI*2);
     ctx.fillStyle=wg;ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;ctx.stroke();
 
-    /* Fin top */
     ctx.beginPath();
     ctx.moveTo(-10,-18);ctx.lineTo(-30,-36);ctx.lineTo(-10,-10);
     ctx.closePath();ctx.fillStyle='#475569';ctx.fill();
-    /* Fin bottom */
     ctx.beginPath();
     ctx.moveTo(-10,18);ctx.lineTo(-30,36);ctx.lineTo(-10,10);
     ctx.closePath();ctx.fillStyle='#475569';ctx.fill();
@@ -4355,60 +4354,63 @@ function _beginIntroAnimation(scr,_rocketAu){
     var progress=Math.min(elapsed/TOTAL_MS,1);
     t=elapsed/1000;
 
-    ctx.clearRect(0,0,W,H);
-
-    /* Deep space background */
-    var bg=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.75);
-    bg.addColorStop(0,'#06001a');
-    bg.addColorStop(.5,'#03000f');
-    bg.addColorStop(1,'#000');
-    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    /* Background — use cached gradient (no reallocation per frame) */
+    if(!_bgGrad){
+      _bgGrad=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.75);
+      _bgGrad.addColorStop(0,'#06001a');
+      _bgGrad.addColorStop(.5,'#03000f');
+      _bgGrad.addColorStop(1,'#000');
+    }
+    ctx.fillStyle=_bgGrad;ctx.fillRect(0,0,W,H);
 
     /* Nebulae */
-    nebulae.forEach(function(n,i){
-      var alpha=Math.min(progress*2,.45)*(0.7+0.3*Math.sin(t*.4+i));
+    for(var ni=0;ni<nebulaCount;ni++){
+      var n=nebulae[ni];
+      var nalpha=Math.min(progress*2,.45)*(0.7+0.3*Math.sin(t*.4+ni));
       var gr=ctx.createRadialGradient(n.x*W,n.y*H,0,n.x*W,n.y*H,n.r*Math.max(W,H));
-      gr.addColorStop(0,n.c+alpha+')');
+      gr.addColorStop(0,n.c+nalpha+')');
       gr.addColorStop(1,'rgba(0,0,0,0)');
       ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
-    });
+    }
 
-    /* Stars — warp stretch for first .6s, then static twinkle */
+    /* Stars — avoid save()/restore() per star; use direct globalAlpha assignment.
+       On mobile skip warp stretch (3× cheaper: arc+fill vs save+stroke+restore). */
     var warpP=Math.max(0,1-progress/.55);
-    stars.forEach(function(s){
-      var sx=(s.x*.5+.5)*W, sy=(s.y*.5+.5)*H;
-      var size=1.2+s.bri*1.8;
-      var twinkle=.5+.5*Math.sin(t*3.2+s.bri*9);
-      var alpha=(.4+.6*s.bri)*twinkle;
-
-      if(warpP>.01){
-        /* stretch from center */
-        var dx=sx-W*.5, dy=sy-H*.5;
+    var savedAlpha=ctx.globalAlpha;
+    if(warpP>.01&&!isSmall){
+      /* Desktop warp: stretch lines from center */
+      ctx.strokeStyle='#fff';
+      stars.forEach(function(s){
+        var size=1.2+s.bri*1.8;
+        var twinkle=.5+.5*Math.sin(t*3.2+s.bri*9);
+        var dx=s.sx-W*.5,dy=s.sy-H*.5;
         var stretch=1+warpP*18*(1-s.z);
-        ctx.save();
-        ctx.globalAlpha=alpha*.85;
-        ctx.strokeStyle='#fff';
+        ctx.globalAlpha=(.4+.6*s.bri)*twinkle*.85;
         ctx.lineWidth=size*.7;
         ctx.beginPath();
-        ctx.moveTo(W*.5+dx,H*.5+dy);
+        ctx.moveTo(s.sx,s.sy);
         ctx.lineTo(W*.5+dx*stretch,H*.5+dy*stretch);
         ctx.stroke();
-        ctx.restore();
-      } else {
+      });
+    } else {
+      /* Static twinkle dots (mobile always, desktop post-warp) */
+      ctx.fillStyle='#fff';
+      stars.forEach(function(s){
+        var size=1.2+s.bri*1.8;
+        var twinkle=.5+.5*Math.sin(t*3.2+s.bri*9);
+        ctx.globalAlpha=(.4+.6*s.bri)*twinkle;
         ctx.beginPath();
-        ctx.arc(sx,sy,size*.5,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,255,255,'+alpha+')';
+        ctx.arc(s.sx,s.sy,size*.5,0,Math.PI*2);
         ctx.fill();
-      }
-    });
+      });
+    }
+    ctx.globalAlpha=savedAlpha;
 
     /* Rocket — enters at t=1.2s, exits at t=6.5s */
-    var rStart=1.2/10, rEnd=6.5/10;
+    var rStart=1.2/10,rEnd=6.5/10;
     if(progress>rStart&&progress<rEnd){
-      /* Play sound on the exact frame the rocket enters */
       if(!_rocketSounded){
         _rocketSounded=true;
-        /* Skip silent intro of the audio file so whoosh lands on rocket entry */
         if(_rocketAu){_rocketAu.currentTime=1.5;_rocketAu.play().catch(function(){});}
       }
       var rP=(progress-rStart)/(rEnd-rStart);
@@ -4424,20 +4426,15 @@ function _beginIntroAnimation(scr,_rocketAu){
     if(progress>textStart){
       var tp=Math.min((progress-textStart)/(.2),1);
       var textAlpha=ease(tp)*Math.min((1-progress)/.1,1);
-      /* Cap font-size so "PACÍFICO  TRANSPORTATION" (24 bold chars, ~0.65 em each)
-         always fits in 88 % of the canvas width regardless of DM Sans load state */
       var fs=Math.min(W*0.88/(24*0.65),36);
       ctx.save();
       ctx.globalAlpha=textAlpha;
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font='700 '+fs+'px "DM Sans",sans-serif';
-
-      /* Glow */
       ctx.shadowColor='rgba(245,158,11,.9)';
       ctx.shadowBlur=28;
       ctx.fillStyle='#f59e0b';
       ctx.fillText('PACÍFICO  TRANSPORTATION',W*.5,H*.5-fs*.55);
-
       ctx.shadowBlur=10;
       ctx.fillStyle='rgba(255,255,255,.82)';
       ctx.font='400 '+(fs*.42)+'px "DM Sans",sans-serif';
@@ -4448,7 +4445,6 @@ function _beginIntroAnimation(scr,_rocketAu){
     if(progress<1){
       raf=requestAnimationFrame(frame);
     } else {
-      /* Fade out and remove */
       scr.classList.add('fade-out');
       setTimeout(function(){scr.style.display='none';},950);
     }
