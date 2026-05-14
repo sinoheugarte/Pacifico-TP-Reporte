@@ -3615,20 +3615,18 @@ function generateRevealPresentation(){
   .rec-arrow{color:var(--amber);font-size:15px;flex-shrink:0;font-weight:700}
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
   /* ── Media player widget ── */
-  #media-player{position:fixed;bottom:72px;left:16px;z-index:9999;
-    background:transparent;backdrop-filter:none;
-    border:none;border-radius:18px;
-    padding:10px 16px 12px;width:240px;
-    box-shadow:0 6px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(245,158,11,0.08);
-    font-family:'DM Sans',sans-serif;color:#fff;user-select:none}
-  #mp-label{font-size:10px;letter-spacing:.14em;text-align:center;
-    color:rgba(245,158,11,.7);text-transform:uppercase;margin-bottom:7px;font-weight:600}
-  #mp-bar-wrap{width:100%;height:4px;background:rgba(255,255,255,.12);
-    border-radius:2px;overflow:hidden;margin-bottom:10px;cursor:pointer}
-  #mp-bar-fill{height:100%;width:0%;border-radius:2px;
-    background:linear-gradient(90deg,#92400e,#f59e0b,#fde68a);
-    transition:width .5s linear}
-  #mp-controls{display:flex;align-items:center;justify-content:center;gap:14px}
+  #media-player{position:fixed;bottom:80px;right:16px;z-index:9999;
+    background:transparent;backdrop-filter:none;border:none;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    font-family:'DM Sans',sans-serif;color:#fff;user-select:none;width:44px}
+  #mp-label{font-size:9px;letter-spacing:.08em;text-align:center;writing-mode:vertical-rl;
+    color:rgba(245,158,11,.7);text-transform:uppercase;font-weight:600;line-height:1}
+  #mp-bar-wrap{width:4px;height:120px;background:rgba(255,255,255,.12);
+    border-radius:2px;overflow:hidden;cursor:pointer;position:relative}
+  #mp-bar-fill{width:100%;height:0%;border-radius:2px;position:absolute;bottom:0;
+    background:linear-gradient(0deg,#92400e,#f59e0b,#fde68a);
+    transition:height .5s linear}
+  #mp-controls{display:flex;flex-direction:column;align-items:center;gap:8px}
   .mp-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
     border-radius:50%;width:38px;height:38px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
@@ -4183,14 +4181,14 @@ function startMusicBar(){
     var time=document.getElementById('mp-time');
     if(!fill)return;
     if(!a||!a.duration||isNaN(a.duration))return;
-    fill.style.width=(a.currentTime/a.duration*100)+'%';
+    fill.style.height=(a.currentTime/a.duration*100)+'%';
     if(time)time.textContent=_fmtTime(a.currentTime);
   },500);
 }
 function stopMusicBar(){
   if(_mBarTimer){clearInterval(_mBarTimer);_mBarTimer=null;}
   var fill=document.getElementById('mp-bar-fill');
-  if(fill)fill.style.width='0%';
+  if(fill)fill.style.height='0%';
   var time=document.getElementById('mp-time');
   if(time)time.textContent='';
   document.getElementById('mp-label').textContent='♪ Pacífico Transportation';
