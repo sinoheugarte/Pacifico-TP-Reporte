@@ -3614,20 +3614,40 @@ function generateRevealPresentation(){
   .rec-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);margin-bottom:6px;text-align:left}
   .rec-arrow{color:var(--amber);font-size:15px;flex-shrink:0;font-weight:700}
   .rec-txt{font-size:12px;opacity:.85;line-height:1.4}
-  #pres-controls{position:fixed;right:14px;bottom:80px;z-index:9999;display:flex;flex-direction:column;gap:10px;align-items:center}
-  .pres-btn{background:rgba(10,22,40,0.85);border:1.5px solid rgba(255,255,255,0.22);border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;backdrop-filter:blur(6px);box-shadow:0 2px 12px rgba(0,0,0,0.5);color:#fff;transition:transform .12s;padding:0;line-height:1}
-  .pres-btn:hover{transform:scale(1.12)}
-  #music-bar-wrap{position:fixed;top:0;left:0;right:0;z-index:9998;height:4px;opacity:0;transition:opacity .6s}
-  #music-bar-track{width:100%;height:100%;background:rgba(255,255,255,.12)}
-  #music-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#b8860b,#f5c842,#fde68a);transition:width .5s linear}
+  /* ── Media player widget ── */
+  #media-player{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9999;
+    background:rgba(8,18,34,0.9);backdrop-filter:blur(14px);
+    border:1.5px solid rgba(255,255,255,0.15);border-radius:18px;
+    padding:10px 16px 12px;width:260px;
+    box-shadow:0 6px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(245,158,11,0.08);
+    font-family:'DM Sans',sans-serif;color:#fff;user-select:none}
+  #mp-label{font-size:10px;letter-spacing:.14em;text-align:center;
+    color:rgba(245,158,11,.7);text-transform:uppercase;margin-bottom:7px;font-weight:600}
+  #mp-bar-wrap{width:100%;height:4px;background:rgba(255,255,255,.12);
+    border-radius:2px;overflow:hidden;margin-bottom:10px;cursor:pointer}
+  #mp-bar-fill{height:100%;width:0%;border-radius:2px;
+    background:linear-gradient(90deg,#92400e,#f59e0b,#fde68a);
+    transition:width .5s linear}
+  #mp-controls{display:flex;align-items:center;justify-content:center;gap:14px}
+  .mp-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    border-radius:50%;width:38px;height:38px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;color:#fff;transition:background .15s,transform .12s;padding:0}
+  .mp-btn:hover{background:rgba(255,255,255,.18);transform:scale(1.1)}
+  .mp-btn.mp-close{font-size:13px;font-weight:700;color:rgba(255,255,255,.6)}
+  #mp-time{font-size:10px;color:rgba(255,255,255,.35);margin-left:4px;min-width:34px;text-align:right}
 </style>
 </head><body>
-<div id="pres-controls">
-  <button class="pres-btn" onclick="window.close()" title="Cerrar presentación">✕</button>
-  <button class="pres-btn" id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar">🔊</button>
-  <button class="pres-btn" id="pauseBtn" onclick="toggleBgPause()" title="Pausar / Reanudar música">⏸</button>
+<div id="media-player">
+  <div id="mp-label">♪ Pacífico Transportation</div>
+  <div id="mp-bar-wrap"><div id="mp-bar-fill"></div></div>
+  <div id="mp-controls">
+    <button class="mp-btn mp-close" onclick="window.close()" title="Cerrar presentación">✕</button>
+    <button class="mp-btn" id="muteBtn" onclick="toggleMute()" title="Silenciar / Activar">🔊</button>
+    <button class="mp-btn" id="pauseBtn" onclick="toggleBgPause()" title="Pausar / Reanudar">⏸</button>
+    <span id="mp-time"></span>
+  </div>
 </div>
-<div id="music-bar-wrap"><div id="music-bar-track"><div id="music-bar-fill"></div></div></div>
 <div class="reveal"><div class="slides">
 
 <!-- SLIDE 1: GLOBE INTRO -->
@@ -4153,24 +4173,27 @@ function stopBgMusic(){
 
 /* ── Music progress bar ─────────────────────────────── */
 var _mBarTimer=null;
+function _fmtTime(s){s=Math.floor(s||0);return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60);}
 function startMusicBar(){
-  var wrap=document.getElementById('music-bar-wrap');
-  if(wrap)wrap.style.opacity='1';
   if(_mBarTimer)return;
+  document.getElementById('mp-label').textContent='♪ On The Radioer';
   _mBarTimer=setInterval(function(){
     var a=_bg();
-    var fill=document.getElementById('music-bar-fill');
+    var fill=document.getElementById('mp-bar-fill');
+    var time=document.getElementById('mp-time');
     if(!fill)return;
-    if(!a||!a.duration||isNaN(a.duration)){return;}
+    if(!a||!a.duration||isNaN(a.duration))return;
     fill.style.width=(a.currentTime/a.duration*100)+'%';
+    if(time)time.textContent=_fmtTime(a.currentTime);
   },500);
 }
 function stopMusicBar(){
-  var wrap=document.getElementById('music-bar-wrap');
-  if(wrap)wrap.style.opacity='0';
   if(_mBarTimer){clearInterval(_mBarTimer);_mBarTimer=null;}
-  var fill=document.getElementById('music-bar-fill');
+  var fill=document.getElementById('mp-bar-fill');
   if(fill)fill.style.width='0%';
+  var time=document.getElementById('mp-time');
+  if(time)time.textContent='';
+  document.getElementById('mp-label').textContent='♪ Pacífico Transportation';
 }
 
 Reveal.on('slidechanged',function(e){
