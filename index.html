@@ -3585,7 +3585,7 @@ function generateRevealPresentation(){
   .kpi-box:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
   .kpi-val{font-size:48px;font-weight:800;line-height:1.1}
   .kpi-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.7;margin-top:8px}
-  .chart-container{background:rgba(255,255,255,.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,.1);max-width:800px;margin:10px auto}
+  .chart-container{background:rgba(255,255,255,.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,.1);max-width:800px;margin:10px auto;height:500px}
   .data-table{width:90%;margin:15px auto;border-collapse:collapse;font-size:16px}
   .data-table th{background:var(--amber);color:var(--navy);padding:10px 16px;text-align:left;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
   .data-table td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
@@ -3724,31 +3724,31 @@ function generateRevealPresentation(){
 <!-- SLIDE 4: ESTADO GRÁFICO -->
 <section data-transition="fade" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Distribución por <span class="gold">Estado</span></h2>
-  <div class="chart-container" style="height:380px"><canvas id="revChartStatus"></canvas></div>
+  <div class="chart-container" style="height:500px"><canvas id="revChartStatus"></canvas></div>
 </section>
 
 <!-- SLIDE 5: TRANSPORTISTAS -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Top <span class="gold">Transportistas</span></h2>
-  <div class="chart-container" style="height:380px"><canvas id="revChartTransp"></canvas></div>
+  <div class="chart-container" style="height:500px"><canvas id="revChartTransp"></canvas></div>
 </section>
 
 <!-- SLIDE 6: RUTAS -->
 <section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Top <span class="gold">Rutas</span></h2>
-  <div class="chart-container" style="height:380px"><canvas id="revChartRutas"></canvas></div>
+  <div class="chart-container" style="height:500px"><canvas id="revChartRutas"></canvas></div>
 </section>
 
 <!-- SLIDE 7: UNIDADES -->
 <section data-transition="fade" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Tipos de <span class="gold">Unidad</span></h2>
-  <div class="chart-container" style="height:380px"><canvas id="revChartUnidad"></canvas></div>
+  <div class="chart-container" style="height:500px"><canvas id="revChartUnidad"></canvas></div>
 </section>
 
 <!-- SLIDE 8: TENDENCIA -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Tendencia <span class="gold">Mensual</span></h2>
-  <div class="chart-container" style="height:380px"><canvas id="revChartMensual"></canvas></div>
+  <div class="chart-container" style="height:500px"><canvas id="revChartMensual"></canvas></div>
 </section>
 
 <!-- SLIDE 9: CARGA -->
@@ -3828,7 +3828,7 @@ Reveal.initialize({
   autoAnimateEasing:'ease-in-out', autoAnimateDuration:1,
   controls:true, progress:true, center:true,
   slideNumber:'c/t',
-  width:960, height:540, margin:0.04,
+  width:960, height:700, margin:0.04,
   minScale:0.1, maxScale:2.0,
   plugins:[]
 });
