@@ -4279,11 +4279,30 @@ function _beginIntroAnimation(scr,_rocketAu){
 
   /* Cached background gradient — recreated only on resize */
   var _bgGrad=null;
+  /* Cached text canvas — shadowBlur se aplica una sola vez, luego drawImage por frame */
+  var _textOC=null;
+  function _buildTextCanvas(){
+    var fs=Math.min(W*0.88/(24*0.65),36);
+    var oc=document.createElement('canvas');
+    oc.width=W;oc.height=H;
+    var ox=oc.getContext('2d');
+    ox.textAlign='center';ox.textBaseline='middle';
+    ox.font='700 '+fs+'px "DM Sans",sans-serif';
+    ox.shadowColor='rgba(245,158,11,.9)';ox.shadowBlur=28;
+    ox.fillStyle='#f59e0b';
+    ox.fillText('PACÍFICO  TRANSPORTATION',W*.5,H*.5-fs*.55);
+    ox.shadowBlur=10;
+    ox.fillStyle='rgba(255,255,255,.82)';
+    ox.font='400 '+(fs*.42)+'px "DM Sans",sans-serif';
+    ox.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A N S P O R T E',W*.5,H*.5+fs*.25);
+    return oc;
+  }
 
   function resize(){
     W=cv.width=window.innerWidth;
     H=cv.height=window.innerHeight;
     _bgGrad=null;
+    _textOC=null; // invalidar canvas de texto cacheado
     updateStarPos();
   }
   resize();
@@ -4421,24 +4440,16 @@ function _beginIntroAnimation(scr,_rocketAu){
       drawRocket(rx,ry,scale,rAlpha);
     }
 
-    /* Title text */
+    /* Title text — se renderiza con shadowBlur a un canvas offline UNA vez,
+       luego cada frame es un drawImage (una sola operación GPU sin recalcular blur) */
     var textStart=4.0/10;
     if(progress>textStart){
       var tp=Math.min((progress-textStart)/(.2),1);
       var textAlpha=ease(tp)*Math.min((1-progress)/.1,1);
-      var fs=Math.min(W*0.88/(24*0.65),36);
+      if(!_textOC)_textOC=_buildTextCanvas();
       ctx.save();
       ctx.globalAlpha=textAlpha;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.font='700 '+fs+'px "DM Sans",sans-serif';
-      /* shadowBlur es muy costoso en GPU móvil — se omite en pantalla pequeña */
-      if(!isSmall){ctx.shadowColor='rgba(245,158,11,.9)';ctx.shadowBlur=28;}
-      ctx.fillStyle='#f59e0b';
-      ctx.fillText('PACÍFICO  TRANSPORTATION',W*.5,H*.5-fs*.55);
-      if(!isSmall){ctx.shadowBlur=10;}
-      ctx.fillStyle='rgba(255,255,255,.82)';
-      ctx.font='400 '+(fs*.42)+'px "DM Sans",sans-serif';
-      ctx.fillText('S I S T E M A   D E   G E S T I Ó N   D E   T R A N S P O R T E',W*.5,H*.5+fs*.25);
+      ctx.drawImage(_textOC,0,0);
       ctx.restore();
     }
 
