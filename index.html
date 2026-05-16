@@ -30,6 +30,7 @@
   --shm:0 4px 16px rgba(0,0,0,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+@keyframes spin360{to{transform:rotate(360deg)}}
 html,body{height:100%}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
      min-height:100vh;max-width:480px;margin:0 auto;-webkit-font-smoothing:antialiased}
@@ -568,6 +569,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <div class="hdr-s" id="hdrS">Pacífico Transportation SAC</div>
   </div>
   <div class="sdot off" id="sdot" title="Estado OneDrive"></div>
+  <button class="hdr-btn" id="refreshBtn" onclick="refreshRecords()" title="Actualizar registros">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="17" height="17">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </svg>
+  </button>
   <button class="hdr-btn" onclick="toggleEM(event)" id="expBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -2290,6 +2297,13 @@ function galTo(i){if(i===galIdx)return;const img=document.getElementById('gimg')
 function showUp(t,s,p){document.getElementById('upOv').classList.add('on');setEl('upT',t);setEl('upS',s);setUpBar(p);}
 function setUpStep(s){setEl('upStep',s);} function setUpBar(p){document.getElementById('upBar').style.width=p+'%';} function hideUp(){document.getElementById('upOv').classList.remove('on');setEl('upStep','');}
 function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.className='sdot '+s;const m={ok:'OneDrive sincronizado',busy:'Sincronizando…',err:'Error OneDrive',off:'Sin conexión'};d.title=m[s]||s;}
+async function refreshRecords(){
+  const btn=document.getElementById('refreshBtn');
+  if(btn){btn.disabled=true;btn.style.animation='spin360 .8s linear infinite';}
+  try{await loadRecordsFromOD();}finally{
+    if(btn){btn.disabled=false;btn.style.animation='';}
+  }
+}
 
 
 
