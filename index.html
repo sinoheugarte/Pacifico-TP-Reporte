@@ -2972,51 +2972,55 @@ async function generatePDF(){
     const pdfNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
     for(const rec of pdfNeedPhotos){try{await loadPhotosForRec(rec);}catch(e){}}
     const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
-    const allPdfPhotos=[];
-    for(const rec of pdfPhotoRecs){
-      if(!rec.images?.length) continue;
-      rec.images.forEach(img=>allPdfPhotos.push({
-        img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
-        fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
-        trans:(rec.transportista||'—').slice(0,20), ruta:(rec.ruta||'—').slice(0,24)
-      }));
-    }
-    if(allPdfPhotos.length>0){
-      const PCOLS=3,PROWS=2,PER_PAGE=PCOLS*PROWS;
+    const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
+    if(pdfPhotoRecsF.length>0){
+      const PCOLS=3, PER_PAGE=6;
       const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
-      const miniHdrH=5, amberH=1, photoH=38, infoH=7, cellH=miniHdrH+amberH+photoH+infoH;
+      const photoH=Math.round(photoW*0.72); // ~42mm
+      const recHdrH=6, amberH=1, infoBarH=6;
       const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
+      const totalPdfPhotos=pdfPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
+      let pdfPhotoIdx=0;
       setUpStep('Generando páginas de fotos…'); setUpBar(78);
-      for(let pi=0;pi<allPdfPhotos.length;pi+=PER_PAGE){
-        const batch=allPdfPhotos.slice(pi,pi+PER_PAGE);
-        doc.addPage();
-        doc.setFillColor(15,35,64); doc.rect(0,0,W,14,'F');
-        doc.setFillColor(245,158,11); doc.rect(0,13,W,1,'F');
-        doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
-        doc.text('EVIDENCIA FOTOGRÁFICA',margin,9);
-        doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(148,163,184);
-        doc.text(`${pi+1}–${Math.min(pi+PER_PAGE,allPdfPhotos.length)} de ${allPdfPhotos.length} fotos`,W-margin,9,{align:'right'});
-        const py0=19;
-        batch.forEach((p,i)=>{
-          const col=i%PCOLS, row=Math.floor(i/PCOLS);
-          const px=margin+col*(photoW+pGap);
-          const py=py0+row*(cellH+pGap);
-          // Barra azul marino: "Orden · Viaje" + estado
-          doc.setFillColor(15,35,64); doc.rect(px,py,photoW,miniHdrH,'F');
-          doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(5.5);
-          doc.text(`Ord ${p.orden} · Viaje N° ${p.viaje}`,px+1.5,py+3.5);
-          const sc=stClrPdf[(p.status||'').toLowerCase()]||[245,158,11];
-          doc.setTextColor(...sc); doc.setFontSize(5);
-          doc.text(p.status,px+photoW-1.5,py+3.5,{align:'right'});
+      for(const rec of pdfPhotoRecsF){
+        const recPhotos=rec.images;
+        for(let pi=0;pi<recPhotos.length;pi+=PER_PAGE){
+          const batch=recPhotos.slice(pi,pi+PER_PAGE);
+          doc.addPage();
+          // Encabezado de página (título global)
+          doc.setFillColor(15,35,64); doc.rect(0,0,W,14,'F');
+          doc.setFillColor(245,158,11); doc.rect(0,13,W,1,'F');
+          doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+          doc.text('EVIDENCIA FOTOGRÁFICA',margin,9);
+          doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(148,163,184);
+          doc.text(`${pdfPhotoIdx+1}–${Math.min(pdfPhotoIdx+batch.length,totalPdfPhotos)} de ${totalPdfPhotos} fotos`,W-margin,9,{align:'right'});
+          let py0=19;
+          // Barra de encabezado del registro (azul marino)
+          doc.setFillColor(15,35,64); doc.rect(margin,py0,contentW,recHdrH,'F');
+          doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+          doc.text(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,margin+2,py0+4.2);
+          const sc=stClrPdf[(rec.status||'').toLowerCase()]||[245,158,11];
+          doc.setTextColor(...sc); doc.setFontSize(6);
+          doc.text((rec.status||'—').toUpperCase(),margin+contentW-2,py0+4.2,{align:'right'});
           // Línea ámbar
-          doc.setFillColor(245,158,11); doc.rect(px,py+miniHdrH,photoW,amberH,'F');
-          // Foto
-          try{doc.addImage(p.img,'JPEG',px,py+miniHdrH+amberH,photoW,photoH,'','FAST');}catch(e){}
-          // Barra de info
-          doc.setFillColor(241,245,249); doc.rect(px,py+miniHdrH+amberH+photoH,photoW,infoH,'F');
-          doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(5);
-          doc.text(`${p.fecha}  ·  ${p.trans}  ·  ${p.ruta}`,px+photoW/2,py+miniHdrH+amberH+photoH+4.5,{align:'center'});
-        });
+          doc.setFillColor(245,158,11); doc.rect(margin,py0+recHdrH,contentW,amberH,'F');
+          // Barra de info (fecha · transportista · ruta)
+          doc.setFillColor(241,245,249); doc.rect(margin,py0+recHdrH+amberH,contentW,infoBarH,'F');
+          doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(6);
+          const infoY=py0+recHdrH+amberH+4.2;
+          doc.text(formatDateToDDMMYYYY(rec.fechaInicio)||'—',margin+2,infoY);
+          doc.text((rec.transportista||'—').slice(0,22),margin+contentW/3,infoY);
+          doc.text((rec.ruta||'—').slice(0,28),margin+contentW*2/3,infoY);
+          py0+=recHdrH+amberH+infoBarH+3;
+          // Fotos en cuadrícula 3×2 (sin info superpuesta)
+          batch.forEach((img,i)=>{
+            const col=i%PCOLS, row=Math.floor(i/PCOLS);
+            const px=margin+col*(photoW+pGap);
+            const py=py0+row*(photoH+pGap);
+            try{doc.addImage(img,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
+          });
+          pdfPhotoIdx+=batch.length;
+        }
       }
     }
 
@@ -3378,55 +3382,47 @@ async function generatePPTX(){
     }
     setUpStep('Sección fotográfica'); setUpBar(85);
     const isMobilePptx=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    // Collect all photos sorted by date (all records combined, 6 per slide)
-    const allPptPhotos=[];
     const pptPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
-    for(const rec of pptPhotoRecs){
-      if(!rec.images?.length) continue;
-      rec.images.forEach(img=>allPptPhotos.push({
-        img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
-        fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
-        trans:(rec.transportista||'—').slice(0,16), ruta:(rec.ruta||'—').slice(0,20)
-      }));
-    }
-    if(allPptPhotos.length>0){
+    const pptPhotoRecsF=pptPhotoRecs.filter(r=>r.images?.length>0);
+    if(pptPhotoRecsF.length>0){
+      const totalPptPhotos=pptPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
       const sfSlide=pptx.addSlide(); sfSlide.background={color:NAVY};
       sfSlide.addShape(pptx.ShapeType.ellipse,{x:7.4,y:-.5,w:3.5,h:3.5,fill:{color:'0B1929'},line:{color:'0B1929'}});
       sfSlide.addShape(pptx.ShapeType.ellipse,{x:-.5,y:3.5,w:3,h:3,fill:{color:'0B1929'},line:{color:'0B1929'}});
       sfSlide.addShape(pptx.ShapeType.rect,{x:0,y:2.48,w:10,h:.06,fill:{color:AMBER}});
       sfSlide.addText('EVIDENCIA FOTOGRÁFICA',{x:.5,y:1.52,w:9,h:.82,fontSize:26,bold:true,color:WHITE,align:'center'});
       sfSlide.addText('Registro fotográfico de operaciones de traslado',{x:.5,y:2.58,w:9,h:.45,fontSize:12,color:'94A3B8',align:'center'});
-      sfSlide.addText(`${allPptPhotos.length} foto${allPptPhotos.length!==1?'s':''} · ordenadas por fecha`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
+      sfSlide.addText(`${totalPptPhotos} foto${totalPptPhotos!==1?'s':''} · ${pptPhotoRecsF.length} registros · ordenados por fecha`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
       const PP=6, pCOLS=3;
       const pW=(CW-(pCOLS-1)*.08)/pCOLS; // ≈3.08"
-      // Cada celda: miniHdrH + amberLineH + imgH + infoBarH = 2.43" × 2 filas + 1 gap = 5.625-0.67 ✓
-      const miniHdrH=0.16, amberLineH=0.04, imgH=2.07, infoBarH=0.16, pGapX=.08, pGapY=.09;
-      const startY=0.67;
-      const stCM={'COMPLETADO':GREEN,'PENDIENTE':ORANGE,'EN-RUTA':BLUE,'CANCELADO':RED};
-      for(let pi=0;pi<allPptPhotos.length;pi+=PP){
-        const batch=allPptPhotos.slice(pi,pi+PP);
-        const ps=pptx.addSlide(); ps.background={color:BG};
-        ps.addShape(pptx.ShapeType.rect,{x:0,y:0,w:10,h:.62,fill:{color:NAVY}});
-        ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
-        ps.addText('EVIDENCIA FOTOGRÁFICA',{x:ML,y:0,w:7,h:.62,fontSize:11,bold:true,color:WHITE,valign:'middle'});
-        ps.addText(`${pi+1}–${Math.min(pi+PP,allPptPhotos.length)} de ${allPptPhotos.length}`,{x:7,y:0,w:2.7,h:.62,fontSize:9,color:'94A3B8',align:'right',valign:'middle'});
-        for(let i=0;i<batch.length;i++){
-          const col=i%pCOLS, row=Math.floor(i/pCOLS);
-          const px=ML+col*(pW+pGapX);
-          const cellY=startY+row*(miniHdrH+amberLineH+imgH+infoBarH+pGapY);
-          // Barra azul marino: "Orden · Viaje N°" + estado
-          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY,w:pW,h:miniHdrH,fill:{color:NAVY}});
-          ps.addText(`Orden: ${batch[i].orden}  ·  Viaje N° ${batch[i].viaje}`,{x:px+.04,y:cellY,w:pW*.68,h:miniHdrH,fontSize:5.5,bold:true,color:WHITE,valign:'middle'});
-          ps.addText(batch[i].status,{x:px+pW*.68,y:cellY,w:pW*.32-.04,h:miniHdrH,fontSize:5,bold:true,color:stCM[batch[i].status]||AMBER,align:'right',valign:'middle'});
-          // Línea ámbar
-          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY+miniHdrH,w:pW,h:amberLineH,fill:{color:AMBER}});
-          // Foto
-          let imgData=batch[i].img;
-          if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,900,0.82);}catch(e){}
-          try{ ps.addImage({data:imgData,x:px,y:cellY+miniHdrH+amberLineH,w:pW,h:imgH,sizing:{type:'contain',w:pW,h:imgH}}); }catch(e){console.warn('PPTX photo:',e);}
-          // Barra de info gris claro: fecha · transportista · ruta
-          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY+miniHdrH+amberLineH+imgH,w:pW,h:infoBarH,fill:{color:'F1F5F9'},line:{color:BORDER,width:.2}});
-          ps.addText(`${batch[i].fecha}  ·  ${batch[i].trans}  ·  ${batch[i].ruta}`,{x:px+.03,y:cellY+miniHdrH+amberLineH+imgH,w:pW-.06,h:infoBarH,fontSize:4.5,color:T2,valign:'middle',wrap:true});
+      const pH=2.25;  // altura de foto: encaja 2 filas con header(0.67)+infoBar(0.36)=1.03 + 2×2.25 + gap = 5.61"
+      const pGapX=.08, pGapY=.08;
+      const photoAreaY=1.03; // header(0.62) + amber(0.05) + infoBar(0.36)
+      const stCM={completado:GREEN,pendiente:ORANGE,'en-ruta':BLUE,cancelado:RED};
+      for(const rec of pptPhotoRecsF){
+        const recPhotos=rec.images;
+        for(let pi=0;pi<recPhotos.length;pi+=PP){
+          const batch=recPhotos.slice(pi,pi+PP);
+          const ps=pptx.addSlide(); ps.background={color:BG};
+          // Encabezado del registro (igual al formato original)
+          ps.addShape(pptx.ShapeType.rect,{x:0,y:0,w:10,h:.62,fill:{color:NAVY}});
+          ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
+          ps.addText(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:6.5,h:.62,fontSize:12,bold:true,color:WHITE,valign:'middle'});
+          ps.addText((rec.status||'').toUpperCase(),{x:7.2,y:0,w:2.5,h:.62,fontSize:9,bold:true,color:stCM[(rec.status||'').toLowerCase()]||AMBER,align:'right',valign:'middle'});
+          // Barra de info del registro
+          ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.36,fill:{color:WHITE},line:{color:BORDER,width:.3}});
+          ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:2.0,h:.36,fontSize:7.5,color:T2,valign:'middle'});
+          ps.addText(`${(rec.transportista||'—').slice(0,22)}`,{x:2.5,y:.67,w:3.2,h:.36,fontSize:7.5,color:T2,valign:'middle'});
+          ps.addText(`${(rec.ruta||'—').slice(0,30)}`,{x:5.8,y:.67,w:3.9,h:.36,fontSize:7.5,color:T2,valign:'middle'});
+          // Fotos en cuadrícula 3×2 (sin datos superpuestos)
+          for(let i=0;i<batch.length;i++){
+            const col=i%pCOLS, row=Math.floor(i/pCOLS);
+            const px=ML+col*(pW+pGapX);
+            const py=photoAreaY+row*(pH+pGapY);
+            let imgData=batch[i];
+            if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,900,0.82);}catch(e){}
+            try{ ps.addImage({data:imgData,x:px,y:py,w:pW,h:pH,sizing:{type:'contain',w:pW,h:pH}}); }catch(e){console.warn('PPTX photo:',e);}
+          }
         }
       }
     }
@@ -3648,54 +3644,45 @@ async function generateRevealPresentation(){
   // ── Cargar fotos para la presentación Live ──
   const liveNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
   for(const rec of liveNeedPhotos){ try{await loadPhotosForRec(rec);}catch(e){} }
-  const allLivePhotos=[];
   const livePhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
-  for(const rec of livePhotoRecs){
-    if(!rec.images?.length) continue;
-    rec.images.forEach(img=>allLivePhotos.push({
-      img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
-      fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
-      trans:(rec.transportista||'—').slice(0,16), ruta:(rec.ruta||'—').slice(0,20)
-    }));
-  }
-  const stCssLive={'COMPLETADO':'#22c55e','PENDIENTE':'#f59e0b','EN-RUTA':'#3b82f6','CANCELADO':'#ef4444'};
+  const livePhotoRecsF=livePhotoRecs.filter(r=>r.images?.length>0);
+  const stCssLive={completado:'#22c55e',pendiente:'#f59e0b','en-ruta':'#3b82f6',cancelado:'#ef4444'};
+  const totalLivePhotos=livePhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
   let photoSlidesHtml='';
-  if(allLivePhotos.length>0){
+  if(livePhotoRecsF.length>0){
     photoSlidesHtml+=`\n<!-- SLIDE: EVIDENCIA FOTOGRÁFICA intro -->
 <section data-transition="fade" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <div class="accent-line" style="margin-bottom:20px"></div>
   <h2 style="font-size:1.5em">Evidencia <span class="gold">Fotográfica</span></h2>
-  <p style="opacity:.5;margin-top:15px;font-size:.8em">${allLivePhotos.length} fotografía${allLivePhotos.length!==1?'s':''} · ordenadas por fecha</p>
+  <p style="opacity:.5;margin-top:15px;font-size:.8em">${totalLivePhotos} fotografía${totalLivePhotos!==1?'s':''} · ${livePhotoRecsF.length} registros · ordenados por fecha</p>
   <div class="accent-line" style="margin-top:20px"></div>
 </section>`;
     const LPP=6;
-    for(let pi=0;pi<allLivePhotos.length;pi+=LPP){
-      const batch=allLivePhotos.slice(pi,pi+LPP);
-      const rangeLabel=`${pi+1}–${Math.min(pi+LPP,allLivePhotos.length)} de ${allLivePhotos.length}`;
-      let cellsHtml='';
-      for(const p of batch){
-        let rsz=p.img; try{rsz=await resizeDataUrl(p.img,600,450,0.70);}catch(e){}
-        const stColor=stCssLive[p.status]||'#f59e0b';
-        cellsHtml+=`<div style="border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">
-          <div style="background:#0f2340;display:flex;justify-content:space-between;align-items:center;padding:3px 6px">
-            <span style="font-size:.28em;font-weight:700;color:#fff;white-space:nowrap">Orden: ${p.orden} · Viaje N°${p.viaje}</span>
-            <span style="font-size:.24em;font-weight:700;color:${stColor};white-space:nowrap;margin-left:4px">${p.status}</span>
-          </div>
-          <div style="height:2px;background:#f59e0b"></div>
-          <img src="${rsz}" style="width:100%;height:108px;object-fit:cover;display:block">
-          <div style="background:#f1f5f9;padding:2px 5px">
-            <span style="font-size:.22em;color:#475569;display:block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.fecha} · ${p.trans} · ${p.ruta}</span>
-          </div>
-        </div>`;
-      }
-      photoSlidesHtml+=`\n<!-- SLIDE: FOTOS ${rangeLabel} -->
+    for(const rec of livePhotoRecsF){
+      const recPhotos=rec.images;
+      const stColor=stCssLive[(rec.status||'').toLowerCase()]||'#f59e0b';
+      for(let pi=0;pi<recPhotos.length;pi+=LPP){
+        const batch=recPhotos.slice(pi,pi+LPP);
+        let cellsHtml='';
+        for(const img of batch){
+          let rsz=img; try{rsz=await resizeDataUrl(img,600,450,0.70);}catch(e){}
+          cellsHtml+=`<div><img src="${rsz}" style="width:100%;height:130px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,255,255,.08)"></div>`;
+        }
+        photoSlidesHtml+=`\n<!-- SLIDE: Ord ${rec.orden||'—'} V${rec.viaje||'—'} -->
 <section data-transition="fade" data-background="#070f1c">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(245,158,11,.35)">
-    <span style="font-size:.5em;font-weight:700;letter-spacing:.06em">EVIDENCIA FOTOGRÁFICA</span>
-    <span style="font-size:.38em;opacity:.45;color:#94a3b8">${rangeLabel}</span>
+  <div style="background:#0f2340;padding:5px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+    <span style="font-size:.55em;font-weight:700">Orden: ${rec.orden||'—'} · Viaje N° ${rec.viaje||'—'}</span>
+    <span style="font-size:.5em;font-weight:700;color:${stColor}">${(rec.status||'').toUpperCase()}</span>
+  </div>
+  <div style="height:3px;background:#f59e0b;margin-bottom:3px"></div>
+  <div style="background:#f1f5f9;padding:3px 12px;display:flex;gap:24px;margin-bottom:6px;border-radius:3px">
+    <span style="font-size:.38em;color:#475569">${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}</span>
+    <span style="font-size:.38em;color:#475569">${(rec.transportista||'—').slice(0,20)}</span>
+    <span style="font-size:.38em;color:#475569">${(rec.ruta||'—').slice(0,25)}</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">${cellsHtml}</div>
 </section>`;
+      }
     }
   }
 
