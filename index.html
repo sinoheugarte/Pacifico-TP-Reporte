@@ -2744,8 +2744,7 @@ window.addEventListener('message',function(e){
 async function generatePDF(){
   if(!records.length){toast('No hay registros para generar el PDF');return;}
   /* Abre la ventana de carga animada AHORA, dentro del gesto del usuario */
-  let _pdfWin=window.open('','_blank');
-  if(_pdfWin){_pdfWin.document.open();_pdfWin.document.write(_truckHtml('Preparando tu Reporte PDF',['Recopilando datos del reporte…','Generando páginas y gráficos…','Procesando tablas de registros…','Añadiendo evidencia fotográfica…','Aplicando formato profesional…','Finalizando el documento PDF…']));_pdfWin.document.close();}
+  showTruckOv('Preparando tu Reporte PDF',['Recopilando datos del reporte…','Generando páginas y gráficos…','Procesando tablas de registros…','Añadiendo evidencia fotográfica…','Aplicando formato profesional…','Finalizando el documento PDF…']);
   showUp('Generando PDF profesional…','Preparando datos',5);
   try{
     const {jsPDF} = window.jspdf;
@@ -3268,18 +3267,17 @@ async function generatePDF(){
     setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    downloadBlob(pdfBlob,pdfName);
     hideUp();
-    if(_pdfWin&&!_pdfWin.closed){
-      const _blobUrl=URL.createObjectURL(pdfBlob);
-      _pdfWin.postMessage({type:'DONE',title:'📄 Reporte PDF Listo',msg:'El camión llegó a destino — reporte generado',url:_blobUrl,btn:'📂 ABRIR PDF'},'*');
-      setTimeout(()=>URL.revokeObjectURL(_blobUrl),60000);
-    } else { toast('✓ PDF generado y descargado'); }
+    const _blobUrl=URL.createObjectURL(pdfBlob);
+    doneTruckOv('📄 Reporte PDF Listo','Tu reporte está listo — toca para abrir','📂 ABRIR PDF',()=>{
+      const a=document.createElement('a');a.href=_blobUrl;a.target='_blank';a.rel='noopener';a.click();
+    });
+    setTimeout(()=>URL.revokeObjectURL(_blobUrl),120000);
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
       .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
       .catch(e=>console.warn('PDF OD upload:',e));
-  }catch(e){hideUp();toast('⚠ Error PDF: '+e.message);console.error(e);}
+  }catch(e){hideUp();hideTruckOv();toast('⚠ Error PDF: '+e.message);console.error(e);}
 }
 
 /* ════════════════════════════════════════════════════════
