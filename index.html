@@ -2970,7 +2970,11 @@ async function generatePDF(){
     // ── EVIDENCIA FOTOGRÁFICA ──
     setUpStep('Cargando fotos para PDF…'); setUpBar(73);
     const pdfNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
-    for(const rec of pdfNeedPhotos){try{await loadPhotosForRec(rec);}catch(e){}}
+    // Cargar en lotes de 3 en paralelo — ~3× más rápido que secuencial
+    for(let _i=0;_i<pdfNeedPhotos.length;_i+=3){
+      setUpStep(`Cargando fotos ${Math.min(_i+3,pdfNeedPhotos.length)}/${pdfNeedPhotos.length}…`);
+      await Promise.allSettled(pdfNeedPhotos.slice(_i,_i+3).map(r=>loadPhotosForRec(r)));
+    }
     const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
     const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
     if(pdfPhotoRecsF.length>0){
@@ -3043,21 +3047,8 @@ async function generatePDF(){
     setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    hideUp();
-    /* En móvil: Web Share API muestra diálogo nativo para abrir/compartir el PDF al instante.
-       En escritorio: descarga directa con <a download>. */
-    const isMobileDl=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if(isMobileDl && typeof navigator.share==='function'){
-      const pdfFile=new File([pdfBlob],pdfName,{type:'application/pdf'});
-      try{
-        await navigator.share({files:[pdfFile],title:'Reporte Pacífico Transportation'});
-      }catch(e){
-        if(e.name!=='AbortError'){downloadBlob(pdfBlob,pdfName);toast('✓ PDF descargado');}
-      }
-    }else{
-      downloadBlob(pdfBlob,pdfName);
-      toast('✓ PDF generado y descargado');
-    }
+    downloadBlob(pdfBlob,pdfName);
+    hideUp(); toast('✓ PDF generado y descargado');
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
       .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
