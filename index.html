@@ -1210,33 +1210,32 @@ function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
   });
 }
 
-/* En Android, envía el PDF al SW para servirlo con:
-     Content-Type: application/octet-stream
-     Content-Disposition: attachment
-     X-Content-Type-Options: nosniff
-   Esto impide que Chrome detecte los bytes %PDF- y abra el visor,
-   y fuerza al gestor de descargas nativo a mostrar la notificación ABRIR. */
+/* En Android, almacena la respuesta directamente en Cache API (sin postMessage
+   ni MessageChannel) para que el SW la sirva con Content-Disposition:attachment.
+   Eso obliga al navegador a descargar sin abrir el visor de PDF, y Android
+   muestra la notificación nativa ABRIR igual que con el PPT.
+   Sin a.download — Content-Disposition es el único hint, así Chrome no sniffea
+   la extensión .pdf para redirigir al visor. */
 async function downloadPdfAndroid(blob,filename){
   const isAndroid=/Android/i.test(navigator.userAgent);
-  if(isAndroid&&'serviceWorker' in navigator){
+  if(isAndroid&&'serviceWorker' in navigator&&'caches' in window){
     try{
-      /* navigator.serviceWorker.ready garantiza que el SW está activo aunque
-         controller sea null en la primera carga (antes de clients.claim()) */
-      const reg=await navigator.serviceWorker.ready;
-      const sw=reg.active;
-      if(!sw) throw new Error('no-sw');
-      const buffer=await blob.arrayBuffer();
+      await navigator.serviceWorker.ready; // garantiza SW activo
       const token=Date.now().toString(36)+Math.random().toString(36).slice(2);
-      await new Promise((res,rej)=>{
-        const ch=new MessageChannel();
-        ch.port1.onmessage=e=>e.data==='ok'?res():rej(new Error('sw-err'));
-        sw.postMessage({type:'STORE_DL',token,buffer,filename},[ch.port2,buffer]);
-        setTimeout(()=>rej(new Error('sw-timeout')),5000);
-      });
+      const key=`/sw-download/${token}`;
+      const cache=await caches.open('sw-dl-v1');
+      await cache.put(key, new Response(blob,{
+        headers:{
+          'Content-Type':'application/octet-stream',
+          'Content-Disposition':`attachment; filename="${filename}"`,
+          'X-Content-Type-Options':'nosniff',
+          'Content-Length':String(blob.size)
+        }
+      }));
       const a=document.createElement('a');
-      a.href=`/sw-download/${token}`;
-      a.download=filename;
+      a.href=key; // sin atributo download — Content-Disposition se encarga
       document.body.appendChild(a);a.click();document.body.removeChild(a);
+      setTimeout(()=>caches.open('sw-dl-v1').then(c=>c.delete(key)),120000);
       return;
     }catch(e){/* fallback */}
   }
