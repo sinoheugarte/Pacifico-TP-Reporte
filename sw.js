@@ -1,11 +1,8 @@
-const CACHE = 'pacifico-v56';
+const CACHE = 'pacifico-v57';
 const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
-
-/* Almacén temporal para descargas de PDF forzadas via SW */
-const _dlStore = new Map();
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -18,44 +15,30 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE && k !== 'sw-dl-v1').map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
-});
-
-/* La página envía el ArrayBuffer del PDF; el SW lo guarda y devuelve 'ok' */
-self.addEventListener('message', e => {
-  if (e.data?.type === 'STORE_DL') {
-    const { token, buffer, filename } = e.data;
-    _dlStore.set(token, { buffer, filename });
-    setTimeout(() => _dlStore.delete(token), 120000);
-    e.ports[0]?.postMessage('ok');
-  }
 });
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  /* Descarga forzada: octet-stream + nosniff + attachment impide que
-     Chrome detecte los bytes %PDF- y abra el visor en lugar del
-     gestor de descargas nativo con la notificación ABRIR */
+  /* Descarga forzada: la página almacena la respuesta en Cache API (sw-dl-v1)
+     con Content-Type:octet-stream + Content-Disposition:attachment.
+     El SW la sirve una sola vez y la borra del caché.
+     Content-Disposition:attachment obliga al navegador a descargar
+     sin abrir el visor de PDF → Android muestra la notificación ABRIR. */
   if (url.pathname.startsWith('/sw-download/')) {
-    const token = url.pathname.split('/')[2];
-    const entry = _dlStore.get(token);
-    if (entry) {
-      _dlStore.delete(token);
-      e.respondWith(new Response(entry.buffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'Content-Disposition': `attachment; filename="${entry.filename}"`,
-          'X-Content-Type-Options': 'nosniff',
-          'Content-Length': String(entry.buffer.byteLength)
-        }
-      }));
-      return;
-    }
+    e.respondWith(
+      caches.open('sw-dl-v1').then(cache =>
+        cache.match(e.request).then(resp => {
+          if (resp) { cache.delete(e.request); return resp; }
+          return new Response('', { status: 404 });
+        })
+      )
+    );
+    return;
   }
 
   /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa */
