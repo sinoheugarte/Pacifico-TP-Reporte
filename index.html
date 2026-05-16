@@ -3172,7 +3172,7 @@ async function generatePPTX(){
   if(!records.length){toast('No hay registros');return;}
   if(!window.PptxGenJS){toast('⚠ La librería PPTX no está disponible. Verifica conexión a internet.');return;}
   let _pptWin=window.open('','_blank');
-  if(_pptWin){_pptWin.document.open();_pptWin.document.write(_truckHtml('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']));_pptWin.document.close();}
+  if(_pptWin){const _hw=_truckHtml('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']);setTimeout(()=>{if(_pptWin&&!_pptWin.closed){_pptWin.document.open();_pptWin.document.write(_hw);_pptWin.document.close();}},0);}
   showUp('Generando presentación PowerPoint…','Preparando diapositivas',3);
   try{
     const pptx=new PptxGenJS();
