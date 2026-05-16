@@ -2967,6 +2967,43 @@ async function generatePDF(){
       y+=rowH;
     });
 
+    // ── EVIDENCIA FOTOGRÁFICA ──
+    setUpStep('Cargando fotos para PDF…'); setUpBar(73);
+    const pdfNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
+    for(const rec of pdfNeedPhotos){try{await loadPhotosForRec(rec);}catch(e){}}
+    const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+    const allPdfPhotos=[];
+    for(const rec of pdfPhotoRecs){
+      if(!rec.images?.length) continue;
+      rec.images.forEach(img=>allPdfPhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+    }
+    if(allPdfPhotos.length>0){
+      const PCOLS=3,PROWS=2,PER_PAGE=PCOLS*PROWS;
+      const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
+      const photoH=Math.round(photoW*0.72); // 4:3 aprox
+      const captionPH=5;
+      setUpStep('Generando páginas de fotos…'); setUpBar(78);
+      for(let pi=0;pi<allPdfPhotos.length;pi+=PER_PAGE){
+        const batch=allPdfPhotos.slice(pi,pi+PER_PAGE);
+        doc.addPage(); let py0=margin;
+        doc.setFillColor(15,35,64); doc.rect(0,0,W,14,'F');
+        doc.setFillColor(245,158,11); doc.rect(0,13,W,1,'F');
+        doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+        doc.text('EVIDENCIA FOTOGRÁFICA',margin,9);
+        doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(148,163,184);
+        doc.text(`${pi+1}–${Math.min(pi+PER_PAGE,allPdfPhotos.length)} de ${allPdfPhotos.length} fotos`,W-margin,9,{align:'right'});
+        py0=19;
+        batch.forEach((p,i)=>{
+          const col=i%PCOLS, row=Math.floor(i/PCOLS);
+          const px=margin+col*(photoW+pGap);
+          const py=py0+row*(photoH+captionPH+pGap);
+          try{doc.addImage(p.img,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
+          doc.setFontSize(5.5); doc.setTextColor(100,116,139); doc.setFont('helvetica','normal');
+          doc.text(p.label,px+photoW/2,py+photoH+3.5,{align:'center'});
+        });
+      }
+    }
+
     // ── FOOTER ──
     const totalPages=doc.internal.getNumberOfPages();
     for(let p=1;p<=totalPages;p++){
@@ -3317,47 +3354,50 @@ async function generatePPTX(){
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
-    // Load photos that are not yet in memory (common on Android after a fresh session)
+    setUpStep('Cargando fotos…'); setUpBar(78);
     const recsNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
-    if(recsNeedPhotos.length>0){
-      for(let i=0;i<recsNeedPhotos.length;i++){
-        setUpStep(`Cargando fotos ${i+1}/${recsNeedPhotos.length}…`); setUpBar(78+Math.round(i/recsNeedPhotos.length*7));
-        try{ await loadPhotosForRec(recsNeedPhotos[i]); }catch(e){ console.warn('PPTX photo load:',e); }
-      }
+    for(let i=0;i<recsNeedPhotos.length;i++){
+      setUpStep(`Cargando fotos ${i+1}/${recsNeedPhotos.length}…`); setUpBar(78+Math.round(i/recsNeedPhotos.length*7));
+      try{ await loadPhotosForRec(recsNeedPhotos[i]); }catch(e){ console.warn('PPTX photo load:',e); }
     }
     setUpStep('Sección fotográfica'); setUpBar(85);
     const isMobilePptx=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const recsWithPhotos=records.filter(r=>r.images&&r.images.length>0);
-    if(recsWithPhotos.length>0){
+    // Collect all photos sorted by date (all records combined, 6 per slide)
+    const allPptPhotos=[];
+    const pptPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+    for(const rec of pptPhotoRecs){
+      if(!rec.images?.length) continue;
+      rec.images.forEach(img=>allPptPhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+    }
+    if(allPptPhotos.length>0){
       const sfSlide=pptx.addSlide(); sfSlide.background={color:NAVY};
       sfSlide.addShape(pptx.ShapeType.ellipse,{x:7.4,y:-.5,w:3.5,h:3.5,fill:{color:'0B1929'},line:{color:'0B1929'}});
       sfSlide.addShape(pptx.ShapeType.ellipse,{x:-.5,y:3.5,w:3,h:3,fill:{color:'0B1929'},line:{color:'0B1929'}});
       sfSlide.addShape(pptx.ShapeType.rect,{x:0,y:2.48,w:10,h:.06,fill:{color:AMBER}});
       sfSlide.addText('EVIDENCIA FOTOGRÁFICA',{x:.5,y:1.52,w:9,h:.82,fontSize:26,bold:true,color:WHITE,align:'center'});
-      sfSlide.addText('Registro fotográfico por operación de traslado',{x:.5,y:2.58,w:9,h:.45,fontSize:12,color:'94A3B8',align:'center'});
-      sfSlide.addText(`${recsWithPhotos.length} registro${recsWithPhotos.length!==1?'s':''} con evidencia fotográfica`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
-      for(const rec of recsWithPhotos){
-        const rawPhotos=rec.images.slice(0,6);
-        /* On mobile, resize photos to max 1200×900 to avoid memory exhaustion in PptxGenJS */
-        const photos=isMobilePptx
-          ? await Promise.all(rawPhotos.map(d=>resizeDataUrl(d,1200,900,0.82)))
-          : rawPhotos;
+      sfSlide.addText('Registro fotográfico de operaciones de traslado',{x:.5,y:2.58,w:9,h:.45,fontSize:12,color:'94A3B8',align:'center'});
+      sfSlide.addText(`${allPptPhotos.length} foto${allPptPhotos.length!==1?'s':''} · ordenadas por fecha`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
+      const PP=6, pCOLS=3;
+      const pW=(CW-(pCOLS-1)*.08)/pCOLS; // ≈3.08"
+      const pH=pW*0.68;                   // ≈2.09" — encaja 2 filas dentro del slide
+      const captionH=0.20, pGapX=.08, pGapY=.09;
+      const startY=0.67;
+      for(let pi=0;pi<allPptPhotos.length;pi+=PP){
+        const batch=allPptPhotos.slice(pi,pi+PP);
         const ps=pptx.addSlide(); ps.background={color:BG};
         ps.addShape(pptx.ShapeType.rect,{x:0,y:0,w:10,h:.62,fill:{color:NAVY}});
         ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
-        ps.addText(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:6.5,h:.62,fontSize:12,bold:true,color:WHITE,valign:'middle'});
-        ps.addText((rec.status||'').toUpperCase(),{x:7.2,y:0,w:2.5,h:.62,fontSize:9,bold:true,color:AMBER,align:'right',valign:'middle'});
-        ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.36,fill:{color:WHITE},line:{color:BORDER,width:.3}});
-        ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:2.0,h:.36,fontSize:7.5,color:T2,valign:'middle'});
-        ps.addText(`${(rec.transportista||'—').slice(0,22)}`,{x:2.5,y:.67,w:3.2,h:.36,fontSize:7.5,color:T2,valign:'middle'});
-        ps.addText(`${(rec.ruta||'—').slice(0,30)}`,{x:5.8,y:.67,w:3.9,h:.36,fontSize:7.5,color:T2,valign:'middle'});
-        const photoAreaY=1.1, photoAreaH=4.1;
-        const cols=Math.min(photos.length,3), rows=Math.ceil(photos.length/cols);
-        const pW=(CW-(cols-1)*.1)/cols, pH=(photoAreaH-(rows-1)*.1)/rows;
-        photos.forEach((imgData,pi)=>{
-          const px=ML+(pi%cols)*(pW+.1), py=photoAreaY+Math.floor(pi/cols)*(pH+.1);
+        ps.addText('EVIDENCIA FOTOGRÁFICA',{x:ML,y:0,w:7,h:.62,fontSize:11,bold:true,color:WHITE,valign:'middle'});
+        ps.addText(`${pi+1}–${Math.min(pi+PP,allPptPhotos.length)} de ${allPptPhotos.length}`,{x:7,y:0,w:2.7,h:.62,fontSize:9,color:'94A3B8',align:'right',valign:'middle'});
+        for(let i=0;i<batch.length;i++){
+          const col=i%pCOLS, row=Math.floor(i/pCOLS);
+          const px=ML+col*(pW+pGapX);
+          const py=startY+row*(pH+captionH+pGapY);
+          let imgData=batch[i].img;
+          if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,900,0.82);}catch(e){}
           try{ ps.addImage({data:imgData,x:px,y:py,w:pW,h:pH,sizing:{type:'contain',w:pW,h:pH}}); }catch(e){console.warn('PPTX photo:',e);}
-        });
+          ps.addText(batch[i].label,{x:px,y:py+pH+.01,w:pW,h:captionH,fontSize:5.5,color:'64748B',align:'center'});
+        }
       }
     }
 
@@ -3489,8 +3529,9 @@ async function generatePPTX(){
 /* ════════════════════════════════════════════════════════
    LIVE PRESENTATION — reveal.js Interactive
 ════════════════════════════════════════════════════════ */
-function generateRevealPresentation(){
+async function generateRevealPresentation(){
   if(!records.length){toast('No hay registros');return;}
+  toast('Generando presentación…');
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
   const enRuta=records.filter(r=>r.status==='en-ruta').length;
@@ -3573,6 +3614,44 @@ function generateRevealPresentation(){
   recItems.push('Actualizar el sistema diariamente para mantener precisión de indicadores.');
   recItems.push('Revisar KPIs mensualmente y aplicar mejoras basadas en datos.');
   const recsHtml=recItems.slice(0,5).map(t=>`<div class="rec-item"><div class="rec-arrow">→</div><div class="rec-txt">${t}</div></div>`).join('');
+
+  // ── Cargar fotos para la presentación Live ──
+  const liveNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
+  for(const rec of liveNeedPhotos){ try{await loadPhotosForRec(rec);}catch(e){} }
+  const allLivePhotos=[];
+  const livePhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+  for(const rec of livePhotoRecs){
+    if(!rec.images?.length) continue;
+    rec.images.forEach(img=>allLivePhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+  }
+  let photoSlidesHtml='';
+  if(allLivePhotos.length>0){
+    photoSlidesHtml+=`\n<!-- SLIDE: EVIDENCIA FOTOGRÁFICA intro -->
+<section data-transition="fade" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <div class="accent-line" style="margin-bottom:20px"></div>
+  <h2 style="font-size:1.5em">Evidencia <span class="gold">Fotográfica</span></h2>
+  <p style="opacity:.5;margin-top:15px;font-size:.8em">${allLivePhotos.length} fotografía${allLivePhotos.length!==1?'s':''} · ordenadas por fecha</p>
+  <div class="accent-line" style="margin-top:20px"></div>
+</section>`;
+    const LPP=6;
+    for(let pi=0;pi<allLivePhotos.length;pi+=LPP){
+      const batch=allLivePhotos.slice(pi,pi+LPP);
+      const rangeLabel=`${pi+1}–${Math.min(pi+LPP,allLivePhotos.length)} de ${allLivePhotos.length}`;
+      let cellsHtml='';
+      for(const p of batch){
+        let rsz=p.img; try{rsz=await resizeDataUrl(p.img,600,450,0.70);}catch(e){}
+        cellsHtml+=`<div style="text-align:center"><img src="${rsz}" style="width:100%;height:130px;object-fit:cover;border-radius:5px;border:1px solid rgba(255,255,255,.12)"><div style="font-size:.28em;opacity:.4;margin-top:2px;color:#94a3b8;line-height:1.2">${p.label}</div></div>`;
+      }
+      photoSlidesHtml+=`\n<!-- SLIDE: FOTOS ${rangeLabel} -->
+<section data-transition="fade" data-background="#070f1c">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(245,158,11,.35)">
+    <span style="font-size:.5em;font-weight:700;letter-spacing:.06em">EVIDENCIA FOTOGRÁFICA</span>
+    <span style="font-size:.38em;opacity:.45;color:#94a3b8">${rangeLabel}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cellsHtml}</div>
+</section>`;
+    }
+  }
 
   const html=`<!DOCTYPE html>
 <html><head>
@@ -3820,6 +3899,8 @@ function generateRevealPresentation(){
     </div>
   </div>
 </section>
+
+${photoSlidesHtml}
 
 <!-- SLIDE: CIERRE -->
 <section data-transition="zoom" data-background="linear-gradient(135deg,#0a1628 0%,#0f2340 40%,#1a3a5c 100%)">
