@@ -2554,7 +2554,8 @@ h1{font-size:1.25rem;font-weight:700;text-align:center;line-height:1.4}
 /* Camión */
 .truck{position:absolute;bottom:11px;font-size:3rem;line-height:1;
   left:6%;transition:left 1.6s cubic-bezier(.3,0,.15,1);
-  filter:drop-shadow(2px 3px 6px rgba(0,0,0,.6))}
+  filter:drop-shadow(2px 3px 6px rgba(0,0,0,.6));
+  transform:scaleX(-1)}
 .truck.go{left:56%}
 /* Destino */
 .dest{position:absolute;right:8%;bottom:8px;font-size:2.4rem;line-height:1;
@@ -2596,7 +2597,7 @@ document.body.appendChild(s);}
 <div class="pw"><div class="pb" id="pb"></div></div>
 <div class="abrir" id="abrir">
   <p>✅ El camión llegó a destino — reporte listo</p>
-  <button onclick="open()">📂 ABRIR PDF</button>
+  <button onclick="abrirPdf()">📂 ABRIR PDF</button>
 </div>
 <script>
 var pb=document.getElementById('pb'),pct=2;
@@ -2608,7 +2609,7 @@ var ti=setInterval(function(){
 },420);
 var si=setInterval(function(){mi=(mi+1)%msgs.length;var el=document.getElementById('st');el.style.opacity=0;setTimeout(function(){el.textContent=msgs[mi];el.style.opacity=1;},300);},4500);
 var pdfUrl=null;
-function open(){if(pdfUrl)window.location.href=pdfUrl;}
+function abrirPdf(){if(pdfUrl)window.location.href=pdfUrl;}
 window.addEventListener('message',function(e){
   if(!e.data||e.data.type!=='PDF_READY')return;
   pdfUrl=e.data.url;
