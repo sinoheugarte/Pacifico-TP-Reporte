@@ -3396,9 +3396,9 @@ async function generatePPTX(){
       sfSlide.addText(`${totalPptPhotos} foto${totalPptPhotos!==1?'s':''} · ${pptPhotoRecsF.length} registros · ordenados por fecha`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
       const PP=6, pCOLS=3;
       const pW=(CW-(pCOLS-1)*.08)/pCOLS; // ≈3.08"
-      const pH=2.25;  // altura de foto: encaja 2 filas con header(0.67)+infoBar(0.36)=1.03 + 2×2.25 + gap = 5.61"
+      const pH=2.19;  // recalculado con infoBar de 0.46" → 1.13 + 2×2.19 + 0.08 = 5.61"
       const pGapX=.08, pGapY=.08;
-      const photoAreaY=1.03; // header(0.62) + amber(0.05) + infoBar(0.36)
+      const photoAreaY=1.13; // header(0.62) + amber(0.05) + infoBar(0.46)
       const stCM={completado:GREEN,pendiente:ORANGE,'en-ruta':BLUE,cancelado:RED};
       for(const rec of pptPhotoRecsF){
         const recPhotos=rec.images;
@@ -3410,12 +3410,12 @@ async function generatePPTX(){
           ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
           ps.addText(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:6.5,h:.62,fontSize:12,bold:true,color:WHITE,valign:'middle'});
           ps.addText((rec.status||'').toUpperCase(),{x:7.2,y:0,w:2.5,h:.62,fontSize:9,bold:true,color:stCM[(rec.status||'').toLowerCase()]||AMBER,align:'right',valign:'middle'});
-          // Barra de info del registro: fecha | motivo | transportista | ruta
-          ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.36,fill:{color:WHITE},line:{color:BORDER,width:.3}});
-          ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:1.7,h:.36,fontSize:7,color:T2,valign:'middle'});
-          ps.addText(`${(rec.motivo||'—').slice(0,20)}`,{x:2.1,y:.67,w:2.1,h:.36,fontSize:7,color:T2,valign:'middle'});
-          ps.addText(`${(rec.transportista||'—').slice(0,20)}`,{x:4.3,y:.67,w:2.2,h:.36,fontSize:7,color:T2,valign:'middle'});
-          ps.addText(`${(rec.ruta||'—').slice(0,26)}`,{x:6.6,y:.67,w:3.1,h:.36,fontSize:7,color:T2,valign:'middle'});
+          // Barra de info del registro: fecha | motivo | transportista | ruta (h=0.46 para motivo completo)
+          ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.46,fill:{color:WHITE},line:{color:BORDER,width:.3}});
+          ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:1.5,h:.46,fontSize:7,color:T2,valign:'middle'});
+          ps.addText(`${rec.motivo||'—'}`,{x:1.9,y:.67,w:3.2,h:.46,fontSize:7,color:T2,valign:'middle',wrap:true});
+          ps.addText(`${(rec.transportista||'—').slice(0,22)}`,{x:5.2,y:.67,w:2.3,h:.46,fontSize:7,color:T2,valign:'middle'});
+          ps.addText(`${(rec.ruta||'—').slice(0,26)}`,{x:7.6,y:.67,w:2.1,h:.46,fontSize:7,color:T2,valign:'middle'});
           // Fotos en cuadrícula 3×2 (sin datos superpuestos)
           for(let i=0;i<batch.length;i++){
             const col=i%pCOLS, row=Math.floor(i/pCOLS);
