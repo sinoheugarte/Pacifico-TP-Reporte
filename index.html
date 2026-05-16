@@ -2975,31 +2975,47 @@ async function generatePDF(){
     const allPdfPhotos=[];
     for(const rec of pdfPhotoRecs){
       if(!rec.images?.length) continue;
-      rec.images.forEach(img=>allPdfPhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+      rec.images.forEach(img=>allPdfPhotos.push({
+        img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
+        fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
+        trans:(rec.transportista||'—').slice(0,20), ruta:(rec.ruta||'—').slice(0,24)
+      }));
     }
     if(allPdfPhotos.length>0){
       const PCOLS=3,PROWS=2,PER_PAGE=PCOLS*PROWS;
       const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
-      const photoH=Math.round(photoW*0.72); // 4:3 aprox
-      const captionPH=5;
+      const miniHdrH=5, amberH=1, photoH=38, infoH=7, cellH=miniHdrH+amberH+photoH+infoH;
+      const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
       setUpStep('Generando páginas de fotos…'); setUpBar(78);
       for(let pi=0;pi<allPdfPhotos.length;pi+=PER_PAGE){
         const batch=allPdfPhotos.slice(pi,pi+PER_PAGE);
-        doc.addPage(); let py0=margin;
+        doc.addPage();
         doc.setFillColor(15,35,64); doc.rect(0,0,W,14,'F');
         doc.setFillColor(245,158,11); doc.rect(0,13,W,1,'F');
         doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
         doc.text('EVIDENCIA FOTOGRÁFICA',margin,9);
         doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(148,163,184);
         doc.text(`${pi+1}–${Math.min(pi+PER_PAGE,allPdfPhotos.length)} de ${allPdfPhotos.length} fotos`,W-margin,9,{align:'right'});
-        py0=19;
+        const py0=19;
         batch.forEach((p,i)=>{
           const col=i%PCOLS, row=Math.floor(i/PCOLS);
           const px=margin+col*(photoW+pGap);
-          const py=py0+row*(photoH+captionPH+pGap);
-          try{doc.addImage(p.img,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
-          doc.setFontSize(5.5); doc.setTextColor(100,116,139); doc.setFont('helvetica','normal');
-          doc.text(p.label,px+photoW/2,py+photoH+3.5,{align:'center'});
+          const py=py0+row*(cellH+pGap);
+          // Barra azul marino: "Orden · Viaje" + estado
+          doc.setFillColor(15,35,64); doc.rect(px,py,photoW,miniHdrH,'F');
+          doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(5.5);
+          doc.text(`Ord ${p.orden} · Viaje N° ${p.viaje}`,px+1.5,py+3.5);
+          const sc=stClrPdf[(p.status||'').toLowerCase()]||[245,158,11];
+          doc.setTextColor(...sc); doc.setFontSize(5);
+          doc.text(p.status,px+photoW-1.5,py+3.5,{align:'right'});
+          // Línea ámbar
+          doc.setFillColor(245,158,11); doc.rect(px,py+miniHdrH,photoW,amberH,'F');
+          // Foto
+          try{doc.addImage(p.img,'JPEG',px,py+miniHdrH+amberH,photoW,photoH,'','FAST');}catch(e){}
+          // Barra de info
+          doc.setFillColor(241,245,249); doc.rect(px,py+miniHdrH+amberH+photoH,photoW,infoH,'F');
+          doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(5);
+          doc.text(`${p.fecha}  ·  ${p.trans}  ·  ${p.ruta}`,px+photoW/2,py+miniHdrH+amberH+photoH+4.5,{align:'center'});
         });
       }
     }
@@ -3367,7 +3383,11 @@ async function generatePPTX(){
     const pptPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
     for(const rec of pptPhotoRecs){
       if(!rec.images?.length) continue;
-      rec.images.forEach(img=>allPptPhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+      rec.images.forEach(img=>allPptPhotos.push({
+        img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
+        fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
+        trans:(rec.transportista||'—').slice(0,16), ruta:(rec.ruta||'—').slice(0,20)
+      }));
     }
     if(allPptPhotos.length>0){
       const sfSlide=pptx.addSlide(); sfSlide.background={color:NAVY};
@@ -3379,9 +3399,10 @@ async function generatePPTX(){
       sfSlide.addText(`${allPptPhotos.length} foto${allPptPhotos.length!==1?'s':''} · ordenadas por fecha`,{x:.5,y:3.1,w:9,h:.38,fontSize:10,color:AMBER,align:'center'});
       const PP=6, pCOLS=3;
       const pW=(CW-(pCOLS-1)*.08)/pCOLS; // ≈3.08"
-      const pH=pW*0.68;                   // ≈2.09" — encaja 2 filas dentro del slide
-      const captionH=0.20, pGapX=.08, pGapY=.09;
+      // Cada celda: miniHdrH + amberLineH + imgH + infoBarH = 2.43" × 2 filas + 1 gap = 5.625-0.67 ✓
+      const miniHdrH=0.16, amberLineH=0.04, imgH=2.07, infoBarH=0.16, pGapX=.08, pGapY=.09;
       const startY=0.67;
+      const stCM={'COMPLETADO':GREEN,'PENDIENTE':ORANGE,'EN-RUTA':BLUE,'CANCELADO':RED};
       for(let pi=0;pi<allPptPhotos.length;pi+=PP){
         const batch=allPptPhotos.slice(pi,pi+PP);
         const ps=pptx.addSlide(); ps.background={color:BG};
@@ -3392,11 +3413,20 @@ async function generatePPTX(){
         for(let i=0;i<batch.length;i++){
           const col=i%pCOLS, row=Math.floor(i/pCOLS);
           const px=ML+col*(pW+pGapX);
-          const py=startY+row*(pH+captionH+pGapY);
+          const cellY=startY+row*(miniHdrH+amberLineH+imgH+infoBarH+pGapY);
+          // Barra azul marino: "Orden · Viaje N°" + estado
+          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY,w:pW,h:miniHdrH,fill:{color:NAVY}});
+          ps.addText(`Orden: ${batch[i].orden}  ·  Viaje N° ${batch[i].viaje}`,{x:px+.04,y:cellY,w:pW*.68,h:miniHdrH,fontSize:5.5,bold:true,color:WHITE,valign:'middle'});
+          ps.addText(batch[i].status,{x:px+pW*.68,y:cellY,w:pW*.32-.04,h:miniHdrH,fontSize:5,bold:true,color:stCM[batch[i].status]||AMBER,align:'right',valign:'middle'});
+          // Línea ámbar
+          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY+miniHdrH,w:pW,h:amberLineH,fill:{color:AMBER}});
+          // Foto
           let imgData=batch[i].img;
           if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,900,0.82);}catch(e){}
-          try{ ps.addImage({data:imgData,x:px,y:py,w:pW,h:pH,sizing:{type:'contain',w:pW,h:pH}}); }catch(e){console.warn('PPTX photo:',e);}
-          ps.addText(batch[i].label,{x:px,y:py+pH+.01,w:pW,h:captionH,fontSize:5.5,color:'64748B',align:'center'});
+          try{ ps.addImage({data:imgData,x:px,y:cellY+miniHdrH+amberLineH,w:pW,h:imgH,sizing:{type:'contain',w:pW,h:imgH}}); }catch(e){console.warn('PPTX photo:',e);}
+          // Barra de info gris claro: fecha · transportista · ruta
+          ps.addShape(pptx.ShapeType.rect,{x:px,y:cellY+miniHdrH+amberLineH+imgH,w:pW,h:infoBarH,fill:{color:'F1F5F9'},line:{color:BORDER,width:.2}});
+          ps.addText(`${batch[i].fecha}  ·  ${batch[i].trans}  ·  ${batch[i].ruta}`,{x:px+.03,y:cellY+miniHdrH+amberLineH+imgH,w:pW-.06,h:infoBarH,fontSize:4.5,color:T2,valign:'middle',wrap:true});
         }
       }
     }
@@ -3622,8 +3652,13 @@ async function generateRevealPresentation(){
   const livePhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
   for(const rec of livePhotoRecs){
     if(!rec.images?.length) continue;
-    rec.images.forEach(img=>allLivePhotos.push({img,label:`Ord ${rec.orden||'—'} · V.${rec.viaje||'—'} · ${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`}));
+    rec.images.forEach(img=>allLivePhotos.push({
+      img, orden:rec.orden||'—', viaje:rec.viaje||'—', status:(rec.status||'—').toUpperCase(),
+      fecha:formatDateToDDMMYYYY(rec.fechaInicio)||'—',
+      trans:(rec.transportista||'—').slice(0,16), ruta:(rec.ruta||'—').slice(0,20)
+    }));
   }
+  const stCssLive={'COMPLETADO':'#22c55e','PENDIENTE':'#f59e0b','EN-RUTA':'#3b82f6','CANCELADO':'#ef4444'};
   let photoSlidesHtml='';
   if(allLivePhotos.length>0){
     photoSlidesHtml+=`\n<!-- SLIDE: EVIDENCIA FOTOGRÁFICA intro -->
@@ -3640,15 +3675,26 @@ async function generateRevealPresentation(){
       let cellsHtml='';
       for(const p of batch){
         let rsz=p.img; try{rsz=await resizeDataUrl(p.img,600,450,0.70);}catch(e){}
-        cellsHtml+=`<div style="text-align:center"><img src="${rsz}" style="width:100%;height:130px;object-fit:cover;border-radius:5px;border:1px solid rgba(255,255,255,.12)"><div style="font-size:.28em;opacity:.4;margin-top:2px;color:#94a3b8;line-height:1.2">${p.label}</div></div>`;
+        const stColor=stCssLive[p.status]||'#f59e0b';
+        cellsHtml+=`<div style="border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">
+          <div style="background:#0f2340;display:flex;justify-content:space-between;align-items:center;padding:3px 6px">
+            <span style="font-size:.28em;font-weight:700;color:#fff;white-space:nowrap">Orden: ${p.orden} · Viaje N°${p.viaje}</span>
+            <span style="font-size:.24em;font-weight:700;color:${stColor};white-space:nowrap;margin-left:4px">${p.status}</span>
+          </div>
+          <div style="height:2px;background:#f59e0b"></div>
+          <img src="${rsz}" style="width:100%;height:108px;object-fit:cover;display:block">
+          <div style="background:#f1f5f9;padding:2px 5px">
+            <span style="font-size:.22em;color:#475569;display:block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.fecha} · ${p.trans} · ${p.ruta}</span>
+          </div>
+        </div>`;
       }
       photoSlidesHtml+=`\n<!-- SLIDE: FOTOS ${rangeLabel} -->
 <section data-transition="fade" data-background="#070f1c">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(245,158,11,.35)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(245,158,11,.35)">
     <span style="font-size:.5em;font-weight:700;letter-spacing:.06em">EVIDENCIA FOTOGRÁFICA</span>
     <span style="font-size:.38em;opacity:.45;color:#94a3b8">${rangeLabel}</span>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${cellsHtml}</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">${cellsHtml}</div>
 </section>`;
     }
   }
