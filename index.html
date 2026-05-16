@@ -349,6 +349,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;
   padding:24px;text-align:center}
 #upOv.on{display:flex}
+
+/* ── Truck overlay (animación camión en página) ─────── */
+#tovOv{display:none;position:fixed;inset:0;background:#0f2340;z-index:900;
+  flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  color:#fff;padding:24px;text-align:center;overflow:hidden}
+#tovOv.on{display:flex}
+.tov-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+  animation:tovTw var(--t) ease-in-out infinite alternate;opacity:.15}
+@keyframes tovTw{to{opacity:.95}}
+#tovOv h2{font-size:1.25rem;font-weight:700;line-height:1.4;z-index:1}
+#tovOv .tov-st{font-size:.85rem;opacity:.55;min-height:1.2em;transition:opacity .3s;z-index:1}
+.tov-scene{width:min(90vw,440px);border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);z-index:1}
+.tov-sky{height:68px;background:linear-gradient(180deg,#060f1f 0%,#102444 100%);position:relative;overflow:hidden}
+.tov-cloud{position:absolute;font-size:1.4rem;opacity:.4;animation:tovCld var(--cd,18s) linear infinite}
+@keyframes tovCld{from{left:110%}to{left:-20%}}
+.tov-road{height:68px;background:#232333;position:relative;overflow:hidden}
+.tov-dash{position:absolute;top:50%;width:300%;height:4px;
+  background:repeating-linear-gradient(90deg,#fff 0,#fff 28px,transparent 28px,transparent 60px);
+  transform:translateY(-50%);animation:tovRd .55s linear infinite}
+@keyframes tovRd{to{transform:translateX(-60px) translateY(-50%)}}
+.tov-road.stop .tov-dash{animation-play-state:paused}
+.tov-truck{position:absolute;bottom:11px;font-size:3rem;line-height:1;left:6%;
+  transition:left 1.6s cubic-bezier(.3,0,.15,1);
+  filter:drop-shadow(2px 3px 6px rgba(0,0,0,.6));transform:scaleX(-1)}
+.tov-truck.go{left:56%}
+.tov-dest{position:absolute;right:8%;bottom:8px;font-size:2.4rem;line-height:1;
+  opacity:0;transform:scale(.7) translateY(6px);transition:all .6s ease .4s}
+.tov-dest.show{opacity:1;transform:scale(1) translateY(0)}
+.tov-ground{height:16px;background:#0e1520}
+.tov-pw{width:min(90vw,440px);background:rgba(255,255,255,.08);border-radius:99px;height:7px;overflow:hidden;z-index:1}
+.tov-pb{height:100%;background:linear-gradient(90deg,#3b82f6,#f59e0b);border-radius:99px;width:2%;transition:width .5s ease}
+.tov-done{display:none;flex-direction:column;align-items:center;gap:14px;z-index:1}
+@keyframes tovUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.tov-done.show{display:flex;animation:tovUp .55s ease}
+.tov-done p{font-size:.9rem;opacity:.75}
+.tov-done button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
+  padding:14px 44px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
+  box-shadow:0 4px 20px rgba(245,158,11,.45)}
 .up-sp{width:46px;height:46px;border:3.5px solid rgba(255,255,255,.2);
   border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
 .up-t{font-size:17px;font-weight:700}
@@ -944,6 +982,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   <div class="up-s" id="upS">Preparando</div>
   <div class="up-bar-bg"><div class="up-bar" id="upBar"></div></div>
   <div class="up-step" id="upStep"></div>
+</div>
+
+<!-- Truck overlay (animación en página para PPT) -->
+<div id="tovOv">
+  <h2 id="tov-h1">🚛 Preparando…</h2>
+  <p class="tov-st" id="tov-st">Iniciando…</p>
+  <div class="tov-scene">
+    <div class="tov-sky">
+      <span class="tov-cloud" style="--cd:22s;top:10px">☁️</span>
+      <span class="tov-cloud" style="--cd:15s;top:28px;font-size:1rem">☁️</span>
+    </div>
+    <div class="tov-road" id="tov-road">
+      <div class="tov-dash"></div>
+      <div class="tov-truck" id="tov-truck">🚛</div>
+      <div class="tov-dest" id="tov-dest">🏭</div>
+    </div>
+    <div class="tov-ground"></div>
+  </div>
+  <div class="tov-pw"><div class="tov-pb" id="tov-pb"></div></div>
+  <div class="tov-done" id="tov-done">
+    <p id="tov-done-msg"></p>
+    <button id="tov-done-btn" onclick="hideTruckOv()">✅ Cerrar</button>
+  </div>
 </div>
 
 <!-- Gallery -->
@@ -2297,6 +2358,59 @@ function galTo(i){if(i===galIdx)return;const img=document.getElementById('gimg')
 
 function showUp(t,s,p){document.getElementById('upOv').classList.add('on');setEl('upT',t);setEl('upS',s);setUpBar(p);}
 function setUpStep(s){setEl('upStep',s);} function setUpBar(p){document.getElementById('upBar').style.width=p+'%';} function hideUp(){document.getElementById('upOv').classList.remove('on');setEl('upStep','');}
+
+/* ── Truck overlay (en página, evita throttle de pestaña en background) ── */
+var _tovTi=null,_tovSi=null;
+function showTruckOv(title,msgs){
+  msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
+  // Reset state
+  var ov=document.getElementById('tovOv');
+  document.getElementById('tov-h1').textContent='🚛 '+title;
+  document.getElementById('tov-st').textContent=msgs[0];
+  document.getElementById('tov-pb').style.width='2%';
+  document.getElementById('tov-truck').className='tov-truck';
+  document.getElementById('tov-dest').className='tov-dest';
+  document.getElementById('tov-road').className='tov-road';
+  document.getElementById('tov-done').className='tov-done';
+  // Populate stars
+  var sky=ov.querySelector('.tov-sky');
+  ov.querySelectorAll('.tov-star').forEach(function(s){s.remove();});
+  for(var i=0;i<40;i++){var s=document.createElement('div');s.className='tov-star';
+    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--t:'+(1.2+Math.random()*3.5)+'s;animation-delay:'+(-Math.random()*4)+'s';
+    ov.appendChild(s);}
+  ov.classList.add('on');
+  // Progress animation
+  var pct=2;
+  _tovTi=setInterval(function(){
+    var step=pct<40?2.8:pct<70?1.4:pct<86?.6:0;
+    pct=Math.min(pct+step,86);
+    document.getElementById('tov-pb').style.width=pct+'%';
+  },420);
+  // Message cycling
+  var mi=0;
+  _tovSi=setInterval(function(){
+    mi=(mi+1)%msgs.length;
+    var el=document.getElementById('tov-st');el.style.opacity=0;
+    setTimeout(function(){el.textContent=msgs[mi];el.style.opacity=1;},300);
+  },4500);
+}
+function doneTruckOv(title,msg){
+  clearInterval(_tovTi);clearInterval(_tovSi);
+  document.getElementById('tov-pb').style.width='100%';
+  document.getElementById('tov-st').style.opacity=0;
+  document.getElementById('tov-road').classList.add('stop');
+  document.getElementById('tov-truck').classList.add('go');
+  setTimeout(function(){document.getElementById('tov-dest').classList.add('show');},900);
+  setTimeout(function(){
+    document.getElementById('tov-h1').textContent=title||'✅ Listo';
+    document.getElementById('tov-done-msg').textContent=msg||'';
+    document.getElementById('tov-done').classList.add('show');
+  },1600);
+}
+function hideTruckOv(){
+  clearInterval(_tovTi);clearInterval(_tovSi);
+  document.getElementById('tovOv').classList.remove('on');
+}
 function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.className='sdot '+s;const m={ok:'OneDrive sincronizado',busy:'Sincronizando…',err:'Error OneDrive',off:'Sin conexión'};d.title=m[s]||s;}
 async function refreshRecords(){
   const btn=document.getElementById('refreshBtn');
@@ -3171,9 +3285,7 @@ async function generatePDF(){
 async function generatePPTX(){
   if(!records.length){toast('No hay registros');return;}
   if(!window.PptxGenJS){toast('⚠ La librería PPTX no está disponible. Verifica conexión a internet.');return;}
-  let _pptWin=window.open('','_blank');
-  if(_pptWin){const _hw=_truckHtml('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']);setTimeout(()=>{if(_pptWin&&!_pptWin.closed){_pptWin.document.open();_pptWin.document.write(_hw);_pptWin.document.close();}},0);}
-  showUp('Generando presentación PowerPoint…','Preparando diapositivas',3);
+  showTruckOv('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']);
   try{
     const pptx=new PptxGenJS();
     pptx.layout='LAYOUT_16x9';
@@ -3665,14 +3777,11 @@ async function generatePPTX(){
     const pptxBlob=await pptx.write({outputType:'blob'});
     /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pptxBlob,pptxName);
-    hideUp();
-    if(_pptWin&&!_pptWin.closed){
-      _pptWin.postMessage({type:'DONE',title:'📊 PowerPoint Listo',msg:'El camión llegó a destino — presentación descargada en tu carpeta de Descargas'},'*');
-    } else { toast('✓ PowerPoint generado y descargado'); }
+    doneTruckOv('📊 PowerPoint Listo','El camión llegó a destino — presentación descargada en tu carpeta de Descargas');
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
-  }catch(e){hideUp();toast('⚠ Error PPTX: '+e.message);console.error(e);}
+  }catch(e){hideTruckOv();toast('⚠ Error PPTX: '+e.message);console.error(e);}
 }
 
 /* ════════════════════════════════════════════════════════
