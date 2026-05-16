@@ -1210,6 +1210,36 @@ function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
   });
 }
 
+/* En Android, sirve el PDF via SW con Content-Disposition:attachment
+   para que Chrome muestre la notificación nativa de descarga con botón ABRIR.
+   Si el SW no está disponible, cae a downloadBlob como respaldo. */
+async function downloadPdfNative(blob, filename) {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid && navigator.serviceWorker?.controller) {
+    try {
+      const buffer = await blob.arrayBuffer();
+      const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      await new Promise((res, rej) => {
+        const ch = new MessageChannel();
+        ch.port1.onmessage = e => e.data === 'ok' ? res() : rej(new Error('sw-err'));
+        navigator.serviceWorker.controller.postMessage(
+          { type: 'STORE_DL', token, buffer, mime: 'application/pdf', filename },
+          [ch.port2, buffer]
+        );
+        setTimeout(() => rej(new Error('sw-timeout')), 5000);
+      });
+      const a = document.createElement('a');
+      a.href = `/sw-download/${token}`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    } catch(e) { /* fallback */ }
+  }
+  downloadBlob(blob, filename);
+}
+
 function downloadBlob(blob,filename){
   /* On Android, using octet-stream prevents the browser from opening files inline */
   const isAndroid=/Android/i.test(navigator.userAgent);
@@ -3048,7 +3078,7 @@ async function generatePDF(){
     setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    downloadBlob(pdfBlob,pdfName);
+    await downloadPdfNative(pdfBlob,pdfName);
     hideUp(); toast('✓ PDF generado y descargado');
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
