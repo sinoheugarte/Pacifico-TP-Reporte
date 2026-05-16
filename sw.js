@@ -1,4 +1,4 @@
-const CACHE = 'pacifico-v47';
+const CACHE = 'pacifico-v48';
 const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
@@ -23,7 +23,18 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  /* Network-first for same-origin (index.html always fresh) */
+
+  /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa.
+     Si el SW devolviera una respuesta cacheada aquí, los registros nuevos
+     creados desde otro dispositivo no se verían hasta limpiar el caché. */
+  if (url.hostname.endsWith('graph.microsoft.com') ||
+      url.hostname.endsWith('sharepoint.com') ||
+      url.hostname.endsWith('microsoftonline.com') ||
+      url.hostname.endsWith('microsoft.com')) {
+    return; // sin respondWith → el navegador gestiona el request normalmente
+  }
+
+  /* Network-first para mismo origen (index.html siempre fresco) */
   if (url.origin === self.location.origin) {
     e.respondWith(
       fetch(e.request).then(res => {
@@ -36,7 +47,8 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  /* Cache-first for CDN assets */
+
+  /* Cache-first para assets CDN estáticos (fuentes, librerías) */
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
