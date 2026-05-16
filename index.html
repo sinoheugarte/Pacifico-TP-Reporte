@@ -2981,6 +2981,7 @@ async function generatePDF(){
       const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
       const totalPdfPhotos=pdfPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
       let pdfPhotoIdx=0;
+      const isMobilePdf=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       setUpStep('Generando páginas de fotos…'); setUpBar(78);
       for(const rec of pdfPhotoRecsF){
         const recPhotos=rec.images;
@@ -3013,13 +3014,16 @@ async function generatePDF(){
           doc.text((rec.transportista||'—').slice(0,22),margin+contentW/2,infoY);
           doc.text((rec.ruta||'—').slice(0,28),margin+contentW*3/4,infoY);
           py0+=recHdrH+amberH+infoBarH+3;
-          // Fotos en cuadrícula 5×3 (sin info superpuesta)
-          batch.forEach((img,i)=>{
-            const col=i%PCOLS, row=Math.floor(i/PCOLS);
+          // Fotos en cuadrícula 3×5 (sin info superpuesta)
+          // En móvil se redimensionan antes de insertar para reducir tamaño y tiempo de generación
+          for(let bi=0;bi<batch.length;bi++){
+            const col=bi%PCOLS, row=Math.floor(bi/PCOLS);
             const px=margin+col*(photoW+pGap);
             const py=py0+row*(photoH+pGap);
-            try{doc.addImage(img,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
-          });
+            let imgData=batch[bi];
+            if(isMobilePdf) try{imgData=await resizeDataUrl(imgData,900,675,0.78);}catch(e){}
+            try{doc.addImage(imgData,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
+          }
           pdfPhotoIdx+=batch.length;
         }
       }
@@ -3039,9 +3043,21 @@ async function generatePDF(){
     setUpBar(95); setUpStep('Preparando descarga…');
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
-    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
-    downloadBlob(pdfBlob,pdfName);
-    hideUp(); toast('✓ PDF generado y descargado');
+    hideUp();
+    /* En móvil: Web Share API muestra diálogo nativo para abrir/compartir el PDF al instante.
+       En escritorio: descarga directa con <a download>. */
+    const isMobileDl=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isMobileDl && typeof navigator.share==='function'){
+      const pdfFile=new File([pdfBlob],pdfName,{type:'application/pdf'});
+      try{
+        await navigator.share({files:[pdfFile],title:'Reporte Pacífico Transportation'});
+      }catch(e){
+        if(e.name!=='AbortError'){downloadBlob(pdfBlob,pdfName);toast('✓ PDF descargado');}
+      }
+    }else{
+      downloadBlob(pdfBlob,pdfName);
+      toast('✓ PDF generado y descargado');
+    }
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
       .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
