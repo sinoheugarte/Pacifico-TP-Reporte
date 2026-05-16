@@ -1,4 +1,4 @@
-const CACHE = 'pacifico-v57';
+const CACHE = 'pacifico-v58';
 const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
@@ -15,7 +15,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE && k !== 'sw-dl-v1').map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -24,29 +24,14 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  /* Descarga forzada: la página almacena la respuesta en Cache API (sw-dl-v1)
-     con Content-Type:octet-stream + Content-Disposition:attachment.
-     El SW la sirve una sola vez y la borra del caché.
-     Content-Disposition:attachment obliga al navegador a descargar
-     sin abrir el visor de PDF → Android muestra la notificación ABRIR. */
-  if (url.pathname.startsWith('/sw-download/')) {
-    e.respondWith(
-      caches.open('sw-dl-v1').then(cache =>
-        cache.match(e.request).then(resp => {
-          if (resp) { cache.delete(e.request); return resp; }
-          return new Response('', { status: 404 });
-        })
-      )
-    );
-    return;
-  }
-
-  /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa */
+  /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa.
+     Si el SW devolviera una respuesta cacheada aquí, los registros nuevos
+     creados desde otro dispositivo no se verían hasta limpiar el caché. */
   if (url.hostname.endsWith('graph.microsoft.com') ||
       url.hostname.endsWith('sharepoint.com') ||
       url.hostname.endsWith('microsoftonline.com') ||
       url.hostname.endsWith('microsoft.com')) {
-    return;
+    return; // sin respondWith → el navegador gestiona el request normalmente
   }
 
   /* Network-first para mismo origen (index.html siempre fresco) */
