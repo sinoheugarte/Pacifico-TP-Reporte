@@ -2974,9 +2974,9 @@ async function generatePDF(){
     const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
     const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
     if(pdfPhotoRecsF.length>0){
-      const PCOLS=5, PER_PAGE=15; // 5 cols × 3 rows = 15 fotos/página
-      const pGap=3, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~34mm
-      const photoH=Math.round(photoW*0.72); // ~24mm
+      const PCOLS=3, PER_PAGE=15; // 3 cols × 5 filas = 15 fotos/página
+      const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
+      const photoH=Math.round(photoW*0.72); // ~42mm
       const recHdrH=6, amberH=1, infoBarH=6;
       const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
       const totalPdfPhotos=pdfPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
