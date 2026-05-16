@@ -2525,9 +2525,12 @@ function captureHiRes(canvasId, scale=3){
 }
 
 /* ── Pantalla de carga animada para descarga del PDF en Android ─────────── */
-const _PDF_LOAD_HTML=`<!doctype html><html lang="es"><head>
+/* ── Pantalla de carga animada (camión en ruta) — PDF / PPT / Live ──────── */
+function _truckHtml(title,msgs){
+  msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
+  return `<!doctype html><html lang="es"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Generando PDF…</title>
+<title>${title}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#0f2340;font-family:system-ui,sans-serif;color:#fff}
@@ -2537,51 +2540,39 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 @keyframes tw{to{opacity:.95}}
 h1{font-size:1.25rem;font-weight:700;text-align:center;line-height:1.4}
 #st{font-size:.85rem;opacity:.55;text-align:center;min-height:1.2em;transition:opacity .3s}
-/* ─── Escena ─── */
-.scene{width:min(90vw,440px);border-radius:14px;overflow:hidden;
-  box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.scene{width:min(90vw,440px);border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)}
 .sky{height:68px;background:linear-gradient(180deg,#060f1f 0%,#102444 100%);position:relative;overflow:hidden}
-/* Nubes */
-.cloud{position:absolute;top:14px;font-size:1.4rem;opacity:.4;animation:cld var(--cd,18s) linear infinite}
+.cloud{position:absolute;font-size:1.4rem;opacity:.4;animation:cld var(--cd,18s) linear infinite}
 @keyframes cld{from{left:110%}to{left:-20%}}
 .road{height:68px;background:#232333;position:relative;overflow:hidden}
-/* Asfalto rayado */
 .dash{position:absolute;top:50%;width:300%;height:4px;
-  background:repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 28px,transparent 28px,transparent 60px);
+  background:repeating-linear-gradient(90deg,#fff 0,#fff 28px,transparent 28px,transparent 60px);
   transform:translateY(-50%);animation:rd .55s linear infinite}
 @keyframes rd{to{transform:translateX(-60px) translateY(-50%)}}
 .road.stop .dash{animation-play-state:paused}
-/* Camión */
-.truck{position:absolute;bottom:11px;font-size:3rem;line-height:1;
-  left:6%;transition:left 1.6s cubic-bezier(.3,0,.15,1);
-  filter:drop-shadow(2px 3px 6px rgba(0,0,0,.6));
-  transform:scaleX(-1)}
+.truck{position:absolute;bottom:11px;font-size:3rem;line-height:1;left:6%;
+  transition:left 1.6s cubic-bezier(.3,0,.15,1);
+  filter:drop-shadow(2px 3px 6px rgba(0,0,0,.6));transform:scaleX(-1)}
 .truck.go{left:56%}
-/* Destino */
 .dest{position:absolute;right:8%;bottom:8px;font-size:2.4rem;line-height:1;
   opacity:0;transform:scale(.7) translateY(6px);transition:all .6s ease .4s}
 .dest.show{opacity:1;transform:scale(1) translateY(0)}
 .ground{height:16px;background:#0e1520}
-/* ─── Barra de progreso ─── */
 .pw{width:min(90vw,440px);background:rgba(255,255,255,.08);border-radius:99px;height:7px;overflow:hidden}
 .pb{height:100%;background:linear-gradient(90deg,#3b82f6,#f59e0b);
   border-radius:99px;width:2%;transition:width .5s ease}
-/* ─── Botón ABRIR ─── */
-.abrir{display:none;flex-direction:column;align-items:center;gap:14px;
-  animation:up .55s ease}
+.done{display:none;flex-direction:column;align-items:center;gap:14px;animation:up .55s ease}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.abrir p{font-size:.9rem;opacity:.75;text-align:center}
-.abrir button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
+.done p{font-size:.9rem;opacity:.75;text-align:center}
+.done button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
   padding:14px 44px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
   box-shadow:0 4px 20px rgba(245,158,11,.45)}
 </style></head><body>
-<script>
-for(var i=0;i<40;i++){var s=document.createElement('div');s.className='star';
+<script>for(var i=0;i<40;i++){var s=document.createElement('div');s.className='star';
 s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--t:'+(1.2+Math.random()*3.5)+'s;animation-delay:'+(-Math.random()*4)+'s';
-document.body.appendChild(s);}
-<\/script>
-<h1>🚛 Preparando tu Reporte PDF</h1>
-<p id="st">Recopilando datos del reporte…</p>
+document.body.appendChild(s);}<\/script>
+<h1 id="h1">🚛 ${title}</h1>
+<p id="st">${msgs[0]}</p>
 <div class="scene">
   <div class="sky">
     <span class="cloud" style="--cd:22s;top:10px">☁️</span>
@@ -2595,48 +2586,49 @@ document.body.appendChild(s);}
   <div class="ground"></div>
 </div>
 <div class="pw"><div class="pb" id="pb"></div></div>
-<div class="abrir" id="abrir">
-  <p>✅ El camión llegó a destino — reporte listo</p>
-  <button onclick="abrirPdf()">📂 ABRIR PDF</button>
+<div class="done" id="done">
+  <p id="done-msg"></p>
+  <button id="done-btn" style="display:none" onclick="doAction()"></button>
 </div>
 <script>
 var pb=document.getElementById('pb'),pct=2;
-var msgs=['Recopilando datos del reporte…','Generando páginas y gráficos…','Procesando tablas de registros…','Añadiendo evidencia fotográfica…','Aplicando formato profesional…','Finalizando el documento PDF…'];
+var msgs=${JSON.stringify(msgs)};
 var mi=0;
 var ti=setInterval(function(){
   var step=pct<40?2.8:pct<70?1.4:pct<86?.6:0;
   pct=Math.min(pct+step,86);pb.style.width=pct+'%';
 },420);
-var si=setInterval(function(){mi=(mi+1)%msgs.length;var el=document.getElementById('st');el.style.opacity=0;setTimeout(function(){el.textContent=msgs[mi];el.style.opacity=1;},300);},4500);
-var pdfUrl=null;
-function abrirPdf(){if(pdfUrl)window.location.href=pdfUrl;}
+var si=setInterval(function(){
+  mi=(mi+1)%msgs.length;
+  var el=document.getElementById('st');el.style.opacity=0;
+  setTimeout(function(){el.textContent=msgs[mi];el.style.opacity=1;},300);
+},4500);
+var _url=null;
+function doAction(){if(_url)window.location.href=_url;}
 window.addEventListener('message',function(e){
-  if(!e.data||e.data.type!=='PDF_READY')return;
-  pdfUrl=e.data.url;
+  if(!e.data||e.data.type!=='DONE')return;
   clearInterval(ti);clearInterval(si);
   pb.style.width='100%';
-  document.getElementById('st').textContent='¡PDF generado con éxito!';
-  var road=document.getElementById('road');
-  road.classList.add('stop');
+  document.getElementById('st').style.opacity=0;
+  document.getElementById('road').classList.add('stop');
   document.getElementById('truck').classList.add('go');
   setTimeout(function(){document.getElementById('dest').classList.add('show');},900);
   setTimeout(function(){
-    document.querySelector('h1').textContent='📄 Reporte PDF Listo';
-    var a=document.getElementById('abrir');a.style.display='flex';
+    document.getElementById('h1').textContent=e.data.title||'✅ Listo';
+    document.getElementById('done-msg').textContent=e.data.msg||'';
+    if(e.data.url){_url=e.data.url;var b=document.getElementById('done-btn');b.textContent=e.data.btn||'📂 ABRIR';b.style.display='';}
+    document.getElementById('done').style.display='flex';
   },1600);
 });
 <\/script>
 </body></html>`;
+}
 
 async function generatePDF(){
   if(!records.length){toast('No hay registros para generar el PDF');return;}
   /* Abre la ventana de carga animada AHORA, dentro del gesto del usuario */
-  const isAndroid=/Android/i.test(navigator.userAgent);
-  let _pdfWin=null;
-  if(isAndroid){
-    _pdfWin=window.open('','_blank');
-    if(_pdfWin){_pdfWin.document.open();_pdfWin.document.write(_PDF_LOAD_HTML);_pdfWin.document.close();}
-  }
+  let _pdfWin=window.open('','_blank');
+  if(_pdfWin){_pdfWin.document.open();_pdfWin.document.write(_truckHtml('Preparando tu Reporte PDF',['Recopilando datos del reporte…','Generando páginas y gráficos…','Procesando tablas de registros…','Añadiendo evidencia fotográfica…','Aplicando formato profesional…','Finalizando el documento PDF…']));_pdfWin.document.close();}
   showUp('Generando PDF profesional…','Preparando datos',5);
   try{
     const {jsPDF} = window.jspdf;
@@ -3163,7 +3155,7 @@ async function generatePDF(){
     hideUp();
     if(_pdfWin&&!_pdfWin.closed){
       const _blobUrl=URL.createObjectURL(pdfBlob);
-      _pdfWin.postMessage({type:'PDF_READY',url:_blobUrl},'*');
+      _pdfWin.postMessage({type:'DONE',title:'📄 Reporte PDF Listo',msg:'El camión llegó a destino — reporte generado',url:_blobUrl,btn:'📂 ABRIR PDF'},'*');
       setTimeout(()=>URL.revokeObjectURL(_blobUrl),60000);
     } else { toast('✓ PDF generado y descargado'); }
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
@@ -3179,6 +3171,8 @@ async function generatePDF(){
 async function generatePPTX(){
   if(!records.length){toast('No hay registros');return;}
   if(!window.PptxGenJS){toast('⚠ La librería PPTX no está disponible. Verifica conexión a internet.');return;}
+  let _pptWin=window.open('','_blank');
+  if(_pptWin){_pptWin.document.open();_pptWin.document.write(_truckHtml('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']));_pptWin.document.close();}
   showUp('Generando presentación PowerPoint…','Preparando diapositivas',3);
   try{
     const pptx=new PptxGenJS();
@@ -3671,7 +3665,10 @@ async function generatePPTX(){
     const pptxBlob=await pptx.write({outputType:'blob'});
     /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
     downloadBlob(pptxBlob,pptxName);
-    hideUp(); toast('✓ PowerPoint generado y descargado');
+    hideUp();
+    if(_pptWin&&!_pptWin.closed){
+      _pptWin.postMessage({type:'DONE',title:'📊 PowerPoint Listo',msg:'El camión llegó a destino — presentación descargada en tu carpeta de Descargas'},'*');
+    } else { toast('✓ PowerPoint generado y descargado'); }
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
@@ -3687,10 +3684,7 @@ async function generateRevealPresentation(){
      En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
   const win=window.open('','_blank');
   if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cargando…</title>
-<style>body{margin:0;background:#0f2340;display:flex;align-items:center;justify-content:center;
-height:100vh;font-family:'DM Sans',sans-serif;color:#fff;font-size:1.2rem}</style></head>
-<body>Generando presentación…</body></html>`);
+  win.document.open();win.document.write(_truckHtml('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']));win.document.close();
   toast('Generando presentación…');
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
