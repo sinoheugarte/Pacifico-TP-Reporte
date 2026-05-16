@@ -3086,7 +3086,7 @@ async function generatePDF(){
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
     downloadBlob(pdfBlob,pdfName);
-    hideUp(); toast('✓ PDF generado y descargado');
+    hideUp();
     showPdfBar(pdfBlob,pdfName);
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
