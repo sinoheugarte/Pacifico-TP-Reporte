@@ -1218,17 +1218,19 @@ function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
    y fuerza al gestor de descargas nativo a mostrar la notificación ABRIR. */
 async function downloadPdfAndroid(blob,filename){
   const isAndroid=/Android/i.test(navigator.userAgent);
-  if(isAndroid&&navigator.serviceWorker?.controller){
+  if(isAndroid&&'serviceWorker' in navigator){
     try{
+      /* navigator.serviceWorker.ready garantiza que el SW está activo aunque
+         controller sea null en la primera carga (antes de clients.claim()) */
+      const reg=await navigator.serviceWorker.ready;
+      const sw=reg.active;
+      if(!sw) throw new Error('no-sw');
       const buffer=await blob.arrayBuffer();
       const token=Date.now().toString(36)+Math.random().toString(36).slice(2);
       await new Promise((res,rej)=>{
         const ch=new MessageChannel();
         ch.port1.onmessage=e=>e.data==='ok'?res():rej(new Error('sw-err'));
-        navigator.serviceWorker.controller.postMessage(
-          {type:'STORE_DL',token,buffer,filename},
-          [ch.port2,buffer]
-        );
+        sw.postMessage({type:'STORE_DL',token,buffer,filename},[ch.port2,buffer]);
         setTimeout(()=>rej(new Error('sw-timeout')),5000);
       });
       const a=document.createElement('a');
@@ -3598,6 +3600,14 @@ async function generatePPTX(){
 ════════════════════════════════════════════════════════ */
 async function generateRevealPresentation(){
   if(!records.length){toast('No hay registros');return;}
+  /* Abre la ventana ANTES de cualquier await para que Chrome no la bloquee.
+     En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
+  const win=window.open('','_blank');
+  if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cargando…</title>
+<style>body{margin:0;background:#0f2340;display:flex;align-items:center;justify-content:center;
+height:100vh;font-family:'DM Sans',sans-serif;color:#fff;font-size:1.2rem}</style></head>
+<body>Generando presentación…</body></html>`);
   toast('Generando presentación…');
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
@@ -4387,8 +4397,8 @@ window.addEventListener('resize',function(){
 <\/script>
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(win){
+  /* win ya fue abierto al inicio de la función, antes de cualquier await */
+  {
     /* Start heartbeat here — we have the user gesture from the Live button tap.
        The audio object lives in the main window; the presentation controls it
        via window.opener._presHbAudio so no gesture is needed in the new tab. */
@@ -4407,9 +4417,8 @@ window.addEventListener('resize',function(){
       _bg.play().catch(function(){});
       window._presBgAudio=_bg;
     }catch(e){}
-    win.document.write(html);win.document.close();
+    win.document.open();win.document.write(html);win.document.close();
   }
-  else toast('⚠ Permite las ventanas emergentes para ver la presentación');
 }
 
 /* ─── INTRO ANIMATION ─────────────────────────────── */
