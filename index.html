@@ -3775,9 +3775,10 @@ async function generatePPTX(){
     setUpStep('Preparando descarga…'); setUpBar(97);
     const pptxName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pptx`;
     const pptxBlob=await pptx.write({outputType:'blob'});
-    /* Download immediately — upload to OneDrive in background so mobile isn't blocked */
-    downloadBlob(pptxBlob,pptxName);
-    doneTruckOv('📊 PowerPoint Listo','El camión llegó a destino — presentación descargada en tu carpeta de Descargas');
+    /* Inicia animación de llegada; dispara la descarga cuando el camión llega
+       (~1700ms) para que la notificación nativa coincida con el estado done */
+    doneTruckOv('📊 PowerPoint Listo','Presentación descargada en tu carpeta de Descargas');
+    setTimeout(()=>downloadBlob(pptxBlob,pptxName),1700);
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
