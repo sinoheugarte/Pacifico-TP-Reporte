@@ -1,8 +1,11 @@
-const CACHE = 'pacifico-v54';
+const CACHE = 'pacifico-v55';
 const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
+
+/* Almacén temporal para descargas de PDF forzadas via SW */
+const _dlStore = new Map();
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -20,18 +23,47 @@ self.addEventListener('activate', e => {
   );
 });
 
+/* La página envía el ArrayBuffer del PDF; el SW lo guarda y devuelve 'ok' */
+self.addEventListener('message', e => {
+  if (e.data?.type === 'STORE_DL') {
+    const { token, buffer, filename } = e.data;
+    _dlStore.set(token, { buffer, filename });
+    setTimeout(() => _dlStore.delete(token), 120000);
+    e.ports[0]?.postMessage('ok');
+  }
+});
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa.
-     Si el SW devolviera una respuesta cacheada aquí, los registros nuevos
-     creados desde otro dispositivo no se verían hasta limpiar el caché. */
+  /* Descarga forzada: octet-stream + nosniff + attachment impide que
+     Chrome detecte los bytes %PDF- y abra el visor en lugar del
+     gestor de descargas nativo con la notificación ABRIR */
+  if (url.pathname.startsWith('/sw-download/')) {
+    const token = url.pathname.split('/')[2];
+    const entry = _dlStore.get(token);
+    if (entry) {
+      _dlStore.delete(token);
+      e.respondWith(new Response(entry.buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${entry.filename}"`,
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Length': String(entry.buffer.byteLength)
+        }
+      }));
+      return;
+    }
+  }
+
+  /* Datos dinámicos de Microsoft — nunca cachear, siempre red directa */
   if (url.hostname.endsWith('graph.microsoft.com') ||
       url.hostname.endsWith('sharepoint.com') ||
       url.hostname.endsWith('microsoftonline.com') ||
       url.hostname.endsWith('microsoft.com')) {
-    return; // sin respondWith → el navegador gestiona el request normalmente
+    return;
   }
 
   /* Network-first para mismo origen (index.html siempre fresco) */
