@@ -2394,7 +2394,7 @@ function showTruckOv(title,msgs){
     setTimeout(function(){el.textContent=msgs[mi];el.style.opacity=1;},300);
   },4500);
 }
-function doneTruckOv(title,msg){
+function doneTruckOv(title,msg,btnText,btnAction){
   clearInterval(_tovTi);clearInterval(_tovSi);
   document.getElementById('tov-pb').style.width='100%';
   document.getElementById('tov-st').style.opacity=0;
@@ -2404,6 +2404,9 @@ function doneTruckOv(title,msg){
   setTimeout(function(){
     document.getElementById('tov-h1').textContent=title||'✅ Listo';
     document.getElementById('tov-done-msg').textContent=msg||'';
+    var btn=document.getElementById('tov-done-btn');
+    btn.textContent=btnText||'✅ Cerrar';
+    btn.onclick=btnAction?function(){btnAction();hideTruckOv();}:hideTruckOv;
     document.getElementById('tov-done').classList.add('show');
   },1600);
 }
@@ -3775,10 +3778,9 @@ async function generatePPTX(){
     setUpStep('Preparando descarga…'); setUpBar(97);
     const pptxName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pptx`;
     const pptxBlob=await pptx.write({outputType:'blob'});
-    /* Inicia animación de llegada; dispara la descarga cuando el camión llega
-       (~1700ms) para que la notificación nativa coincida con el estado done */
-    doneTruckOv('📊 PowerPoint Listo','Presentación descargada en tu carpeta de Descargas');
-    setTimeout(()=>downloadBlob(pptxBlob,pptxName),1700);
+    /* El botón ABRIR PPT dispara la descarga desde un gesto del usuario,
+       lo que garantiza la notificación nativa de Android */
+    doneTruckOv('📊 PowerPoint Listo','Tu presentación está lista — toca para descargar y abrir','📂 ABRIR PPT',()=>downloadBlob(pptxBlob,pptxName));
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
