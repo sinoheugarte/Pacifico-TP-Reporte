@@ -2974,9 +2974,9 @@ async function generatePDF(){
     const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
     const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
     if(pdfPhotoRecsF.length>0){
-      const PCOLS=3, PER_PAGE=6;
-      const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
-      const photoH=Math.round(photoW*0.72); // ~42mm
+      const PCOLS=5, PER_PAGE=15; // 5 cols × 3 rows = 15 fotos/página
+      const pGap=3, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~34mm
+      const photoH=Math.round(photoW*0.72); // ~24mm
       const recHdrH=6, amberH=1, infoBarH=6;
       const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
       const totalPdfPhotos=pdfPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
@@ -3004,15 +3004,16 @@ async function generatePDF(){
           doc.text((rec.status||'—').toUpperCase(),margin+contentW-2,py0+4.2,{align:'right'});
           // Línea ámbar
           doc.setFillColor(245,158,11); doc.rect(margin,py0+recHdrH,contentW,amberH,'F');
-          // Barra de info (fecha · transportista · ruta)
+          // Barra de info: fecha | motivo | transportista | ruta
           doc.setFillColor(241,245,249); doc.rect(margin,py0+recHdrH+amberH,contentW,infoBarH,'F');
           doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(6);
           const infoY=py0+recHdrH+amberH+4.2;
           doc.text(formatDateToDDMMYYYY(rec.fechaInicio)||'—',margin+2,infoY);
-          doc.text((rec.transportista||'—').slice(0,22),margin+contentW/3,infoY);
-          doc.text((rec.ruta||'—').slice(0,28),margin+contentW*2/3,infoY);
+          doc.text((rec.motivo||'—').slice(0,22),margin+contentW/4,infoY);
+          doc.text((rec.transportista||'—').slice(0,22),margin+contentW/2,infoY);
+          doc.text((rec.ruta||'—').slice(0,28),margin+contentW*3/4,infoY);
           py0+=recHdrH+amberH+infoBarH+3;
-          // Fotos en cuadrícula 3×2 (sin info superpuesta)
+          // Fotos en cuadrícula 5×3 (sin info superpuesta)
           batch.forEach((img,i)=>{
             const col=i%PCOLS, row=Math.floor(i/PCOLS);
             const px=margin+col*(photoW+pGap);
@@ -3409,11 +3410,12 @@ async function generatePPTX(){
           ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
           ps.addText(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:6.5,h:.62,fontSize:12,bold:true,color:WHITE,valign:'middle'});
           ps.addText((rec.status||'').toUpperCase(),{x:7.2,y:0,w:2.5,h:.62,fontSize:9,bold:true,color:stCM[(rec.status||'').toLowerCase()]||AMBER,align:'right',valign:'middle'});
-          // Barra de info del registro
+          // Barra de info del registro: fecha | motivo | transportista | ruta
           ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.36,fill:{color:WHITE},line:{color:BORDER,width:.3}});
-          ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:2.0,h:.36,fontSize:7.5,color:T2,valign:'middle'});
-          ps.addText(`${(rec.transportista||'—').slice(0,22)}`,{x:2.5,y:.67,w:3.2,h:.36,fontSize:7.5,color:T2,valign:'middle'});
-          ps.addText(`${(rec.ruta||'—').slice(0,30)}`,{x:5.8,y:.67,w:3.9,h:.36,fontSize:7.5,color:T2,valign:'middle'});
+          ps.addText(`${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}`,{x:ML,y:.67,w:1.7,h:.36,fontSize:7,color:T2,valign:'middle'});
+          ps.addText(`${(rec.motivo||'—').slice(0,20)}`,{x:2.1,y:.67,w:2.1,h:.36,fontSize:7,color:T2,valign:'middle'});
+          ps.addText(`${(rec.transportista||'—').slice(0,20)}`,{x:4.3,y:.67,w:2.2,h:.36,fontSize:7,color:T2,valign:'middle'});
+          ps.addText(`${(rec.ruta||'—').slice(0,26)}`,{x:6.6,y:.67,w:3.1,h:.36,fontSize:7,color:T2,valign:'middle'});
           // Fotos en cuadrícula 3×2 (sin datos superpuestos)
           for(let i=0;i<batch.length;i++){
             const col=i%pCOLS, row=Math.floor(i/pCOLS);
@@ -3665,8 +3667,8 @@ async function generateRevealPresentation(){
         const batch=recPhotos.slice(pi,pi+LPP);
         let cellsHtml='';
         for(const img of batch){
-          let rsz=img; try{rsz=await resizeDataUrl(img,600,450,0.70);}catch(e){}
-          cellsHtml+=`<div><img src="${rsz}" style="width:100%;height:130px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,255,255,.08)"></div>`;
+          let rsz=img; try{rsz=await resizeDataUrl(img,900,675,0.85);}catch(e){}
+          cellsHtml+=`<div style="aspect-ratio:4/3;background:#0a0a0a;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.1)"><img src="${rsz}" style="width:100%;height:100%;object-fit:contain;display:block"></div>`;
         }
         photoSlidesHtml+=`\n<!-- SLIDE: Ord ${rec.orden||'—'} V${rec.viaje||'—'} -->
 <section data-transition="fade" data-background="#070f1c">
@@ -3675,10 +3677,14 @@ async function generateRevealPresentation(){
     <span style="font-size:.5em;font-weight:700;color:${stColor}">${(rec.status||'').toUpperCase()}</span>
   </div>
   <div style="height:3px;background:#f59e0b;margin-bottom:3px"></div>
-  <div style="background:#f1f5f9;padding:3px 12px;display:flex;gap:24px;margin-bottom:6px;border-radius:3px">
-    <span style="font-size:.38em;color:#475569">${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}</span>
-    <span style="font-size:.38em;color:#475569">${(rec.transportista||'—').slice(0,20)}</span>
-    <span style="font-size:.38em;color:#475569">${(rec.ruta||'—').slice(0,25)}</span>
+  <div style="background:#f1f5f9;padding:3px 12px;display:flex;gap:16px;margin-bottom:5px;border-radius:3px">
+    <span style="font-size:.36em;color:#475569">${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}</span>
+    <span style="font-size:.36em;color:#94a3b8">·</span>
+    <span style="font-size:.36em;color:#475569">${(rec.motivo||'—').slice(0,22)}</span>
+    <span style="font-size:.36em;color:#94a3b8">·</span>
+    <span style="font-size:.36em;color:#475569">${(rec.transportista||'—').slice(0,20)}</span>
+    <span style="font-size:.36em;color:#94a3b8">·</span>
+    <span style="font-size:.36em;color:#475569">${(rec.ruta||'—').slice(0,25)}</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">${cellsHtml}</div>
 </section>`;
