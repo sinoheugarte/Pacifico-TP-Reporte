@@ -444,8 +444,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   line-height:1.5;transition:all .15s}
 .efm-primary-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 .efm-primary-btn:hover:not(.active){background:var(--bg);color:var(--text)}
-.efm-opt-dim{opacity:.28;pointer-events:none}
-.efm-opt-dim span{text-decoration:line-through;color:var(--text2)}
+.efm-opt-dim{opacity:.35;pointer-events:none;background:#fef2f2;border-radius:6px}
+.efm-opt-dim span{text-decoration:line-through;color:#ef4444}
+.efm-opt-dim input{opacity:.3}
 .efm-range{display:flex;flex-direction:column;gap:8px;padding:6px 0}
 .efm-range label{font-size:11px;font-weight:600;color:var(--text2);
   display:flex;flex-direction:column;gap:4px}
@@ -2591,28 +2592,14 @@ function _efmPrimarySubset(){
 /* Establece / quita el filtro principal y refresca toda la UI */
 function _efmSetPrimary(fieldId){
   if(_efm.primaryField===fieldId){
-    /* Quitar principal → restaurar selección completa */
     _efm.primaryField=null;
-    /* Restaurar todos los campos al estado completo */
     _EFM_FIELDS.forEach(function(x){_efm.state[x.id]=new Set(_efmUniq(x.key));});
   }else{
-    /* Marcar como principal → limpiar su selección para que el usuario elija */
     _efm.primaryField=fieldId;
     _efm.state[fieldId]=new Set();
-    /* Limpiar también los secundarios hasta que el principal tenga selección */
     _EFM_FIELDS.forEach(function(x){if(x.id!==fieldId)_efm.state[x.id]=new Set();});
   }
-  var primarySub=_efmPrimarySubset();
-  _EFM_FIELDS.forEach(function(f){
-    var vals=_efmUniq(f.key);
-    _efmRenderSec(f,vals,primarySub);
-    _efmUpdateBadge(f.id,vals);
-    var btn=document.getElementById('efm-primary-'+f.id);
-    if(btn){
-      if(_efm.primaryField===f.id){btn.textContent='● Principal';btn.classList.add('active');}
-      else{btn.textContent='○ Principal';btn.classList.remove('active');}
-    }
-  });
+  _efmBuild();
   _efmUpdateCount();
 }
 /* Refresca únicamente los filtros secundarios cuando cambia la selección del principal */
@@ -2622,25 +2609,26 @@ function _efmRefreshSecondary(){
   _EFM_FIELDS.forEach(function(f){
     if(f.id===_efm.primaryField)return;
     var vals=_efmUniq(f.key);
-    /* Actualizar estado del campo secundario según el filtro principal */
     if(primarySub&&primarySub.length>0){
       var pVals=new Set(_efmUniq(f.key,primarySub));
-      /* Conservar selecciones previas que sigan siendo válidas;
-         si ninguna lo es, seleccionar todas las disponibles */
       var kept=new Set();
       if(_efm.state[f.id]){_efm.state[f.id].forEach(function(v){if(pVals.has(v))kept.add(v);});}
       _efm.state[f.id]=kept.size>0?kept:new Set(pVals);
-    }else if(primarySub&&primarySub.length===0){
-      /* Filtro principal vacío → nada seleccionado en secundarios */
+    }else if(primarySub!==null&&primarySub.length===0){
       _efm.state[f.id]=new Set();
     }
-    _efmRenderSec(f,vals,primarySub);
-    _efmUpdateBadge(f.id,vals);
   });
+  _efmBuild();
   _efmUpdateCount();
 }
 function _efmBuild(){
   var body=document.getElementById('efm-body');
+  /* Preservar estado abierto/cerrado de las secciones existentes */
+  var openMap={};
+  _EFM_FIELDS.forEach(function(f){
+    var s=document.getElementById('efm-sec-'+f.id);
+    openMap[f.id]=!s||s.classList.contains('open');
+  });
   body.innerHTML='';
   var allVals={};
   _EFM_FIELDS.forEach(function(f){
@@ -2657,7 +2645,7 @@ function _efmBuild(){
     if(f.isDate&&_efm.dateMode==='range'){badge='efm-badge-some';badgeTxt='Rango';}
     var isPrimary=_efm.primaryField===f.id;
     var sec=document.createElement('div');
-    sec.className='efm-sec open';
+    sec.className='efm-sec'+(openMap[f.id]!==false?' open':'');
     sec.id='efm-sec-'+f.id;
     sec.innerHTML='<div class="efm-sec-hdr" onclick="_efmToggleSec(\''+f.id+'\')">'+
       '<span class="efm-sec-hdr-left">'+f.label+
