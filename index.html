@@ -2708,12 +2708,20 @@ function _efmRenderSec(f,vals,primarySub){
     var lbl=f.isDate?_efmFmtDate(v):(f.key==='status'?(_EFM_STATUS_LABELS[v]||v):v);
     var opt=document.createElement('label');
     opt.className='efm-opt'+(isDimmed?' efm-opt-dim':'');
+    var cb=document.createElement('input');
+    cb.type='checkbox';
     if(isDimmed){
-      opt.innerHTML='<input type="checkbox" disabled><span>'+lbl+'</span>';
+      cb.disabled=true;
     }else{
-      opt.innerHTML='<input type="checkbox"'+((_efm.state[f.id]&&_efm.state[f.id].has(v))?' checked':'')+
-        ' onchange="_efmOptChange(\''+f.id+'\','+JSON.stringify(v)+',this.checked)"><span>'+lbl+'</span>';
+      cb.checked=!!(_efm.state[f.id]&&_efm.state[f.id].has(v));
+      (function(fid,val){
+        cb.addEventListener('change',function(e){_efmOptChange(fid,val,e.target.checked);});
+      })(f.id,v);
     }
+    var sp=document.createElement('span');
+    sp.textContent=lbl;
+    opt.appendChild(cb);
+    opt.appendChild(sp);
     body.appendChild(opt);
   });
 }
