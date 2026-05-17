@@ -620,7 +620,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
         <path d="M9.5 7a6 6 0 0 1 5.5-1.5L8.5 15.1l10.5.01A3.8 3.8 0 0 0 22.5 11.2a3.8 3.8 0 0 0-3.8-3.8h-.18A6 6 0 0 0 9.5 7z" fill="#0078D4"/>
         <path d="M15 5.5a6 6 0 0 1 3.5-1h.2a3.8 3.8 0 0 1 3.8 3.8 3.8 3.8 0 0 1-2.8 3.7L9.2 13l5.8-7.5z" fill="#1490DF"/>
       </svg>
-      <div>Registros y fotos se guardan automáticamente en tu <strong>OneDrive corporativo</strong></div>
+      <div>Registros en <strong>SharePoint compartido</strong> · Fotos en tu <strong>OneDrive personal</strong></div>
     </div>
 
     <button class="btn-ms" id="btnMS" onclick="signIn()">
@@ -685,7 +685,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <div class="hdr-t" id="hdrT">Reporte de Transporte</div>
     <div class="hdr-s" id="hdrS">Pacífico Transportation SAC</div>
   </div>
-  <div class="sdot off" id="sdot" title="Estado OneDrive"></div>
+  <div class="sdot off" id="sdot" title="Estado SharePoint"></div>
   <button class="hdr-btn" id="refreshBtn" onclick="refreshRecords()" title="Actualizar registros">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="17" height="17">
       <polyline points="23 4 23 10 17 10"/>
@@ -751,7 +751,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 <div class="scr" id="scr-form">
   <div class="fhdr">
     <div class="ft" id="fTitle">Nuevo Reporte</div>
-    <div class="fs">Los datos y fotos se guardarán automáticamente en OneDrive</div>
+    <div class="fs">Datos en SharePoint compartido · Fotos en tu OneDrive personal</div>
   </div>
   <div class="fsec">
     <div class="slbl">Identificación</div>
@@ -877,7 +877,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <button class="btn-s" onclick="cancelForm()">Cancelar</button>
     <button class="btn-p" id="btnSave" onclick="saveRecord()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      Guardar en OneDrive
+      Guardar
     </button>
   </div>
   <div style="height:20px"></div>
@@ -1137,10 +1137,6 @@ const OD_PHOTOS = 'Fotos';
 const GRAPH     = 'https://graph.microsoft.com/v1.0';
 const CFG_KEY   = 'ptp_cfg';
 const CACHE_KEY = 'ptp_cache';
-/* SharePoint — URL del sitio corporativo donde vive el JSON/Excel compartido.
-   El admin configura esto una vez en "Configuración avanzada".
-   Ejemplo: https://contoso.sharepoint.com/sites/Transportes            */
-const DEFAULT_SP_SITE = '';
 /* SharePoint — URL del sitio corporativo donde vive el JSON/Excel compartido.
    El admin configura esto una vez en "Configuración avanzada".
    Ejemplo: https://contoso.sharepoint.com/sites/Transportes            */
@@ -2187,7 +2183,7 @@ async function saveRecord(){
 
     await pushToOneDrive(rec, formImgs);
     editingId=null; formImgs=[]; deletedImgs=[];
-    hideUp(); toast('✓ Guardado en OneDrive correctamente');
+    hideUp(); toast('✓ Guardado en SharePoint correctamente');
     showScr('list');
   }catch(e){
     hideUp();
@@ -2412,11 +2408,12 @@ async function delRec(id){
 function renderUserCard() {
   if(!user)return;
   const ini=(user.name||user.email).split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
-  setEl('ucardW',`<div class="ucard"><div class="uav">${ini}</div><div class="uname">${user.name}</div><div class="uemail">${user.email}</div><div class="ubadge"><div class="sdot ok" style="width:7px;height:7px"></div>Conectado a OneDrive</div></div>`);
+  setEl('ucardW',`<div class="ucard"><div class="uav">${ini}</div><div class="uname">${user.name}</div><div class="uemail">${user.email}</div><div class="ubadge"><div class="sdot ok" style="width:7px;height:7px"></div>Conectado a Microsoft 365</div></div>`);
   setEl('sEmail',user.email);setEl('sTotal',records.length); setEl('sSync',lastSync?lastSync.toLocaleTimeString('es-PE'):'—');
-  setEl('odJson',`OneDrive / ${OD_ROOT} / ${OD_JSON}`); setEl('odXlsx',`OneDrive / ${OD_ROOT} / ${OD_EXCEL}`); setEl('odPhotos',`OneDrive / ${OD_ROOT} / ${OD_PHOTOS} / ORDEN-{N°}-{DD-MM-YYYY} /`);
+  setEl('odJson',`SharePoint / ${OD_ROOT} / ${OD_JSON}`); setEl('odXlsx',`SharePoint / ${OD_ROOT} / ${OD_EXCEL}`); setEl('odPhotos',`OneDrive / ${OD_ROOT} / ${OD_PHOTOS} / ORDEN-{N°}-{DD-MM-YYYY} /`);
 }
 function openOD(){window.open('https://onedrive.live.com','_blank');}
+function openSP(){window.open(cfg.spSite||'https://sharepoint.com','_blank');}
 
 function toggleEM(e){e.stopPropagation();const m=document.getElementById('emenu'),o=document.getElementById('emOv'),op=m.style.display!=='none';m.style.display=op?'none':'block';o.style.display=op?'none':'block';}
 function closeEM(){document.getElementById('emenu').style.display='none';document.getElementById('emOv').style.display='none';}
@@ -2870,7 +2867,7 @@ async function applyExportFilter(){
   }finally{records=orig;}
 }
 
-function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.className='sdot '+s;const m={ok:'OneDrive sincronizado',busy:'Sincronizando…',err:'Error OneDrive',off:'Sin conexión'};d.title=m[s]||s;}
+function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.className='sdot '+s;const m={ok:'SharePoint sincronizado',busy:'Sincronizando…',err:'Error de conexión',off:'Sin conexión'};d.title=m[s]||s;}
 async function refreshRecords(){
   const btn=document.getElementById('refreshBtn');
   if(btn){btn.disabled=true;btn.style.animation='spin360 .8s linear infinite';}
