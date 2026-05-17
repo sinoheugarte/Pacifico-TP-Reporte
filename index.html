@@ -1191,6 +1191,7 @@ async function signIn(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    checkLiveHash();
 
   } catch(e){
     if(e.message==='user_cancelled') showAErr('⚠ Se canceló el inicio de sesión.');
@@ -1237,6 +1238,7 @@ async function tryAutoLogin(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    checkLiveHash();
     return true;
   } catch(e){
     console.warn('auto-login failed:',e);
@@ -4673,31 +4675,52 @@ window.addEventListener('resize',function(){
       win.postMessage({type:'DONE',title:'🖥️ Presentación Lista',msg:'La presentación está lista para iniciar',url:_liveBlobUrl,btn:'▶ ABRIR LIVE'},'*');
       setTimeout(()=>URL.revokeObjectURL(_liveBlobUrl),120000);
     }
-    // Subir HTML a OneDrive y generar enlace compartible en segundo plano
-    const _liveName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
-    freshToken().then(async tk=>{
+    // Generar enlace compartible con los datos de registros codificados en el URL
+    try{
+      const shareData=JSON.stringify(records.map(({images,...r})=>r));
+      let b64;
       try{
-        const up=await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/Presentaciones/'+_liveName)}:/content`,{
-          method:'PUT',
-          headers:{Authorization:`Bearer ${tk}`,'Content-Type':'text/html; charset=utf-8'},
-          body:new Blob([html],{type:'text/html'})
-        });
-        const upData=await up.json();
-        const itemId=upData.id;
-        if(!itemId)return;
-        const lk=await fetch(`${GRAPH}/me/drive/items/${itemId}/createLink`,{
-          method:'POST',
-          headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/json'},
-          body:JSON.stringify({type:'view',scope:'anonymous'})
-        });
-        const lkData=await lk.json();
-        const shareUrl=lkData.link?.webUrl;
-        if(shareUrl&&!win.closed){
-          win.postMessage({type:'SHARE_LINK',url:shareUrl},'*');
-        }
-      }catch(e){console.warn('Live share link:',e);}
-    }).catch(e=>console.warn('Live OD upload:',e));
+        const cs=new CompressionStream('deflate-raw');
+        const writer=cs.writable.getWriter();
+        writer.write(new TextEncoder().encode(shareData));
+        writer.close();
+        const buf=await new Response(cs.readable).arrayBuffer();
+        b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
+      }catch(_){
+        b64=btoa(unescape(encodeURIComponent(shareData)));
+      }
+      const shareUrl=APP_URL+'#live='+encodeURIComponent(b64);
+      if(!win.closed) win.postMessage({type:'SHARE_LINK',url:shareUrl},'*');
+    }catch(e){console.warn('Share URL:',e);}
   }
+}
+
+/* ─── LIVE COMPARTIDO — detección y apertura desde URL hash ─── */
+async function showSharedLivePrompt(encoded){
+  try{
+    const bytes=Uint8Array.from(atob(decodeURIComponent(encoded)),c=>c.charCodeAt(0));
+    let json;
+    try{
+      const ds=new DecompressionStream('deflate-raw');
+      const writer=ds.writable.getWriter();
+      writer.write(bytes);writer.close();
+      json=await new Response(ds.readable).text();
+    }catch(_){
+      json=decodeURIComponent(escape(String.fromCharCode(...bytes)));
+    }
+    const sharedRecs=JSON.parse(json);
+    if(!sharedRecs?.length){toast('⚠ Enlace de presentación inválido');return;}
+    // Reemplazar registros temporalmente mientras se genera el Live
+    const _orig=records;
+    records=sharedRecs;
+    try{await generateRevealPresentation();}finally{records=_orig;}
+  }catch(e){toast('⚠ Error al abrir presentación compartida: '+e.message);console.error(e);}
+}
+function checkLiveHash(){
+  const m=location.hash.match(/[#&]live=([^&]*)/);
+  if(!m)return;
+  history.replaceState(null,'',location.pathname+location.search);
+  showSharedLivePrompt(m[1]);
 }
 
 /* ─── INTRO ANIMATION ─────────────────────────────── */
