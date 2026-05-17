@@ -420,6 +420,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .efm-badge-none{background:#fee2e2;color:#991b1b}
 .efm-chev{font-size:10px;color:var(--text2);transition:transform .2s}
 .efm-sec.open .efm-chev{transform:rotate(180deg)}
+@keyframes efmFlash{0%,100%{background:transparent}40%{background:rgba(59,130,246,.12)}}
+.efm-sec.efm-flash .efm-sec-hdr{animation:efmFlash .55s ease}
 .efm-sec-body{display:none;padding:0 18px 12px;flex-direction:column;gap:6px}
 .efm-sec.open .efm-sec-body{display:flex}
 .efm-sel-all{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
@@ -2583,6 +2585,7 @@ function _efmCascadeFrom(startIdx){
     var f=_EFM_FIELDS[i];
     if(f.isDate&&_efm.dateMode==='range'){
       _efmUpdateBadge(f.id,null);
+      _efmFlashSec(f.id);
       continue;
     }
     var subset=_efmFilterUpTo(i);
@@ -2597,8 +2600,17 @@ function _efmCascadeFrom(startIdx){
     }
     _efmRenderSec(f,newVals);
     _efmUpdateBadge(f.id,newVals);
+    _efmFlashSec(f.id);
   }
   _efmUpdateCount();
+}
+function _efmFlashSec(id){
+  var sec=document.getElementById('efm-sec-'+id);
+  if(!sec)return;
+  sec.classList.remove('efm-flash');
+  void sec.offsetWidth;
+  sec.classList.add('efm-flash');
+  setTimeout(function(){sec.classList.remove('efm-flash');},600);
 }
 function _efmBuild(){
   var body=document.getElementById('efm-body');
@@ -2609,7 +2621,7 @@ function _efmBuild(){
     if(!_efm.state[f.id]){_efm.state[f.id]=new Set(vals);}
     var allSel=f.isDate&&_efm.dateMode==='range'?true:(_efm.state[f.id].size===vals.length&&vals.length>0);
     var badge=allSel?'efm-badge-all':(_efm.state[f.id].size===0?'efm-badge-none':'efm-badge-some');
-    var badgeTxt=allSel?'Todos':(_efm.state[f.id].size===0?'Ninguno':_efm.state[f.id].size+' sel.');
+    var badgeTxt=allSel?'Todos · '+vals.length:(_efm.state[f.id].size===0?'Ninguno':_efm.state[f.id].size+' de '+vals.length);
     if(f.isDate&&_efm.dateMode==='range'){badge='efm-badge-some';badgeTxt='Rango';}
     var sec=document.createElement('div');
     sec.className='efm-sec open';
@@ -2720,8 +2732,8 @@ function _efmUpdateBadge(fieldId,vals){
   var st=_efm.state[fieldId];
   var tot=vals?vals.length:0;
   if(!st||st.size===0){badge.className='efm-badge efm-badge-none';badge.textContent='Ninguno';}
-  else if(st.size===tot){badge.className='efm-badge efm-badge-all';badge.textContent='Todos';}
-  else{badge.className='efm-badge efm-badge-some';badge.textContent=st.size+' sel.';}
+  else if(st.size===tot){badge.className='efm-badge efm-badge-all';badge.textContent='Todos · '+tot;}
+  else{badge.className='efm-badge efm-badge-some';badge.textContent=st.size+' de '+tot;}
 }
 function _efmFilterRecords(){
   return records.filter(function(r){
