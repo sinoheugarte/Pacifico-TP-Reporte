@@ -897,11 +897,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   <div id="ucardW"></div>
   <div class="ssec">
     <div class="ssect">Almacenamiento</div>
-    <div class="srow"><div><div class="srl">Base de datos compartida</div><div class="srs">SharePoint · todos los usuarios</div></div></div>
+    <div class="srow">
+      <div><div class="srl">Base de datos + Excel</div><div class="srs" id="dbDesc">Compartida en SharePoint · visible para todos</div></div>
+      <label class="ps-toggle">
+        <input type="checkbox" id="dbToggle" checked onchange="setDbStorage(this.checked?'sp':'od');document.getElementById('dbDesc').textContent=this.checked?'Compartida en SharePoint · visible para todos':'Privada en tu OneDrive · solo tú la ves'">
+        <span class="ps-track"></span>
+      </label>
+    </div>
     <div class="od-box" id="odJson">—</div>
-    <div class="srow" style="margin-top:12px"><div><div class="srl">Excel compartido</div><div class="srs">SharePoint · se regenera en cada guardado</div></div></div>
-    <div class="od-box" id="odXlsx">—</div>
-    <div class="srow" style="margin-top:12px">
+    <div class="od-box" id="odXlsx" style="margin-top:4px">—</div>
+    <div class="srow" style="margin-top:14px">
       <div><div class="srl">Fotos</div><div class="srs" id="psDesc">Compartidas en SharePoint · visibles para todos</div></div>
       <label class="ps-toggle">
         <input type="checkbox" id="psToggle" checked onchange="setPhotoStorage(this.checked?'sp':'od');document.getElementById('psDesc').textContent=this.checked?'Compartidas en SharePoint · visibles para todos':'Privadas en tu OneDrive · solo tú las ves'">
@@ -1177,15 +1182,15 @@ const PKCE_KEY   = 'ptp_pkce';
 function loadCfg(){
   try{
     const s = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
-    cfg = { cid: s.cid || DEFAULT_CID, tid: s.tid || DEFAULT_TID, redir: s.redir || APP_URL, spSite: s.spSite || DEFAULT_SP_SITE, photoStorage: s.photoStorage || 'sp' };
-  } catch { cfg={cid:DEFAULT_CID,tid:DEFAULT_TID,redir:APP_URL,spSite:DEFAULT_SP_SITE,photoStorage:'sp'}; }
+    cfg = { cid: s.cid || DEFAULT_CID, tid: s.tid || DEFAULT_TID, redir: s.redir || APP_URL, spSite: s.spSite || DEFAULT_SP_SITE, photoStorage: s.photoStorage || 'sp', dbStorage: s.dbStorage || 'sp' };
+  } catch { cfg={cid:DEFAULT_CID,tid:DEFAULT_TID,redir:APP_URL,spSite:DEFAULT_SP_SITE,photoStorage:'sp',dbStorage:'sp'}; }
 }
 function saveCfg(){
   const cid    = document.getElementById('cfgCid').value.trim()    || DEFAULT_CID;
   const tid    = document.getElementById('cfgTid').value.trim()    || DEFAULT_TID;
   const redir  = document.getElementById('cfgRedir').value.trim()  || APP_URL;
   const spSite = document.getElementById('cfgSpSite').value.trim() || DEFAULT_SP_SITE;
-  cfg={cid,tid,redir,spSite,photoStorage:cfg.photoStorage||'sp'};
+  cfg={cid,tid,redir,spSite,photoStorage:cfg.photoStorage||'sp',dbStorage:cfg.dbStorage||'sp'};
   spDriveId=null;
   localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
   localStorage.removeItem(TOKEN_KEY);
@@ -1566,12 +1571,39 @@ async function spSaveJson(){
   }, 4, 1500);
 }
 
+async function odSaveJson(){
+  const cloudRecords = records.map(r=>{const c={...r};delete c.images;return c;});
+  await withRetry(async()=>{
+    const tk = await freshToken();
+    const r = await fetch(
+      `${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}:/content`,
+      {method:'PUT', headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/json'},
+       body: new Blob([JSON.stringify(cloudRecords,null,2)],{type:'application/json'})}
+    );
+    if(!r.ok) throw new Error(`OD JSON ${r.status}: ${await r.text()}`);
+  }, 4, 1500);
+}
+
+async function saveJson(){
+  if(cfg.dbStorage === 'od') return odSaveJson();
+  return spSaveJson();
+}
+
+function setDbStorage(mode){
+  cfg.dbStorage = mode;
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  renderUserCard();
+  toast(mode==='sp' ? '✓ Base de datos compartida en SharePoint' : '✓ Base de datos privada en tu OneDrive');
+}
+
 async function setupOneDrive(){
   try{
     await gGet('me/drive/root?$select=id');
     await ensureFolderByPath(OD_ROOT);
     await ensureFolderByPath(`${OD_ROOT}/${OD_PHOTOS}`);
-    await ensureSPFolder();
+    if(cfg.dbStorage !== 'od' || cfg.photoStorage === 'sp'){
+      await ensureSPFolder();
+    }
     if(cfg.photoStorage === 'sp'){
       await ensureSPFolderByPath(`${OD_ROOT}/${OD_PHOTOS}`);
     }
@@ -1585,8 +1617,14 @@ async function setupOneDrive(){
 async function loadRecordsFromOD(){
   setSdot('busy');
   try{
-    const driveId = await ensureSPDrive();
-    const item = await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}?$select=@microsoft.graph.downloadUrl`);
+    let itemPath, fetchFn;
+    if(cfg.dbStorage === 'od'){
+      itemPath = `me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}?$select=@microsoft.graph.downloadUrl`;
+    } else {
+      const driveId = await ensureSPDrive();
+      itemPath = `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}?$select=@microsoft.graph.downloadUrl`;
+    }
+    const item = await gGet(itemPath);
     const dlUrl = item['@microsoft.graph.downloadUrl'];
     const urlWithTs = dlUrl + (dlUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
     const res = await fetch(urlWithTs);
@@ -1599,7 +1637,7 @@ async function loadRecordsFromOD(){
       saveCache();
     }
     lastSync = new Date(); setSdot('ok'); renderList();
-  }catch(e){ console.warn('Load SP:', e); setSdot(records.length ? 'ok' : 'off'); }
+  }catch(e){ console.warn('Load records:', e); setSdot(records.length ? 'ok' : 'off'); }
 }
 
 async function pushToOneDrive(rec, finalImgs){
@@ -1673,8 +1711,9 @@ async function pushToOneDrive(rec, finalImgs){
   if(idx>=0) records[idx]=rec; else records.push(rec);
   saveCache();
 
-  showUp('Actualizando base de datos…', 'Guardando datos.json en SharePoint', 65);
-  await spSaveJson();
+  const dbLbl = cfg.dbStorage==='od' ? 'OneDrive' : 'SharePoint';
+  showUp('Actualizando base de datos…', `Guardando datos.json en ${dbLbl}`, 65);
+  await saveJson();
 
   showUp('Generando Excel actualizado…', 'Creando ReporteTransporte.xlsx', 82);
   await uploadExcel();
@@ -1820,9 +1859,15 @@ async function uploadExcel(){
   const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   await withRetry(async()=>{
-    const driveId = await ensureSPDrive();
     const tk=await freshToken();
-    const r=await fetch(`${GRAPH}/drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/'+OD_EXCEL)}:/content`,
+    let uploadUrl;
+    if(cfg.dbStorage === 'od'){
+      uploadUrl = `${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+OD_EXCEL)}:/content`;
+    } else {
+      const driveId = await ensureSPDrive();
+      uploadUrl = `${GRAPH}/drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/'+OD_EXCEL)}:/content`;
+    }
+    const r=await fetch(uploadUrl,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:blob});
     if(!r.ok) throw new Error(`Excel upload ${r.status}: ${await r.text()}`);
     return r.json();
@@ -1854,7 +1899,7 @@ async function deleteFromOD(rec){
   }
 
   setUpStep('Actualizando datos…'); setUpBar(50);
-  await spSaveJson();
+  await saveJson();
 
   setUpStep('Actualizando Excel…'); setUpBar(80);
   try { await uploadExcel(); setUpBar(100); } catch(e) {
@@ -2490,7 +2535,7 @@ async function renamePhotosIfNeeded(rec){
   if(idx>=0){
     records[idx].photoNames = newNames;
     saveCache();
-    try{ await spSaveJson(); }catch(e){console.warn('renamePhotosIfNeeded: SP sync failed:',e);}
+    try{ await saveJson(); }catch(e){console.warn('renamePhotosIfNeeded: save failed:',e);}
   }
 }
 
@@ -2539,7 +2584,14 @@ function renderUserCard() {
   const ini=(user.name||user.email).split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
   setEl('ucardW',`<div class="ucard"><div class="uav">${ini}</div><div class="uname">${user.name}</div><div class="uemail">${user.email}</div><div class="ubadge"><div class="sdot ok" style="width:7px;height:7px"></div>Conectado a Microsoft 365</div></div>`);
   setEl('sEmail',user.email);setEl('sTotal',records.length); setEl('sSync',lastSync?lastSync.toLocaleTimeString('es-PE'):'—');
-  setEl('odJson',`SharePoint / ${OD_ROOT} / ${OD_JSON}`); setEl('odXlsx',`SharePoint / ${OD_ROOT} / ${OD_EXCEL}`);
+  const dbSP = cfg.dbStorage !== 'od';
+  setEl('odJson', dbSP ? `SharePoint / ${OD_ROOT} / ${OD_JSON}` : `OneDrive / ${OD_ROOT} / ${OD_JSON}`);
+  setEl('odXlsx', dbSP ? `SharePoint / ${OD_ROOT} / ${OD_EXCEL}` : `OneDrive / ${OD_ROOT} / ${OD_EXCEL}`);
+  const dbToggle = document.getElementById('dbToggle');
+  if(dbToggle) dbToggle.checked = dbSP;
+  const dbDesc = document.getElementById('dbDesc');
+  if(dbDesc) dbDesc.textContent = dbSP ? 'Compartida en SharePoint · visible para todos' : 'Privada en tu OneDrive · solo tú la ves';
+
   const psSP = cfg.photoStorage !== 'od';
   setEl('odPhotos', psSP ? `SharePoint / ${OD_ROOT} / ${OD_PHOTOS} / ORDEN-{N°}-{DD-MM-YYYY} /` : `OneDrive personal / ${OD_ROOT} / ${OD_PHOTOS} / ORDEN-{N°}-{DD-MM-YYYY} /`);
   const psToggle = document.getElementById('psToggle');
