@@ -2365,9 +2365,10 @@ function showUp(t,s,p){document.getElementById('upOv').classList.add('on');setEl
 function setUpStep(s){setEl('upStep',s);} function setUpBar(p){document.getElementById('upBar').style.width=p+'%';} function hideUp(){document.getElementById('upOv').classList.remove('on');setEl('upStep','');}
 
 /* ── Truck overlay (en página, evita throttle de pestaña en background) ── */
-var _tovTi=null,_tovSi=null,_tovCancelled=false;
+var _tovTi=null,_tovSi=null,_tovCancelled=false,_tovMinEnd=0;
 function showTruckOv(title,msgs){
   _tovCancelled=false;
+  _tovMinEnd=Date.now()+4000; // mínimo 4s de animación visible
   msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
   // Reset state
   var ov=document.getElementById('tovOv');
@@ -2401,20 +2402,25 @@ function showTruckOv(title,msgs){
   },4500);
 }
 function doneTruckOv(title,msg,btnText,btnAction){
-  clearInterval(_tovTi);clearInterval(_tovSi);
-  document.getElementById('tov-pb').style.width='100%';
-  document.getElementById('tov-st').style.opacity=0;
-  document.getElementById('tov-road').classList.add('stop');
-  document.getElementById('tov-truck').classList.add('go');
-  setTimeout(function(){document.getElementById('tov-dest').classList.add('show');},900);
+  var wait=Math.max(0,_tovMinEnd-Date.now());
   setTimeout(function(){
-    document.getElementById('tov-h1').textContent=title||'✅ Listo';
-    document.getElementById('tov-done-msg').textContent=msg||'';
-    var btn=document.getElementById('tov-done-btn');
-    btn.textContent=btnText||'✅ Cerrar';
-    btn.onclick=btnAction?function(){btnAction();hideTruckOv();}:hideTruckOv;
-    document.getElementById('tov-done').classList.add('show');
-  },1600);
+    if(_tovCancelled)return;
+    clearInterval(_tovTi);clearInterval(_tovSi);
+    document.getElementById('tov-pb').style.width='100%';
+    document.getElementById('tov-st').style.opacity=0;
+    document.getElementById('tov-road').classList.add('stop');
+    document.getElementById('tov-truck').classList.add('go');
+    setTimeout(function(){document.getElementById('tov-dest').classList.add('show');},900);
+    setTimeout(function(){
+      if(_tovCancelled)return;
+      document.getElementById('tov-h1').textContent=title||'✅ Listo';
+      document.getElementById('tov-done-msg').textContent=msg||'';
+      var btn=document.getElementById('tov-done-btn');
+      btn.textContent=btnText||'✅ Cerrar';
+      btn.onclick=btnAction?function(){btnAction();hideTruckOv();}:hideTruckOv;
+      document.getElementById('tov-done').classList.add('show');
+    },1600);
+  },wait);
 }
 function hideTruckOv(){
   _tovCancelled=true;
@@ -2758,6 +2764,8 @@ async function generatePDF(){
   /* Abre la ventana de carga animada AHORA, dentro del gesto del usuario */
   showTruckOv('Preparando tu Reporte PDF',['Recopilando datos del reporte…','Generando páginas y gráficos…','Procesando tablas de registros…','Añadiendo evidencia fotográfica…','Aplicando formato profesional…','Finalizando el documento PDF…']);
   showUp('Generando PDF profesional…','Preparando datos',5);
+  await new Promise(r=>setTimeout(r,80)); // cede al navegador para pintar el overlay
+  if(_tovCancelled)return;
   try{
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -3300,6 +3308,8 @@ async function generatePPTX(){
   if(!records.length){toast('No hay registros');return;}
   if(!window.PptxGenJS){toast('⚠ La librería PPTX no está disponible. Verifica conexión a internet.');return;}
   showTruckOv('Preparando tu PowerPoint',['Preparando diapositivas…','Generando gráficos y tablas…','Añadiendo evidencia fotográfica…','Aplicando diseño ejecutivo…','Finalizando la presentación…']);
+  await new Promise(r=>setTimeout(r,80)); // cede al navegador para pintar el overlay
+  if(_tovCancelled)return;
   try{
     const pptx=new PptxGenJS();
     pptx.layout='LAYOUT_16x9';
