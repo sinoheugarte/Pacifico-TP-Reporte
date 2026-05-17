@@ -2365,9 +2365,8 @@ function showUp(t,s,p){document.getElementById('upOv').classList.add('on');setEl
 function setUpStep(s){setEl('upStep',s);} function setUpBar(p){document.getElementById('upBar').style.width=p+'%';} function hideUp(){document.getElementById('upOv').classList.remove('on');setEl('upStep','');}
 
 /* ── Truck overlay (en página, evita throttle de pestaña en background) ── */
-var _tovTi=null,_tovSi=null,_tovActive=false;
+var _tovTi=null,_tovSi=null;
 function showTruckOv(title,msgs){
-  _tovActive=true;
   msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
   // Reset state
   var ov=document.getElementById('tovOv');
@@ -2417,10 +2416,8 @@ function doneTruckOv(title,msg,btnText,btnAction){
   },1600);
 }
 function hideTruckOv(){
-  _tovActive=false;
   clearInterval(_tovTi);clearInterval(_tovSi);
   document.getElementById('tovOv').classList.remove('on');
-  hideUp();
 }
 function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.className='sdot '+s;const m={ok:'OneDrive sincronizado',busy:'Sincronizando…',err:'Error OneDrive',off:'Sin conexión'};d.title=m[s]||s;}
 async function refreshRecords(){
@@ -3280,12 +3277,9 @@ async function generatePDF(){
     const pdfName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pdf`;
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
     hideUp();
-    if(_tovActive){
-      doneTruckOv('📄 Reporte PDF Listo','Tu reporte está listo — toca para descargar y abrir','📂 ABRIR PDF',()=>downloadBlob(pdfBlob,pdfName));
-    }else{
-      downloadBlob(pdfBlob,pdfName);
-      toast('✓ PDF listo — revisa tu carpeta de Descargas');
-    }
+    const _blobUrl=URL.createObjectURL(pdfBlob);
+    doneTruckOv('📄 Reporte PDF Listo','Tu reporte está listo — toca para descargar y abrir','📂 ABRIR PDF',()=>downloadBlob(pdfBlob,pdfName));
+    setTimeout(()=>URL.revokeObjectURL(_blobUrl),120000);
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
       .then(()=>toast(`✓ PDF guardado en OneDrive: ${pdfName}`))
@@ -3789,12 +3783,9 @@ async function generatePPTX(){
     setUpStep('Preparando descarga…'); setUpBar(97);
     const pptxName=`Reporte_Pacifico_${new Date().toISOString().slice(0,10)}.pptx`;
     const pptxBlob=await pptx.write({outputType:'blob'});
-    if(_tovActive){
-      doneTruckOv('📊 PowerPoint Listo','Tu presentación está lista — toca para descargar y abrir','📂 ABRIR PPT',()=>downloadBlob(pptxBlob,pptxName));
-    }else{
-      downloadBlob(pptxBlob,pptxName);
-      toast('✓ PPT listo — revisa tu carpeta de Descargas');
-    }
+    /* El botón ABRIR PPT dispara la descarga desde un gesto del usuario,
+       lo que garantiza la notificación nativa de Android */
+    doneTruckOv('📊 PowerPoint Listo','Tu presentación está lista — toca para descargar y abrir','📂 ABRIR PPT',()=>downloadBlob(pptxBlob,pptxName));
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pptxName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/vnd.openxmlformats-presentationml.presentation'},body:pptxBlob}))
       .catch(e=>console.warn('PPTX OD upload:',e));
