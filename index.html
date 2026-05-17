@@ -2659,6 +2659,25 @@ function captureHiRes(canvasId, scale=3){
 
 /* ── Pantalla de carga animada para descarga del PDF en Android ─────────── */
 /* ── Pantalla de carga animada (camión en ruta) — PDF / PPT / Live ──────── */
+function _makeStandaloneHtml(html){
+  const BASE='https://sinoheugarte.github.io/Pacifico-TP-Reporte/';
+  // Audio: reemplazar acceso via window.opener por audio local con URLs absolutas
+  html=html.replace(
+    'function _hb(){try{return window.opener&&window.opener._presHbAudio||null;}catch(e){return null;}}',
+    'var _saHb=null;function _hb(){try{if(window.opener&&window.opener._presHbAudio)return window.opener._presHbAudio;}catch(e){}if(!_saHb){_saHb=new Audio("'+BASE+'heartbeat.mp3");_saHb.loop=true;_saHb.volume=0;}return _saHb;}'
+  );
+  html=html.replace(
+    'function _bg(){try{return window.opener&&window.opener._presBgAudio||null;}catch(e){return null;}}',
+    'var _saBg=null;function _bg(){try{if(window.opener&&window.opener._presBgAudio)return window.opener._presBgAudio;}catch(e){}if(!_saBg){_saBg=new Audio("'+BASE+'026_ON THE RADIOER.mp3");_saBg.loop=false;_saBg.volume=0;}return _saBg;}'
+  );
+  // Unload: limpiar solo audio local (no acceder opener que no existe)
+  html=html.replace(
+    'window.addEventListener(\'unload\',function(){\n  try{\n    var hb=window.opener&&window.opener._presHbAudio;if(hb){hb.pause();window.opener._presHbAudio=null;}\n    var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}\n  }catch(e){}\n});',
+    'window.addEventListener(\'unload\',function(){try{if(_saHb)_saHb.pause();if(_saBg)_saBg.pause();}catch(e){}});'
+  );
+  return html;
+}
+
 function _truckHtml(title,msgs){
   msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
   return `<!doctype html><html lang="es"><head>
@@ -2726,8 +2745,12 @@ document.body.appendChild(s);}<\/script>
 <div class="done" id="done">
   <p id="done-msg"></p>
   <button id="done-btn" style="display:none" onclick="doAction()"></button>
+  <a id="dl-btn" style="display:none;background:rgba(255,255,255,.12);color:#fff;
+      border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:11px 28px;
+      font-size:.95rem;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit;
+      letter-spacing:.02em">📥 Descargar Live</a>
   <div id="share-box" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-top:4px;width:min(90vw,380px)">
-    <p style="font-size:.78rem;opacity:.55;margin:0">Enlace para compartir:</p>
+    <p style="font-size:.78rem;opacity:.55;margin:0">Enlace para compartir (requiere cuenta de la organización):</p>
     <div style="display:flex;gap:8px;width:100%">
       <input id="share-url" type="text" readonly
         style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
@@ -2785,6 +2808,12 @@ window.addEventListener('message',function(e){
   if(e.data.type==='SHARE_LINK'){
     document.getElementById('share-url').value=e.data.url;
     document.getElementById('share-box').style.display='flex';
+  }
+  if(e.data.type==='DOWNLOAD_BLOB'){
+    var dl=document.getElementById('dl-btn');
+    dl.href=e.data.url;
+    dl.download=e.data.filename||'Live_Pacifico.html';
+    dl.style.display='';
   }
 });
 <\/script>
@@ -4674,6 +4703,12 @@ window.addEventListener('resize',function(){
       const _liveBlobUrl=URL.createObjectURL(new Blob([html],{type:'text/html'}));
       win.postMessage({type:'DONE',title:'🖥️ Presentación Lista',msg:'La presentación está lista para iniciar',url:_liveBlobUrl,btn:'▶ ABRIR LIVE'},'*');
       setTimeout(()=>URL.revokeObjectURL(_liveBlobUrl),120000);
+      // HTML autocontenido para descarga (audio via URLs absolutas, sin window.opener)
+      const _saHtml=_makeStandaloneHtml(html);
+      const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
+      const _dlName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
+      win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
+      setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
     }
     // Generar enlace compartible con los datos de registros codificados en el URL
     try{
