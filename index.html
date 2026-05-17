@@ -4751,7 +4751,10 @@ window.addEventListener('resize',function(){
       var _bg=new Audio('026_ON THE RADIOER.mp3');
       _bg.loop=false;
       _bg.volume=0;
-      _bg.play().catch(function(){});
+      // play() desbloquea el contexto de audio en móvil; pausar y resetear de inmediato
+      // para que la canción empiece desde el principio cuando el usuario llegue a slide 2
+      var _bgp=_bg.play();
+      if(_bgp)_bgp.then(function(){_bg.pause();_bg.currentTime=0;}).catch(function(){});
       window._presBgAudio=_bg;
     }catch(e){}
     const _liveWait=Math.max(0,_liveMinEnd-Date.now());
