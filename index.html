@@ -2675,6 +2675,17 @@ function _makeStandaloneHtml(html){
     'window.addEventListener(\'unload\',function(){\n  try{\n    var hb=window.opener&&window.opener._presHbAudio;if(hb){hb.pause();window.opener._presHbAudio=null;}\n    var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}\n  }catch(e){}\n});',
     'window.addEventListener(\'unload\',function(){try{if(_saHb)_saHb.pause();if(_saBg)_saBg.pause();}catch(e){}});'
   );
+  // Desbloquear audio en el primer gesto del usuario (autoplay policy)
+  // Al primer click/tecla/toque inicia el heartbeat si estamos en slide 0
+  html=html.replace(
+    'Chart.register(ChartDataLabels);',
+    'Chart.register(ChartDataLabels);\n'+
+    'var _saUnlocked=false;'+
+    'function _saUnlock(){if(_saUnlocked)return;_saUnlocked=true;try{if(Reveal.getState().indexh===0)startHeartbeat();}catch(e){}}'+
+    'document.addEventListener("click",_saUnlock,{once:true});'+
+    'document.addEventListener("keydown",_saUnlock,{once:true});'+
+    'document.addEventListener("touchstart",_saUnlock,{once:true});'
+  );
   return html;
 }
 
