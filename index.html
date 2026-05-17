@@ -2670,22 +2670,68 @@ function _makeStandaloneHtml(html){
     'function _bg(){try{return window.opener&&window.opener._presBgAudio||null;}catch(e){return null;}}',
     'var _saBg=null;function _bg(){try{if(window.opener&&window.opener._presBgAudio)return window.opener._presBgAudio;}catch(e){}if(!_saBg){_saBg=new Audio("'+BASE+'026_ON THE RADIOER.mp3");_saBg.loop=false;_saBg.volume=0;}return _saBg;}'
   );
-  // Unload: limpiar solo audio local (no acceder opener que no existe)
+  // Unload: limpiar solo audio local
   html=html.replace(
     'window.addEventListener(\'unload\',function(){\n  try{\n    var hb=window.opener&&window.opener._presHbAudio;if(hb){hb.pause();window.opener._presHbAudio=null;}\n    var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}\n  }catch(e){}\n});',
     'window.addEventListener(\'unload\',function(){try{if(_saHb)_saHb.pause();if(_saBg)_saBg.pause();}catch(e){}});'
   );
-  // Desbloquear audio en el primer gesto del usuario (autoplay policy)
-  // Al primer click/tecla/toque inicia el heartbeat si estamos en slide 0
+  // Quitar el antiguo unlock por gesto (ahora lo maneja el botón INICIAR LIVE)
   html=html.replace(
-    'Chart.register(ChartDataLabels);',
-    'Chart.register(ChartDataLabels);\n'+
-    'var _saUnlocked=false;'+
-    'function _saUnlock(){if(_saUnlocked)return;_saUnlocked=true;try{if(Reveal.getState().indexh===0)startHeartbeat();}catch(e){}}'+
-    'document.addEventListener("click",_saUnlock,{once:true});'+
-    'document.addEventListener("keydown",_saUnlock,{once:true});'+
-    'document.addEventListener("touchstart",_saUnlock,{once:true});'
-  );
+    /var _saUnlocked=false;function _saUnlock\(\)\{[^}]+\}document\.addEventListener[^;]+;document\.addEventListener[^;]+;document\.addEventListener[^;]+;/,'');
+
+  // Obtener código de la animación del cohete y adaptarlo para standalone
+  let animSrc=_beginIntroAnimation.toString()
+    .replace('function _beginIntroAnimation(scr,_rocketAu)','function _saBeginIntroAnimation(scr,_rocketAu)')
+    .replace("document.getElementById('intro-canvas')",'document.getElementById(\'sa-canvas\')')
+    .replace(
+      /scr\.classList\.add\('fade-out'\);\s+setTimeout\(function\(\)\{scr\.style\.display='none';\},950\);/,
+      "scr.classList.add('fade-out');setTimeout(function(){scr.style.display='none';try{startHeartbeat();}catch(e){}},950);"
+    );
+
+  // CSS del presplash standalone
+  const css=`<style>#sa-splash{position:fixed;inset:0;z-index:99999;background:#f8f6f0;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+gap:32px;font-family:'DM Sans',system-ui,sans-serif;transition:opacity .6s ease}
+#sa-splash.fade-out{opacity:0;pointer-events:none}
+#sa-splash img{width:min(55vw,260px);height:min(55vw,260px);object-fit:contain}
+#sa-splash-sub{text-align:center;line-height:1.6}
+#sa-splash-sub span:first-child{display:block;font-size:clamp(9px,2.6vw,13px);letter-spacing:.28em;color:#94a3b8;font-weight:500}
+#sa-splash-sub span:last-child{display:block;font-size:clamp(8px,2.2vw,11px);letter-spacing:.22em;color:#cbd5e1}
+#sa-splash-btn{background:linear-gradient(135deg,#b8860b,#f5c842,#b8860b);color:#0f2340;border:none;
+border-radius:50px;padding:14px 36px;font-size:clamp(12px,3.5vw,15px);font-weight:700;
+letter-spacing:.12em;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rgba(184,134,11,.45)}
+#sa-intro{position:fixed;inset:0;z-index:99998;background:#000;display:none;transition:opacity .9s ease}
+#sa-intro.fade-out{opacity:0;pointer-events:none}
+#sa-intro canvas{position:absolute;inset:0;width:100%;height:100%}</style>`;
+
+  // HTML del presplash
+  const splashHtml=`<div id="sa-splash">
+<img src="${BASE}pt-logo.jpg" alt="PT">
+<div id="sa-splash-sub"><span>PACÍFICO TRANSPORTATION</span><span>SISTEMA DE GESTIÓN DE TRANSPORTE</span></div>
+<button id="sa-splash-btn" onclick="saStartIntro()">&#9654; INICIAR LIVE</button>
+</div><div id="sa-intro"><canvas id="sa-canvas"></canvas></div>`;
+
+  // JS: saStartIntro + animación del cohete adaptada
+  const js=`<script>
+var _saRocketAu=null;
+function saStartIntro(){
+  _saRocketAu=new Audio('${BASE}rocket-whoosh.mp3');
+  _saRocketAu.volume=0.6;
+  var p=_saRocketAu.play();
+  if(p)p.then(function(){_saRocketAu.pause();_saRocketAu.currentTime=0;}).catch(function(){});
+  var sp=document.getElementById('sa-splash');
+  sp.classList.add('fade-out');
+  setTimeout(function(){sp.style.display='none';},650);
+  var si=document.getElementById('sa-intro');
+  si.style.display='block';
+  _saBeginIntroAnimation(si,_saRocketAu);
+}
+${animSrc}
+<\/script>`;
+
+  html=html.replace('</head>',css+'</head>');
+  html=html.replace('<body>','<body>'+splashHtml);
+  html=html.replace('</body>',js+'</body>');
   return html;
 }
 
