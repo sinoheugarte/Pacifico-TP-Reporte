@@ -2593,12 +2593,14 @@ function _efmSetPrimary(fieldId){
   if(_efm.primaryField===fieldId){
     /* Quitar principal → restaurar selección completa */
     _efm.primaryField=null;
-    var fOld=_EFM_FIELDS.find(function(x){return x.id===fieldId;});
-    if(fOld)_efm.state[fieldId]=new Set(_efmUniq(fOld.key));
+    /* Restaurar todos los campos al estado completo */
+    _EFM_FIELDS.forEach(function(x){_efm.state[x.id]=new Set(_efmUniq(x.key));});
   }else{
     /* Marcar como principal → limpiar su selección para que el usuario elija */
     _efm.primaryField=fieldId;
     _efm.state[fieldId]=new Set();
+    /* Limpiar también los secundarios hasta que el principal tenga selección */
+    _EFM_FIELDS.forEach(function(x){if(x.id!==fieldId)_efm.state[x.id]=new Set();});
   }
   var primarySub=_efmPrimarySubset();
   _EFM_FIELDS.forEach(function(f){
@@ -2620,6 +2622,18 @@ function _efmRefreshSecondary(){
   _EFM_FIELDS.forEach(function(f){
     if(f.id===_efm.primaryField)return;
     var vals=_efmUniq(f.key);
+    /* Actualizar estado del campo secundario según el filtro principal */
+    if(primarySub&&primarySub.length>0){
+      var pVals=new Set(_efmUniq(f.key,primarySub));
+      /* Conservar selecciones previas que sigan siendo válidas;
+         si ninguna lo es, seleccionar todas las disponibles */
+      var kept=new Set();
+      if(_efm.state[f.id]){_efm.state[f.id].forEach(function(v){if(pVals.has(v))kept.add(v);});}
+      _efm.state[f.id]=kept.size>0?kept:new Set(pVals);
+    }else if(primarySub&&primarySub.length===0){
+      /* Filtro principal vacío → nada seleccionado en secundarios */
+      _efm.state[f.id]=new Set();
+    }
     _efmRenderSec(f,vals,primarySub);
     _efmUpdateBadge(f.id,vals);
   });
