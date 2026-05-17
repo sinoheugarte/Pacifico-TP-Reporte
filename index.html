@@ -2583,11 +2583,23 @@ function _efmPrimarySubset(){
   if(!_efm.primaryField)return null;
   var pf=_EFM_FIELDS.find(function(x){return x.id===_efm.primaryField;});
   if(!pf)return null;
+  var st=_efm.state[pf.id];
+  /* Selección vacía en el principal → ningún registro pasa → todo se atenúa */
+  if(!st||st.size===0)return [];
   return records.filter(function(r){return _efmPassesField(r,pf);});
 }
 /* Establece / quita el filtro principal y refresca toda la UI */
 function _efmSetPrimary(fieldId){
-  _efm.primaryField=(_efm.primaryField===fieldId)?null:fieldId;
+  if(_efm.primaryField===fieldId){
+    /* Quitar principal → restaurar selección completa */
+    _efm.primaryField=null;
+    var fOld=_EFM_FIELDS.find(function(x){return x.id===fieldId;});
+    if(fOld)_efm.state[fieldId]=new Set(_efmUniq(fOld.key));
+  }else{
+    /* Marcar como principal → limpiar su selección para que el usuario elija */
+    _efm.primaryField=fieldId;
+    _efm.state[fieldId]=new Set();
+  }
   var primarySub=_efmPrimarySubset();
   _EFM_FIELDS.forEach(function(f){
     var vals=_efmUniq(f.key);
@@ -2672,6 +2684,13 @@ function _efmRenderSec(f,vals,primarySub){
       body.appendChild(rng);
       return;
     }
+  }
+  /* Pista cuando el filtro principal no tiene nada seleccionado */
+  if(_efm.primaryField===f.id&&(!_efm.state[f.id]||_efm.state[f.id].size===0)){
+    var hint=document.createElement('p');
+    hint.style.cssText='font-size:11px;color:var(--navy);background:rgba(15,35,64,.07);border-radius:8px;padding:8px 10px;margin:0 0 6px;line-height:1.5';
+    hint.textContent='Selecciona qué incluir → los demás filtros se actualizarán automáticamente';
+    body.appendChild(hint);
   }
   /* "Seleccionar todo" opera sólo sobre los valores activos (no atenuados) */
   var activeVals=primaryValsSet?vals.filter(function(v){return primaryValsSet.has(v);}):vals;
@@ -2767,6 +2786,14 @@ function _efmUpdateBadge(fieldId,vals){
   else{badge.className='efm-badge efm-badge-some';badge.textContent=st.size+' de '+tot;}
 }
 function _efmFilterRecords(){
+  /* Si el filtro principal está activo y sin selección → 0 resultados */
+  if(_efm.primaryField){
+    var pf=_EFM_FIELDS.find(function(x){return x.id===_efm.primaryField;});
+    if(pf){
+      var pst=_efm.state[pf.id];
+      if(!pst||pst.size===0)return [];
+    }
+  }
   return records.filter(function(r){
     for(var i=0;i<_EFM_FIELDS.length;i++){if(!_efmPassesField(r,_EFM_FIELDS[i]))return false;}
     return true;
