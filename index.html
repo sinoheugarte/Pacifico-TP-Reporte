@@ -3269,9 +3269,7 @@ async function generatePDF(){
     const pdfBlob=new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
     hideUp();
     const _blobUrl=URL.createObjectURL(pdfBlob);
-    doneTruckOv('📄 Reporte PDF Listo','Tu reporte está listo — toca para abrir','📂 ABRIR PDF',()=>{
-      const a=document.createElement('a');a.href=_blobUrl;a.target='_blank';a.rel='noopener';a.click();
-    });
+    doneTruckOv('📄 Reporte PDF Listo','Tu reporte está listo — toca para descargar y abrir','📂 ABRIR PDF',()=>downloadBlob(pdfBlob,pdfName));
     setTimeout(()=>URL.revokeObjectURL(_blobUrl),120000);
     freshToken().then(tk=>fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/'+pdfName)}:/content`,
       {method:'PUT',headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/pdf'},body:pdfBlob}))
