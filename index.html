@@ -387,6 +387,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .tov-done button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
   padding:14px 44px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
   box-shadow:0 4px 20px rgba(245,158,11,.45)}
+#tov-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.12);
+  color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;
+  padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer;z-index:2;
+  font-family:inherit;letter-spacing:.02em}
 .up-sp{width:46px;height:46px;border:3.5px solid rgba(255,255,255,.2);
   border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
 .up-t{font-size:17px;font-weight:700}
@@ -984,8 +988,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   <div class="up-step" id="upStep"></div>
 </div>
 
-<!-- Truck overlay (animación en página para PPT) -->
+<!-- Truck overlay (animación en página para PDF / PPT) -->
 <div id="tovOv">
+  <button id="tov-close" onclick="hideTruckOv()">✕ Volver al Dashboard</button>
   <h2 id="tov-h1">🚛 Preparando…</h2>
   <p class="tov-st" id="tov-st">Iniciando…</p>
   <div class="tov-scene">
@@ -2681,10 +2686,14 @@ h1{font-size:1.25rem;font-weight:700;text-align:center;line-height:1.4}
 .done{display:none;flex-direction:column;align-items:center;gap:14px;animation:up .55s ease}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .done p{font-size:.9rem;opacity:.75;text-align:center}
+#close-btn{position:fixed;top:16px;right:16px;background:rgba(255,255,255,.12);
+  color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;
+  padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
 .done button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
   padding:14px 44px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
   box-shadow:0 4px 20px rgba(245,158,11,.45)}
 </style></head><body>
+<button id="close-btn" onclick="window.close()">✕ Cerrar</button>
 <script>for(var i=0;i<40;i++){var s=document.createElement('div');s.className='star';
 s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--t:'+(1.2+Math.random()*3.5)+'s;animation-delay:'+(-Math.random()*4)+'s';
 document.body.appendChild(s);}<\/script>
