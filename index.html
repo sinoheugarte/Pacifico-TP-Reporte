@@ -2724,6 +2724,19 @@ document.body.appendChild(s);}<\/script>
 <div class="done" id="done">
   <p id="done-msg"></p>
   <button id="done-btn" style="display:none" onclick="doAction()"></button>
+  <div id="share-box" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-top:4px;width:min(90vw,380px)">
+    <p style="font-size:.78rem;opacity:.55;margin:0">Enlace para compartir:</p>
+    <div style="display:flex;gap:8px;width:100%">
+      <input id="share-url" type="text" readonly
+        style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+               border-radius:8px;padding:8px 10px;color:#fff;font-size:.78rem;font-family:monospace;
+               outline:none;min-width:0">
+      <button id="copy-btn" onclick="copyLink()"
+        style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);
+               border-radius:8px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;
+               white-space:nowrap;font-family:inherit">📋 Copiar</button>
+    </div>
+  </div>
 </div>
 <script>
 var pb=document.getElementById('pb'),pct=2;
@@ -2740,20 +2753,37 @@ var si=setInterval(function(){
 },4500);
 var _url=null;
 function doAction(){if(_url)window.location.href=_url;}
+function copyLink(){
+  var url=document.getElementById('share-url').value;
+  if(!url)return;
+  var btn=document.getElementById('copy-btn');
+  navigator.clipboard.writeText(url).then(function(){
+    btn.textContent='✅ Copiado';setTimeout(function(){btn.textContent='📋 Copiar';},2000);
+  }).catch(function(){
+    try{document.getElementById('share-url').select();document.execCommand('copy');
+      btn.textContent='✅ Copiado';setTimeout(function(){btn.textContent='📋 Copiar';},2000);}catch(e){}
+  });
+}
 window.addEventListener('message',function(e){
-  if(!e.data||e.data.type!=='DONE')return;
-  clearInterval(ti);clearInterval(si);
-  pb.style.width='100%';
-  document.getElementById('st').style.opacity=0;
-  document.getElementById('road').classList.add('stop');
-  document.getElementById('truck').classList.add('go');
-  setTimeout(function(){document.getElementById('dest').classList.add('show');},900);
-  setTimeout(function(){
-    document.getElementById('h1').textContent=e.data.title||'✅ Listo';
-    document.getElementById('done-msg').textContent=e.data.msg||'';
-    if(e.data.url){_url=e.data.url;var b=document.getElementById('done-btn');b.textContent=e.data.btn||'📂 ABRIR';b.style.display='';}
-    document.getElementById('done').style.display='flex';
-  },1600);
+  if(!e.data)return;
+  if(e.data.type==='DONE'){
+    clearInterval(ti);clearInterval(si);
+    pb.style.width='100%';
+    document.getElementById('st').style.opacity=0;
+    document.getElementById('road').classList.add('stop');
+    document.getElementById('truck').classList.add('go');
+    setTimeout(function(){document.getElementById('dest').classList.add('show');},900);
+    setTimeout(function(){
+      document.getElementById('h1').textContent=e.data.title||'✅ Listo';
+      document.getElementById('done-msg').textContent=e.data.msg||'';
+      if(e.data.url){_url=e.data.url;var b=document.getElementById('done-btn');b.textContent=e.data.btn||'📂 ABRIR';b.style.display='';}
+      document.getElementById('done').style.display='flex';
+    },1600);
+  }
+  if(e.data.type==='SHARE_LINK'){
+    document.getElementById('share-url').value=e.data.url;
+    document.getElementById('share-box').style.display='flex';
+  }
 });
 <\/script>
 </body></html>`;
@@ -4643,6 +4673,30 @@ window.addEventListener('resize',function(){
       win.postMessage({type:'DONE',title:'🖥️ Presentación Lista',msg:'La presentación está lista para iniciar',url:_liveBlobUrl,btn:'▶ ABRIR LIVE'},'*');
       setTimeout(()=>URL.revokeObjectURL(_liveBlobUrl),120000);
     }
+    // Subir HTML a OneDrive y generar enlace compartible en segundo plano
+    const _liveName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
+    freshToken().then(async tk=>{
+      try{
+        const up=await fetch(`${GRAPH}/me/drive/root:/${encodeGraphPath(OD_ROOT+'/Presentaciones/'+_liveName)}:/content`,{
+          method:'PUT',
+          headers:{Authorization:`Bearer ${tk}`,'Content-Type':'text/html; charset=utf-8'},
+          body:new Blob([html],{type:'text/html'})
+        });
+        const upData=await up.json();
+        const itemId=upData.id;
+        if(!itemId)return;
+        const lk=await fetch(`${GRAPH}/me/drive/items/${itemId}/createLink`,{
+          method:'POST',
+          headers:{Authorization:`Bearer ${tk}`,'Content-Type':'application/json'},
+          body:JSON.stringify({type:'view',scope:'anonymous'})
+        });
+        const lkData=await lk.json();
+        const shareUrl=lkData.link?.webUrl;
+        if(shareUrl&&!win.closed){
+          win.postMessage({type:'SHARE_LINK',url:shareUrl},'*');
+        }
+      }catch(e){console.warn('Live share link:',e);}
+    }).catch(e=>console.warn('Live OD upload:',e));
   }
 }
 
