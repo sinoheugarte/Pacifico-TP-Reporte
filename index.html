@@ -956,6 +956,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
       <button class="sbar-date-clear" title="Limpiar fechas" onclick="document.getElementById('dash-desde').value='';document.getElementById('dash-hasta').value='';renderDashboard()">×</button>
     </div>
   </div>
+  <div class="fpills">
+    <div class="fp on" data-f="todos" onclick="setDashFil(this)">Todos</div>
+    <div class="fp" data-f="pendiente" onclick="setDashFil(this)">Pendiente</div>
+    <div class="fp" data-f="en-ruta" onclick="setDashFil(this)">En Ruta</div>
+    <div class="fp" data-f="completado" onclick="setDashFil(this)">Completado</div>
+    <div class="fp" data-f="cancelado" onclick="setDashFil(this)">Cancelado</div>
+  </div>
   <div style="padding:0 14px 8px;display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:15px;font-weight:700;color:var(--navy)">Dashboard Ejecutivo</div>
     <div style="display:flex;gap:8px">
@@ -1063,6 +1070,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
       </div>
       <button class="sbar-date-clear" title="Limpiar fechas" onclick="document.getElementById('rec-desde').value='';document.getElementById('rec-hasta').value='';renderRecordsTable()">×</button>
     </div>
+  </div>
+  <div class="fpills">
+    <div class="fp on" data-f="todos" onclick="setRecFil(this)">Todos</div>
+    <div class="fp" data-f="pendiente" onclick="setRecFil(this)">Pendiente</div>
+    <div class="fp" data-f="en-ruta" onclick="setRecFil(this)">En Ruta</div>
+    <div class="fp" data-f="completado" onclick="setRecFil(this)">Completado</div>
+    <div class="fp" data-f="cancelado" onclick="setRecFil(this)">Cancelado</div>
   </div>
   <div style="padding:0 14px 0">
     <div class="rtbl-col-toggle" id="rtbl-col-toggle"></div>
@@ -1198,7 +1212,7 @@ const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoIni
 
 let token=null, user=null;
 let spDriveId=null;
-let records=[], editingId=null, activeFilter='todos';
+let records=[], editingId=null, activeFilter='todos', dashFilter='todos', recFilter='todos';
 let formImgs=[], deletedImgs=[]; 
 let recImgs={}, detImgs=[], galImgs=[], galIdx=0, touchX=0;
 let lastSync=null, cfg={cid:'',tid:'common'};
@@ -2033,7 +2047,16 @@ function showScr(name){
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
 
-function setFil(el){document.querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');activeFilter=el.dataset.f;renderList();}
+function setFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');activeFilter=el.dataset.f;renderList();}
+function setDashFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');dashFilter=el.dataset.f;renderDashboard();}
+function setRecFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');recFilter=el.dataset.f;renderRecordsTable();}
+
+/* Orden: exact match. Other fields: substring. */
+function _matchesSearch(r, q){
+  if(!q) return true;
+  if((r.orden||'').toLowerCase()===q) return true;
+  return [r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q);
+}
 
 function clearDateFilter(){
   document.getElementById('srch-desde').value='';
@@ -2046,7 +2069,7 @@ function renderList(){
   const hasta=document.getElementById('srch-hasta').value||'';
   let fil=records.filter(r=>{
     if(activeFilter!=='todos'&&(r.status||'').toLowerCase()!==activeFilter)return false;
-    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    if(!_matchesSearch(r,q))return false;
     const f=r.fechaInicio||'';
     if(desde&&f&&f<desde)return false;
     if(hasta&&f&&f>hasta)return false;
@@ -3115,7 +3138,8 @@ function renderDashboard(){
   const desde = document.getElementById('dash-desde')?.value||'';
   const hasta = document.getElementById('dash-hasta')?.value||'';
   const fil = records.filter(r=>{
-    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    if(dashFilter!=='todos'&&(r.status||'').toLowerCase()!==dashFilter)return false;
+    if(!_matchesSearch(r,q))return false;
     const f=r.fechaInicio||'';
     if(desde&&f&&f<desde)return false;
     if(hasta&&f&&f>hasta)return false;
@@ -5784,7 +5808,8 @@ function renderRecordsTable(){
   const desde = document.getElementById('rec-desde')?.value||'';
   const hasta = document.getElementById('rec-hasta')?.value||'';
   let rows = records.filter(r=>{
-    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    if(recFilter!=='todos'&&(r.status||'').toLowerCase()!==recFilter)return false;
+    if(!_matchesSearch(r,q))return false;
     const f=r.fechaInicio||'';
     if(desde&&f&&f<desde)return false;
     if(hasta&&f&&f>hasta)return false;
