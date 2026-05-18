@@ -2051,11 +2051,9 @@ function setFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.c
 function setDashFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');dashFilter=el.dataset.f;renderDashboard();}
 function setRecFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>p.classList.remove('on'));el.classList.add('on');recFilter=el.dataset.f;renderRecordsTable();}
 
-/* Orden: exact match. Other fields: substring. */
 function _matchesSearch(r, q){
   if(!q) return true;
-  if((r.orden||'').toLowerCase()===q) return true;
-  return [r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q);
+  return [r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q);
 }
 
 function clearDateFilter(){
