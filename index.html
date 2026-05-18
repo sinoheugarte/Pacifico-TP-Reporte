@@ -2053,7 +2053,10 @@ function setRecFil(el){el.closest('.fpills').querySelectorAll('.fp').forEach(p=>
 
 function _matchesSearch(r, q){
   if(!q) return true;
-  return [r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q);
+  const ql = q.toLowerCase();
+  return (r.orden||'').toLowerCase().includes(ql)
+      || (r.ruta||'').toLowerCase().includes(ql)
+      || (r.transportista||'').toLowerCase().includes(ql);
 }
 
 function clearDateFilter(){
