@@ -939,7 +939,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 <!-- ════════════ BOTTOM NAV ════════════ -->
 <!-- DASHBOARD SCREEN -->
 <div class="scr" id="scr-dashboard">
-  <div style="padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between">
+  <div class="sbar" style="padding-bottom:8px">
+    <div class="sbar-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="sbar-inp" id="dash-srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderDashboard()">
+    </div>
+    <div class="sbar-dates">
+      <div class="sbar-date-grp">
+        <span>Desde</span>
+        <input class="sbar-date-inp" type="date" id="dash-desde" oninput="renderDashboard()">
+      </div>
+      <div class="sbar-date-grp">
+        <span>Hasta</span>
+        <input class="sbar-date-inp" type="date" id="dash-hasta" oninput="renderDashboard()">
+      </div>
+      <button class="sbar-date-clear" title="Limpiar fechas" onclick="document.getElementById('dash-desde').value='';document.getElementById('dash-hasta').value='';renderDashboard()">×</button>
+    </div>
+  </div>
+  <div style="padding:0 14px 8px;display:flex;align-items:center;justify-content:space-between">
     <div style="font-size:15px;font-weight:700;color:var(--navy)">Dashboard Ejecutivo</div>
     <div style="display:flex;gap:8px">
       <button onclick="showExportFilter('pdf')" style="background:var(--red-light);color:var(--red);border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">
@@ -1030,7 +1047,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- ════════════ RECORDS TABLE ════════════ -->
 <div class="scr" id="scr-records">
-  <div style="padding:12px 14px 0">
+  <div class="sbar" style="padding-bottom:8px">
+    <div class="sbar-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="sbar-inp" id="rec-srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderRecordsTable()">
+    </div>
+    <div class="sbar-dates">
+      <div class="sbar-date-grp">
+        <span>Desde</span>
+        <input class="sbar-date-inp" type="date" id="rec-desde" oninput="renderRecordsTable()">
+      </div>
+      <div class="sbar-date-grp">
+        <span>Hasta</span>
+        <input class="sbar-date-inp" type="date" id="rec-hasta" oninput="renderRecordsTable()">
+      </div>
+      <button class="sbar-date-clear" title="Limpiar fechas" onclick="document.getElementById('rec-desde').value='';document.getElementById('rec-hasta').value='';renderRecordsTable()">×</button>
+    </div>
+  </div>
+  <div style="padding:0 14px 0">
     <div class="rtbl-col-toggle" id="rtbl-col-toggle"></div>
     <div class="rtbl-meta">
       <span id="rtbl-count">—</span>
@@ -3077,18 +3111,29 @@ function destroyCharts(){
 
 function renderDashboard(){
   destroyCharts();
-  const total   = records.length;
-  const comp    = records.filter(r=>r.status==='completado').length;
-  const enRuta  = records.filter(r=>r.status==='en-ruta').length;
-  const pend    = records.filter(r=>r.status==='pendiente').length;
-  const cancel  = records.filter(r=>r.status==='cancelado').length;
-  const paletas = records.reduce((a,r)=>a+(parseInt(r.paletas)||0),0);
-  const cajas   = records.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
-  const sobres  = records.reduce((a,r)=>a+(parseInt(r.sobres)||0),0);
-  const entrega = records.filter(r=>(r.motivo||'').includes('ENTREGA')).length;
-  const retorno = records.filter(r=>(r.motivo||'').includes('RETORNO')).length;
+  const q     = (document.getElementById('dash-srch')?.value||'').toLowerCase();
+  const desde = document.getElementById('dash-desde')?.value||'';
+  const hasta = document.getElementById('dash-hasta')?.value||'';
+  const fil = records.filter(r=>{
+    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    const f=r.fechaInicio||'';
+    if(desde&&f&&f<desde)return false;
+    if(hasta&&f&&f>hasta)return false;
+    return true;
+  });
+
+  const total   = fil.length;
+  const comp    = fil.filter(r=>r.status==='completado').length;
+  const enRuta  = fil.filter(r=>r.status==='en-ruta').length;
+  const pend    = fil.filter(r=>r.status==='pendiente').length;
+  const cancel  = fil.filter(r=>r.status==='cancelado').length;
+  const paletas = fil.reduce((a,r)=>a+(parseInt(r.paletas)||0),0);
+  const cajas   = fil.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
+  const sobres  = fil.reduce((a,r)=>a+(parseInt(r.sobres)||0),0);
+  const entrega = fil.filter(r=>(r.motivo||'').includes('ENTREGA')).length;
+  const retorno = fil.filter(r=>(r.motivo||'').includes('RETORNO')).length;
   const pctComp = total ? Math.round(comp/total*100) : 0;
-  const totalViajes = new Set(records.map(r=>`${r.orden}_${r.motivo}_${r.viaje}`)).size;
+  const totalViajes = new Set(fil.map(r=>`${r.orden}_${r.motivo}_${r.viaje}`)).size;
 
   // ── GAUGE ──
   const gc=document.getElementById('gaugeComp');
@@ -3146,7 +3191,7 @@ function renderDashboard(){
 
   // ── TRANSPORTISTAS BAR ──
   const transMap={};
-  records.forEach(r=>{if(r.transportista) transMap[r.transportista]=(transMap[r.transportista]||0)+1;});
+  fil.forEach(r=>{if(r.transportista) transMap[r.transportista]=(transMap[r.transportista]||0)+1;});
   const transEntries=Object.entries(transMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
   chartInstances.transp = new Chart(document.getElementById('chartTransp'),{
     type:'bar',
@@ -3161,7 +3206,7 @@ function renderDashboard(){
 
   // ── UNIDADES BAR ──
   const unitMap={};
-  records.forEach(r=>{if(r.tipoUnidad) unitMap[r.tipoUnidad]=(unitMap[r.tipoUnidad]||0)+1;});
+  fil.forEach(r=>{if(r.tipoUnidad) unitMap[r.tipoUnidad]=(unitMap[r.tipoUnidad]||0)+1;});
   const unitEntries=Object.entries(unitMap).sort((a,b)=>b[1]-a[1]);
   chartInstances.unidad = new Chart(document.getElementById('chartUnidad'),{
     type:'bar',
@@ -3177,7 +3222,7 @@ function renderDashboard(){
 
   // ── TENDENCIA MENSUAL LINE ──
   const byMonth={};
-  records.forEach(r=>{
+  fil.forEach(r=>{
     if(!r.fechaInicio) return;
     const p=r.fechaInicio.split('-');
     const mk=p.length>=2?`${p[1]}/${p[0]}`:'Otros';
@@ -3199,7 +3244,7 @@ function renderDashboard(){
 
   // ── RUTAS ──
   const rutaMap={};
-  records.forEach(r=>{if(r.ruta) rutaMap[r.ruta]=(rutaMap[r.ruta]||0)+1;});
+  fil.forEach(r=>{if(r.ruta) rutaMap[r.ruta]=(rutaMap[r.ruta]||0)+1;});
   const rutaEntries=Object.entries(rutaMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
   chartInstances.rutas = new Chart(document.getElementById('chartRutas'),{
     type:'bar',
@@ -3225,7 +3270,7 @@ function renderDashboard(){
 
   // ── TABLE: ÓRDENES CON MÚLTIPLES VIAJES ──
   const ovMap={};
-  records.forEach(r=>{
+  fil.forEach(r=>{
     const key=`${r.orden||''}|||${r.motivo||''}`;
     if(!ovMap[key]) ovMap[key]={orden:r.orden,motivo:r.motivo,viajes:new Set(),recs:0};
     ovMap[key].viajes.add(r.viaje||'1');
@@ -3247,7 +3292,7 @@ function renderDashboard(){
   }
 
   // ── TABLE: ÚLTIMOS 5 REGISTROS ──
-  const last5=records.slice().sort((a,b)=>(b.updatedAt||b.fechaInicio||'').localeCompare(a.updatedAt||a.fechaInicio||'')).slice(0,5);
+  const last5=fil.slice().sort((a,b)=>(b.updatedAt||b.fechaInicio||'').localeCompare(a.updatedAt||a.fechaInicio||'')).slice(0,5);
   if(last5.length>0){
     let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Viaje</th><th ${thS}>Ruta</th><th ${thS}>Status</th></tr>`;
     const sBadge=(s)=>{
@@ -5734,8 +5779,19 @@ function renderRecordsTable(){
   const head=document.getElementById('rtbl-head');
   head.innerHTML='<tr>'+visCols.map(c=>`<th data-col="${c.k}" class="${_rtSort.col===c.k?_rtSort.dir:''}" onclick="sortRT('${c.k}')">${c.label}<span class="sort-ic"></span></th>`).join('')+'</tr>';
 
+  /* filter */
+  const q     = (document.getElementById('rec-srch')?.value||'').toLowerCase();
+  const desde = document.getElementById('rec-desde')?.value||'';
+  const hasta = document.getElementById('rec-hasta')?.value||'';
+  let rows = records.filter(r=>{
+    if(q&&![r.orden,r.ruta,r.transportista,r.dam,r.motivo].join(' ').toLowerCase().includes(q))return false;
+    const f=r.fechaInicio||'';
+    if(desde&&f&&f<desde)return false;
+    if(hasta&&f&&f>hasta)return false;
+    return true;
+  });
+
   /* sort */
-  let rows=[...records];
   const sc=_rtSort.col, sd=_rtSort.dir;
   rows.sort((a,b)=>{
     let av=a[sc]||'', bv=b[sc]||'';
