@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <style>
 :root {
   --navy:#0f2340; --navy2:#1a3560; --navy3:#22468a;
@@ -533,6 +534,82 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
+/* ── DARK MODE ─────────────────────────────────────────── */
+[data-theme="dark"]{--bg:#0f172a;--white:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--border:#334155;--amber-light:rgba(245,158,11,.15);--green-light:rgba(5,150,105,.15);--red-light:rgba(220,38,38,.15);--sh:0 1px 3px rgba(0,0,0,.35);--shm:0 4px 16px rgba(0,0,0,.55)}
+[data-theme="dark"] body{background:#0f172a}
+[data-theme="dark"] .rc,[data-theme="dark"] .skel-card,[data-theme="dark"] .emenu,[data-theme="dark"] .emb,[data-theme="dark"] .a-card,[data-theme="dark"] .setup-wrap,[data-theme="dark"] .od-box{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .emb:hover{background:#0f172a}
+[data-theme="dark"] .sc{background:#1e293b !important;border-color:#334155 !important}
+[data-theme="dark"] .nav{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .nb{color:#94a3b8}[data-theme="dark"] .nb.on{color:#93c5fd}
+[data-theme="dark"] .fp{background:#1e293b;border-color:#334155;color:#94a3b8}
+[data-theme="dark"] .fp.on{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+[data-theme="dark"] .sbar-wrap,[data-theme="dark"] .sbar-date-grp{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .sbar-inp,[data-theme="dark"] .sbar-date-inp{color:#e2e8f0}
+[data-theme="dark"] .chip{background:#0f172a;border-color:#334155;color:#94a3b8}
+[data-theme="dark"] .rc-main{color:#e2e8f0}[data-theme="dark"] .rc-sub,[data-theme="dark"] .lmeta{color:#94a3b8}
+[data-theme="dark"] .rc-num{background:#334155;color:#93c5fd}
+[data-theme="dark"] .f input,[data-theme="dark"] .f select,[data-theme="dark"] .f textarea,[data-theme="dark"] .cfg-input{background:#0f172a;color:#e2e8f0;border-color:#334155}
+[data-theme="dark"] .f label,[data-theme="dark"] .slbl{color:#94a3b8}
+[data-theme="dark"] .btn-s{background:#1e293b;color:#e2e8f0;border-color:#334155}
+[data-theme="dark"] .dhero{background:linear-gradient(135deg,#1e3a5f,#2a4f7a)}
+[data-theme="dark"] .dsec{border-color:#334155;background:#1e293b}
+[data-theme="dark"] .di .v{color:#e2e8f0}[data-theme="dark"] .di .l{color:#94a3b8}
+[data-theme="dark"] .nbox{background:#0f172a;border-color:#334155}
+[data-theme="dark"] .rtbl thead tr{background:#1e3a5f}
+[data-theme="dark"] .rtbl tbody tr:hover{background:#1e3a5f}
+[data-theme="dark"] .rtbl tbody tr{border-color:#334155}
+[data-theme="dark"] .rtbl td{color:#e2e8f0}
+[data-theme="dark"] .efm-panel,[data-theme="dark"] .efm-ftr,[data-theme="dark"] .efm-count{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .efm-body{background:#1e293b}
+[data-theme="dark"] .efm-sec{border-color:#334155}
+[data-theme="dark"] .efm-sec-hdr-left,[data-theme="dark"] .efm-hdr-title{color:#e2e8f0}
+[data-theme="dark"] .efm-hdr-close{color:#94a3b8}
+[data-theme="dark"] .efm-opt{color:#e2e8f0}[data-theme="dark"] .efm-opt:hover{background:#0f172a}
+[data-theme="dark"] .efm-sel-all{background:#0f172a;color:#93c5fd}
+[data-theme="dark"] .efm-cancel{background:#1e293b;border-color:#334155;color:#94a3b8}
+[data-theme="dark"] .ssec{border-color:#334155}
+[data-theme="dark"] .srow{border-color:#334155}
+[data-theme="dark"] .srl{color:#e2e8f0}[data-theme="dark"] .srs,[data-theme="dark"] .srv{color:#94a3b8}
+[data-theme="dark"] .fhdr,[data-theme="dark"] .fsec,[data-theme="dark"] .isec{background:var(--bg)}
+[data-theme="dark"] #scr-dashboard>div>div[style*="background:#fff"]{background:#1e293b !important;border-color:#334155 !important}
+[data-theme="dark"] #signature-pad-wrap{background:#1e293b !important;border-color:#334155 !important}
+[data-theme="dark"] #sig-hint{color:#475569}
+
+/* ── TRANSICIONES DE PANTALLA ───────────────────────────── */
+@keyframes scrFadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.scr.on{animation:scrFadeIn .2s ease}
+
+/* ── SKELETON LOADING ──────────────────────────────────── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:6px}
+[data-theme="dark"] .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%);background-size:200% 100%}
+.skel-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 15px;box-shadow:var(--sh)}
+
+/* ── GPS INDICATOR ──────────────────────────────────────── */
+.gps-pill{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);color:var(--green);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600}
+.gps-pill.wait{background:var(--amber-light);color:#92400e}
+.gps-pill.err{background:var(--red-light);color:var(--red)}
+
+/* ── FIRMA DIGITAL ──────────────────────────────────────── */
+#signature-pad-wrap{position:relative;background:#fff;border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-top:8px}
+#signature-pad-wrap canvas{display:block;width:100%;height:150px;cursor:crosshair;touch-action:none}
+#sig-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:12px;color:#d1d5db;text-align:center;transition:opacity .2s;white-space:nowrap}
+.sig-done #sig-hint{opacity:0}
+
+/* ── OFFLINE BADGE ──────────────────────────────────────── */
+.offline-badge{display:none;position:fixed;top:0;left:0;right:0;z-index:10001;background:#f59e0b;color:#0f2340;text-align:center;font-size:12px;font-weight:700;padding:5px 16px;letter-spacing:.04em}
+body.is-offline .offline-badge{display:block}
+
+/* ── PENDING SYNC ───────────────────────────────────────── */
+.pending-dot{display:none;width:7px;height:7px;background:#f59e0b;border-radius:50%;animation:pulse .9s ease-in-out infinite;margin-left:3px;vertical-align:middle}
+body.has-pending .pending-dot{display:inline-block}
+
+/* ── ROLE BADGE ─────────────────────────────────────────── */
+.role-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em;margin-left:4px}
+.role-badge.admin{background:rgba(220,38,38,.7)}
+.role-badge.supervisor{background:rgba(5,150,105,.7)}
+
 /* ── RECORDS TABLE ───────────────────────────────────── */
 #scr-records .rtbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh)}
 .rtbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
@@ -589,6 +666,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 </style>
 </head>
 <body>
+<script>if(localStorage.getItem('ptp_dark')==='1')document.documentElement.dataset.theme='dark'</script>
+<div class="offline-badge">📴 SIN CONEXIÓN — los reportes se guardan localmente y se sincronizan al recuperar señal</div>
 
 <!-- ════════════ PRESPLASH GATE ════════════ -->
 <div id="presplash">
@@ -861,6 +940,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
       </div>
     </div>
   </div>
+  <!-- GPS -->
+  <div class="fsec" style="padding-bottom:10px">
+    <div class="slbl">Ubicación GPS</div>
+    <div id="gps-status" class="gps-pill wait">📡 Obteniendo ubicación…</div>
+  </div>
+  <!-- Firma Digital -->
+  <div class="fsec">
+    <div class="slbl">Firma Digital del Receptor <span class="doc-dot" id="dot-firma"></span></div>
+    <div id="signature-pad-wrap">
+      <canvas id="signature-pad"></canvas>
+      <div id="sig-hint">✍ Firmar aquí con el dedo o lápiz</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+      <button type="button" onclick="clearSig()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);padding:7px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--text2)">✕ Limpiar</button>
+      <span id="sig-status" style="font-size:11px;color:var(--green)"></span>
+    </div>
+  </div>
   <div class="isec">
     <div class="slbl">Evidencia Fotográfica (Fotos Generales) <span class="doc-dot" id="dot-fotosGenerales"></span></div>
     <div class="igrid" id="igrid"></div>
@@ -930,6 +1026,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
     <div class="srow"><div class="srl">Correo</div><div class="srv" id="sEmail">—</div></div>
     <div class="srow"><div class="srl">Reportes guardados</div><div class="srv" id="sTotal">0</div></div>
     <div class="srow"><div class="srl">Última sincronización</div><div class="srv" id="sSync">—</div></div>
+  </div>
+  <div class="ssec">
+    <div class="ssect">Apariencia</div>
+    <div class="srow">
+      <div><div class="srl">Modo oscuro</div><div class="srs">Interfaz nocturna para turnos nocturnos</div></div>
+      <label class="ps-toggle"><input type="checkbox" id="darkToggle" onchange="toggleDarkMode(this.checked)"><span class="ps-track"></span></label>
+    </div>
+    <div class="srow">
+      <div><div class="srl">Pendientes de sincronización</div><div class="srs">Reportes guardados sin conexión</div></div>
+      <div class="srv" id="sPending">0<span class="pending-dot"></span></div>
+    </div>
   </div>
   <div style="padding:16px 18px">
     <button class="btn-logout" onclick="signOut()">Cerrar sesión de Microsoft</button>
@@ -1657,6 +1764,7 @@ async function setupOneDrive(){
     }
     renderUserCard();
     setSdot('ok');
+    loadUserRole().catch(()=>{});
   }catch(e){
     console.error('Setup:', e); setSdot('err'); toast('⚠ Error conectando: '+e.message?.slice(0,80));
   }
@@ -2018,16 +2126,15 @@ async function loadPhotosForRec(rec) {
 
 function saveCache(){
   try{
-    // First try saving with images (for records that have them loaded)
     const withImgs = records.map(r => ({...r}));
     localStorage.setItem(CACHE_KEY, JSON.stringify(withImgs));
   }catch(e){
-    // If quota exceeded, save without images
     try{
       const light = records.map(r => { const c={...r}; delete c.images; return c; });
       localStorage.setItem(CACHE_KEY, JSON.stringify(light));
     }catch(e2){ console.warn('saveCache failed:', e2); }
   }
+  idbSaveRecords().catch(()=>{});
 }
 function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_KEY)||'[]');}catch{records=[];} }
 
@@ -2245,15 +2352,16 @@ function calcTurno(type) {
 }
 
 function newRecord(){
-  editingId=null;formImgs=[];deletedImgs=[];
+  editingId=null;formImgs=[];deletedImgs=[];_currentGPS=null;
   FKEYS.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
   const _t=new Date();
   const _hoy=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
   if(todayEl) todayEl.value=_hoy;
   renderIG();setEl('iStatus','');showScr('form');
+  setTimeout(()=>{ clearSig(); initSigPad(); captureGPS(); },180);
 }
-function cancelForm(){showScr('list');}
+function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
 function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'';}
 
 function addImgs(inp){
@@ -2323,9 +2431,19 @@ async function saveRecord(){
   const rec={
     id, folderName,
     ...Object.fromEntries(FKEYS.map(k=>[k,fv(k)])),
-    images: formImgs.map(f=>f.dataUrl), 
-    updatedAt: new Date().toISOString()
+    images: formImgs.map(f=>f.dataUrl),
+    createdAt: existingRec?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdBy: existingRec?.createdBy || user?.email || '',
+    updatedBy: user?.email || '',
   };
+  // GPS
+  if(_currentGPS){rec.gpsLat=_currentGPS.lat;rec.gpsLon=_currentGPS.lon;rec.gpsAcc=_currentGPS.acc;rec.gpsAt=_currentGPS.at;}
+  else if(existingRec?.gpsLat){rec.gpsLat=existingRec.gpsLat;rec.gpsLon=existingRec.gpsLon;rec.gpsAcc=existingRec.gpsAcc;rec.gpsAt=existingRec.gpsAt;}
+  // Firma digital
+  const _sigData=getSigData();
+  if(_sigData){rec.signatureData=_sigData;rec.signedAt=new Date().toISOString();rec.signedBy=user?.email||'';}
+  else if(existingRec?.signatureData){rec.signatureData=existingRec.signatureData;rec.signedAt=existingRec.signedAt;rec.signedBy=existingRec.signedBy;}
 
   /* Save orig values BEFORE pushToOneDrive overwrites the record */
   const origValues = existingRec ? {
@@ -2382,7 +2500,8 @@ async function saveRecord(){
     }
 
     await pushToOneDrive(rec, formImgs);
-    editingId=null; formImgs=[]; deletedImgs=[];
+    addAudit(editingId?'UPDATE':'CREATE', id, {orden:rec.orden, ruta:rec.ruta});
+    editingId=null; formImgs=[]; deletedImgs=[]; _currentGPS=null;
     hideUp(); toast('✓ Guardado en SharePoint correctamente');
     showScr('list');
   }catch(e){
@@ -2390,7 +2509,10 @@ async function saveRecord(){
     const msg = e.message||String(e);
     if(msg.includes('423')||msg.includes('Excel upload')) toast('⚠ Datos guardados. El Excel está abierto en OneDrive — ciérralo y vuelve a guardar para actualizar el reporte.');
     else if(msg.includes('401')||msg.includes('403')) toast('⚠ Sesión expirada. Cierra sesión e inicia de nuevo.');
-    else if(msg.includes('Failed to fetch')) toast('⚠ Sin conexión. Verifica tu internet.');
+    else if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||!navigator.onLine){
+      try{ await queueRecord(rec,formImgs); editingId=null; formImgs=[]; deletedImgs=[]; _currentGPS=null; showScr('list'); }
+      catch(qe){ toast('⚠ Error al guardar localmente: '+qe.message?.slice(0,40)); }
+    }
     else toast('⚠ Error al guardar: '+msg.slice(0,60));
   }
   finally{ btn.disabled=false; }
@@ -2491,6 +2613,21 @@ function showDet(id){
       </div>
     </div>
     ${r.observaciones?`<div class="dsec"><div class="dst">Observaciones</div><div style="font-size:13px;line-height:1.5;white-space:pre-wrap">${r.observaciones}</div></div>`:''}
+    ${r.gpsLat?`<div class="dsec"><div class="dst">Ubicación GPS</div><div class="dgrid">
+      <div class="di"><div class="l">Latitud</div><div class="v" style="font-family:'DM Mono',monospace;font-size:13px">${r.gpsLat.toFixed(5)}</div></div>
+      <div class="di"><div class="l">Longitud</div><div class="v" style="font-family:'DM Mono',monospace;font-size:13px">${r.gpsLon.toFixed(5)}</div></div>
+      <div class="di"><div class="l">Precisión</div><div class="v">±${r.gpsAcc}m</div></div>
+      <div class="di"><div class="l">Capturado</div><div class="v" style="font-size:12px">${new Date(r.gpsAt).toLocaleString('es-PE')}</div></div>
+      <div class="di w"><div class="l">Mapa</div><div class="v"><a href="https://maps.google.com/?q=${r.gpsLat},${r.gpsLon}" target="_blank" style="color:var(--ms);font-weight:600;text-decoration:none">📍 Ver en Google Maps ↗</a></div></div>
+    </div></div>`:''}
+    ${r.signatureData?`<div class="dsec"><div class="dst">Firma del Receptor</div>
+      <img src="${r.signatureData}" style="max-width:100%;border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-top:8px;display:block">
+      ${r.signedAt?`<div style="font-size:11px;color:var(--text2);margin-top:6px">✓ Firmado el ${new Date(r.signedAt).toLocaleString('es-PE')}${r.signedBy?' · '+r.signedBy:''}</div>`:''}</div>`:''}
+    ${r.createdAt?`<div class="dsec" style="border-bottom:none"><div class="dst">Auditoría</div><div class="dgrid">
+      <div class="di"><div class="l">Creado</div><div class="v" style="font-size:12px">${new Date(r.createdAt).toLocaleString('es-PE')}</div></div>
+      <div class="di"><div class="l">Por</div><div class="v" style="font-size:12px">${r.createdBy||'—'}</div></div>
+      ${r.updatedAt&&r.updatedAt!==r.createdAt?`<div class="di"><div class="l">Actualizado</div><div class="v" style="font-size:12px">${new Date(r.updatedAt).toLocaleString('es-PE')}</div></div><div class="di"><div class="l">Por</div><div class="v" style="font-size:12px">${r.updatedBy||'—'}</div></div>`:''}
+    </div></div>`:''}
     ${pc?(()=>{
       const isPrivate = (r.photoStorage||'od')==='od' && r.createdBy && r.createdBy!==(user?.email||'');
       const storageLbl = (r.photoStorage||'od')==='sp' ? 'SharePoint' : 'OneDrive';
@@ -2525,6 +2662,7 @@ async function editRec(id){
   r._origHoja     = r.hojaIngreso      || '';
   editingId = id;
   deletedImgs = [];
+  _currentGPS = null;
   formImgs = r.images?.map((dataUrl, i) => ({
     dataUrl, blob: null,
     name: r.photoNames?.[i] || `foto_old_${i}.jpg`,
@@ -2536,6 +2674,7 @@ async function editRec(id){
     if(r.horaTermino) calcTurno('Termino');
     renderIG();
     setEl('iStatus', formImgs.length ? `${formImgs.length} foto${formImgs.length!==1?'s':''} (${formImgs.filter(f=>f.isOld).length} existente${formImgs.filter(f=>f.isOld).length!==1?'s':''})` : '');
+    clearSig(); initSigPad(); captureGPS();
   }, 50);
   showScr('form');
 }
@@ -2617,6 +2756,9 @@ async function deletePhotoFromOD(rec, fname){
 
 async function delRec(id){
   const r = records.find(x=>x.id===id);
+  if(userRole==='conductor'&&r?.createdBy&&r.createdBy!==(user?.email||'')){
+    toast('⚠ Solo puedes eliminar tus propios reportes'); return;
+  }
   if(!confirm('¿Eliminar este reporte?\n\nSe eliminarán las fotos y se actualizará el Excel en OneDrive.'))return;
   showUp('Eliminando reporte…','Actualizando OneDrive y Excel',5);
   try{
@@ -2640,7 +2782,9 @@ async function delRec(id){
 function renderUserCard() {
   if(!user)return;
   const ini=(user.name||user.email).split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
-  setEl('ucardW',`<div class="ucard"><div class="uav">${ini}</div><div class="uname">${user.name}</div><div class="uemail">${user.email}</div><div class="ubadge"><div class="sdot ok" style="width:7px;height:7px"></div>Conectado a Microsoft 365</div></div>`);
+  const _roleCls=userRole==='admin'?'admin':userRole==='supervisor'?'supervisor':'';
+  const _roleIcon={'admin':'👑','supervisor':'🔍','conductor':'🚛'}[userRole]||'🚛';
+  setEl('ucardW',`<div class="ucard"><div class="uav">${ini}</div><div class="uname">${user.name}</div><div class="uemail">${user.email}</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:12px"><div class="ubadge"><div class="sdot ok" style="width:7px;height:7px"></div>Conectado a Microsoft 365</div><div class="role-badge ${_roleCls}">${_roleIcon} ${userRole}</div></div></div>`);
   setEl('sEmail',user.email);setEl('sTotal',records.length); setEl('sSync',lastSync?lastSync.toLocaleTimeString('es-PE'):'—');
   const dbSP = cfg.dbStorage !== 'od';
   setEl('odJson', dbSP ? `SharePoint / ${OD_ROOT} / ${OD_JSON}` : `OneDrive / ${OD_ROOT} / ${OD_JSON}`);
@@ -6082,11 +6226,247 @@ function exportRecordsPDF(){
   toast('✓ PDF descargado');
 }
 
-loadCfg(); loadCacheRecords();
+/* ════════════════════════════════════════════════════════
+   INDEXEDDB — almacenamiento offline >50MB
+════════════════════════════════════════════════════════ */
+let _idb=null;
+async function idbOpen(){
+  if(_idb)return _idb;
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('pacifico_tp_idb',2);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('records'))db.createObjectStore('records',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('pending'))db.createObjectStore('pending',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('audit'))db.createObjectStore('audit',{keyPath:'id',autoIncrement:true});
+    };
+    req.onsuccess=e=>{_idb=e.target.result;res(_idb);};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function idbPut(store,data){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite'),s=tx.objectStore(store);
+    if(Array.isArray(data)){s.clear();data.forEach(r=>s.put(r));}else s.put(data);
+    tx.oncomplete=res;tx.onerror=e=>rej(e.target.error);
+  });
+}
+async function idbAll(store){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const req=db.transaction(store,'readonly').objectStore(store).getAll();
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function idbDel(store,key){
+  const db=await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.objectStore(store).delete(key);
+    tx.oncomplete=res;tx.onerror=e=>rej(e.target.error);
+  });
+}
+async function idbSaveRecords(){
+  const light=records.map(r=>{const c={...r};delete c.images;return c;});
+  await idbPut('records',light);
+}
+async function loadCacheRecordsAsync(){
+  try{
+    const recs=await idbAll('records');
+    if(recs&&recs.length>0){records=recs;return;}
+  }catch(e){console.warn('idb load:',e);}
+  try{records=JSON.parse(localStorage.getItem(CACHE_KEY)||'[]');}catch{records=[];}
+}
+
+/* ════════════════════════════════════════════════════════
+   COLA OFFLINE — guardar sin red, sincronizar al volver
+════════════════════════════════════════════════════════ */
+let _syncBusy=false;
+async function queueRecord(rec,imgs){
+  const lite={...rec,_pendingImgs:imgs.map(f=>({dataUrl:f.dataUrl,name:f.name,isOld:f.isOld,blob:null})),_pendingAt:new Date().toISOString()};
+  const idx=records.findIndex(r=>r.id===rec.id);
+  if(idx>=0)records[idx]=rec;else records.push(rec);
+  saveCache();
+  await idbPut('pending',lite);
+  updatePendingIndicator();
+  toast('📴 Sin red — guardado localmente. Se enviará al recuperar conexión.');
+}
+async function syncPending(){
+  if(_syncBusy||!navigator.onLine)return;
+  const pending=await idbAll('pending').catch(()=>[]);
+  if(!pending.length){updatePendingIndicator();return;}
+  _syncBusy=true;setSdot('busy');
+  let synced=0;
+  for(const p of pending){
+    try{
+      const imgs=(p._pendingImgs||[]);
+      delete p._pendingImgs;delete p._pendingAt;
+      await pushToOneDrive(p,imgs);
+      await idbDel('pending',p.id);
+      synced++;
+    }catch(e){console.warn('sync pending:',e);}
+  }
+  _syncBusy=false;
+  updatePendingIndicator();
+  if(synced){setSdot('ok');toast(`✓ ${synced} reporte(s) sincronizado(s) con SharePoint`);}
+}
+async function updatePendingIndicator(){
+  const p=await idbAll('pending').catch(()=>[]);
+  document.body.classList.toggle('has-pending',p.length>0);
+  const el=document.getElementById('sPending');
+  if(el)el.innerHTML=p.length+`<span class="pending-dot"></span>`;
+}
+window.addEventListener('online',()=>{
+  document.body.classList.remove('is-offline');
+  setSdot('busy');
+  toast('🟢 Conexión restaurada — sincronizando…');
+  setTimeout(syncPending,1500);
+});
+window.addEventListener('offline',()=>{
+  document.body.classList.add('is-offline');
+  setSdot('off');
+  toast('📴 Sin conexión — los reportes se guardarán localmente');
+});
+
+/* ════════════════════════════════════════════════════════
+   GPS — captura automática de ubicación
+════════════════════════════════════════════════════════ */
+let _currentGPS=null;
+function captureGPS(){
+  const el=document.getElementById('gps-status');
+  if(!navigator.geolocation){
+    if(el){el.className='gps-pill err';el.innerHTML='📍 GPS no disponible';}
+    return;
+  }
+  if(el){el.className='gps-pill wait';el.innerHTML='📡 Obteniendo ubicación…';}
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      _currentGPS={lat:pos.coords.latitude,lon:pos.coords.longitude,acc:Math.round(pos.coords.accuracy),at:new Date().toISOString()};
+      if(el){el.className='gps-pill';el.innerHTML=`📍 ${_currentGPS.lat.toFixed(5)}, ${_currentGPS.lon.toFixed(5)} ±${_currentGPS.acc}m`;}
+    },
+    ()=>{
+      _currentGPS=null;
+      if(el){el.className='gps-pill err';el.innerHTML='📍 Ubicación no disponible';}
+    },
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+  );
+}
+
+/* ════════════════════════════════════════════════════════
+   FIRMA DIGITAL — signature_pad
+════════════════════════════════════════════════════════ */
+let _sigPad=null;
+function initSigPad(){
+  const canvas=document.getElementById('signature-pad');
+  if(!canvas||!window.SignaturePad)return;
+  const ratio=Math.max(window.devicePixelRatio||1,1);
+  canvas.width=(canvas.offsetWidth||300)*ratio;
+  canvas.height=150*ratio;
+  canvas.getContext('2d').scale(ratio,ratio);
+  _sigPad=new SignaturePad(canvas,{penColor:'#0f2340',minWidth:1.5,maxWidth:3.5,backgroundColor:'rgba(255,255,255,0)'});
+  _sigPad.addEventListener('beginStroke',()=>{
+    document.getElementById('signature-pad-wrap')?.classList.add('sig-done');
+    updateSigDot();
+  });
+}
+function clearSig(){
+  if(_sigPad)_sigPad.clear();
+  document.getElementById('signature-pad-wrap')?.classList.remove('sig-done');
+  const st=document.getElementById('sig-status');if(st)st.textContent='';
+  document.getElementById('dot-firma')?.classList.remove('has');
+}
+function getSigData(){
+  if(!_sigPad||_sigPad.isEmpty())return null;
+  return _sigPad.toDataURL('image/png');
+}
+function updateSigDot(){
+  const has=_sigPad&&!_sigPad.isEmpty();
+  document.getElementById('dot-firma')?.classList.toggle('has',has);
+  const st=document.getElementById('sig-status');
+  if(st)st.textContent=has?'✓ Firma capturada':'';
+}
+
+/* ════════════════════════════════════════════════════════
+   MODO OSCURO
+════════════════════════════════════════════════════════ */
+function toggleDarkMode(on){
+  document.documentElement.dataset.theme=on?'dark':'';
+  localStorage.setItem('ptp_dark',on?'1':'0');
+  toast(on?'🌙 Modo oscuro activado':'☀ Modo claro activado');
+}
+function initDarkMode(){
+  const saved=localStorage.getItem('ptp_dark');
+  const prefersDark=window.matchMedia?.('(prefers-color-scheme:dark)').matches;
+  const isDark=saved==='1'||(saved===null&&prefersDark);
+  if(isDark)document.documentElement.dataset.theme='dark';
+  const tog=document.getElementById('darkToggle');
+  if(tog)tog.checked=isDark;
+}
+
+/* ════════════════════════════════════════════════════════
+   ROLES DE USUARIO — lee usuarios.json de SharePoint
+════════════════════════════════════════════════════════ */
+let userRole='conductor';
+async function loadUserRole(){
+  if(!user)return;
+  try{
+    const driveId=await ensureSPDrive();
+    const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}?$select=@microsoft.graph.downloadUrl`);
+    const dlUrl=item['@microsoft.graph.downloadUrl'];
+    const res=await fetch(dlUrl+'&t='+Date.now());
+    if(!res.ok)return;
+    const users=await res.json();
+    const found=users.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
+    if(found?.rol){userRole=found.rol.toLowerCase();renderUserCard();}
+  }catch(e){console.log('usuarios.json:',e.message?.slice(0,60));}
+}
+
+/* ════════════════════════════════════════════════════════
+   AUDITORÍA LOCAL — log en IndexedDB
+════════════════════════════════════════════════════════ */
+function addAudit(action,recId,extra){
+  idbPut('audit',{id:Date.now(),action,recId,user:user?.email||'',ts:new Date().toISOString(),...extra}).catch(()=>{});
+}
+
+/* ════════════════════════════════════════════════════════
+   SWIPE PARA VOLVER — deslizar desde borde izquierdo
+════════════════════════════════════════════════════════ */
+let _swipeX=0;
+document.addEventListener('touchstart',e=>{_swipeX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-_swipeX;
+  const scr=document.querySelector('.scr.on')?.id;
+  if(dx>72&&_swipeX<32&&(scr==='scr-detail'||scr==='scr-form'))goBack();
+},{passive:true});
+
+/* ════════════════════════════════════════════════════════
+   SKELETON LOADING — placeholders mientras carga
+════════════════════════════════════════════════════════ */
+function showSkeletons(n=4){
+  const list=document.getElementById('rlist');
+  if(!list)return;
+  list.innerHTML=Array.from({length:n},()=>`<div class="skel-card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+      <div class="skeleton" style="height:18px;width:80px"></div>
+      <div class="skeleton" style="height:18px;width:60px"></div>
+    </div>
+    <div class="skeleton" style="height:20px;width:70%;margin-bottom:8px"></div>
+    <div class="skeleton" style="height:16px;width:50%;margin-bottom:12px"></div>
+    <div style="display:flex;justify-content:space-between">
+      <div class="skeleton" style="height:24px;width:90px;border-radius:12px"></div>
+      <div style="display:flex;gap:5px"><div class="skeleton" style="height:40px;width:40px;border-radius:6px"></div><div class="skeleton" style="height:40px;width:40px;border-radius:6px"></div></div>
+    </div>
+  </div>`).join('');
+}
+
+loadCfg(); initDarkMode(); showSkeletons(); showScr('list');
 (function(){ var d=new Date(); var s=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-'+(String(d.getDate()).padStart(2,'0')); document.getElementById('srch-desde').value=s; })();
-renderList(); showScr('list');
+loadCacheRecordsAsync().then(()=>{ renderList(); updatePendingIndicator(); }).catch(()=>{ loadCacheRecords(); renderList(); });
 tryAutoLogin().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(!navigator.onLine) document.body.classList.add('is-offline');
 </script>
 
 <!-- ════════════ QR SCANNER MODAL ════════════ -->
