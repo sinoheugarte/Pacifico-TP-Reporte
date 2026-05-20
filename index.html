@@ -792,13 +792,18 @@ body.has-pending .pending-dot{display:inline-block}
 .user-marker-active{background:#059669}
 .user-marker-warn{background:#f59e0b}
 .user-marker-idle{background:#94a3b8}
-.mapa-filters{display:flex;align-items:flex-end;gap:10px;padding:0 12px 10px;flex-wrap:wrap}
-.mapa-filter-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:120px}
+.mapa-filters{display:flex;align-items:flex-start;gap:10px;padding:0 12px 10px;flex-wrap:wrap}
+.mapa-filter-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
 .mapa-filter-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
-.mapa-filter-sel{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;cursor:pointer}
+.mapa-filter-sel{border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;cursor:pointer}
 .mapa-filter-sel:focus{border-color:var(--navy)}
-.mapa-filter-clear{align-self:flex-end;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.mapa-filter-multi{padding:4px 2px;height:100px;overflow-y:auto;resize:none}
+.mapa-filter-multi option{padding:5px 10px;border-radius:5px;cursor:pointer;margin:1px 2px}
+.mapa-filter-multi option:checked,.mapa-filter-multi option:selected{background:var(--navy);color:#fff}
+.mapa-filter-hint{font-size:9px;color:#94a3b8;margin-top:1px}
+.mapa-filter-clear{align-self:flex-end;margin-top:22px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
 [data-theme="dark"] .mapa-filter-sel{background:#1e293b;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .mapa-filter-multi option:checked{background:#1d4ed8}
 [data-theme="dark"] .mapa-filter-clear{border-color:#334155;color:#94a3b8}
 /* ── ADMIN TABS ───────────────────────────────────────── */
 .utab-bar{display:flex;gap:2px;padding:0 12px 12px;border-bottom:1px solid var(--border);margin-bottom:0}
@@ -1557,15 +1562,13 @@ body.has-pending .pending-dot{display:inline-block}
   <div id="mapa-gps-status" style="display:none;margin:0 12px 6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;line-height:1.4"></div>
   <div class="mapa-filters" id="mapa-filters">
     <div class="mapa-filter-group">
-      <label class="mapa-filter-label">Usuario</label>
-      <select class="mapa-filter-sel" id="mf-usuario" onchange="applyMapFilters()">
-        <option value="">Todos</option>
+      <label class="mapa-filter-label">Empresa</label>
+      <select class="mapa-filter-sel mapa-filter-multi" id="mf-empresa" multiple size="4" onchange="onEmpresaFilterChange()">
       </select>
     </div>
     <div class="mapa-filter-group">
-      <label class="mapa-filter-label">Empresa</label>
-      <select class="mapa-filter-sel" id="mf-empresa" onchange="applyMapFilters()">
-        <option value="">Todas</option>
+      <label class="mapa-filter-label">Usuario</label>
+      <select class="mapa-filter-sel mapa-filter-multi" id="mf-usuario" multiple size="4" onchange="applyMapFilters()">
       </select>
     </div>
     <button class="mapa-filter-clear" onclick="clearMapFilters()">✕ Limpiar</button>
@@ -7246,46 +7249,78 @@ function animatedRefreshMap(){
 }
 
 let _allLocs={};
+function _getSelVals(id){
+  const sel=document.getElementById(id);
+  if(!sel)return[];
+  return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean);
+}
 function _updateMapFilterOptions(locs){
   const selU=document.getElementById('mf-usuario');
   const selE=document.getElementById('mf-empresa');
   if(!selU||!selE)return;
-  const curU=selU.value, curE=selE.value;
-  // Usar _sysUsers como fuente principal; label = nombre + apellidos
+  const prevE=_getSelVals('mf-empresa');
+  const prevU=_getSelVals('mf-usuario');
   const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
   const empresas=[...new Set(registrados.map(u=>u.empresa||'').filter(Boolean))].sort();
-  selU.innerHTML='<option value="">Todos</option>'+registrados.map(u=>{
+  // Reconstruir opciones de empresa (preservar selección previa)
+  selE.innerHTML=empresas.map(e=>
+    `<option value="${esc(e)}"${prevE.includes(e)?' selected':''}>${esc(e)}</option>`
+  ).join('');
+  // Usuarios filtrados por empresas seleccionadas (cascada)
+  const selEVals=_getSelVals('mf-empresa');
+  const visibles=selEVals.length
+    ? registrados.filter(u=>selEVals.includes(u.empresa||''))
+    : registrados;
+  selU.innerHTML=visibles.map(u=>{
     const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
-    return `<option value="${esc(u.email)}">${esc(label)}</option>`;
+    return `<option value="${esc(u.email)}"${prevU.includes(u.email)?' selected':''}>${esc(label)}</option>`;
   }).join('');
-  selE.innerHTML='<option value="">Todas</option>'+empresas.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
-  selU.value=curU; selE.value=curE;
+}
+function onEmpresaFilterChange(){
+  // Cascada: recalcular opciones de usuario según empresas seleccionadas
+  const selU=document.getElementById('mf-usuario');
+  if(!selU)return;
+  const selEVals=_getSelVals('mf-empresa');
+  const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
+  const visibles=selEVals.length
+    ? registrados.filter(u=>selEVals.includes(u.empresa||''))
+    : registrados;
+  // Preservar selección de usuarios que aún son visibles
+  const prevU=_getSelVals('mf-usuario');
+  selU.innerHTML=visibles.map(u=>{
+    const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
+    return `<option value="${esc(u.email)}"${prevU.includes(u.email)?' selected':''}>${esc(label)}</option>`;
+  }).join('');
+  applyMapFilters();
 }
 function _applyLocFilter(locs){
-  const fu=document.getElementById('mf-usuario')?.value||'';
-  const fe=document.getElementById('mf-empresa')?.value||'';
-  if(!fu&&!fe)return locs;
+  const fu=_getSelVals('mf-usuario');
+  const fe=_getSelVals('mf-empresa');
+  if(!fu.length&&!fe.length)return locs;
   const out={};
   Object.entries(locs).forEach(([k,u])=>{
-    if(fu&&u.email!==fu)return;
-    if(fe&&(u.empresa||'')!==fe)return;
+    if(fe.length&&!fe.includes(u.empresa||''))return;
+    if(fu.length&&!fu.includes(u.email))return;
     out[k]=u;
   });
   return out;
 }
 function applyMapFilters(){
   if(!_allLocs||Object.keys(_allLocs).length===0)return;
-  const now=Date.now();
-  const filtered=_applyLocFilter(_allLocs);
-  Object.keys(_liveMarkers).forEach(e=>{if(!filtered[e]){_liveMap?.removeLayer(_liveMarkers[e]);delete _liveMarkers[e];}});
-  // re-render filtered markers (re-use existing render logic)
   loadLiveLocations();
 }
 function clearMapFilters(){
   const selU=document.getElementById('mf-usuario');
   const selE=document.getElementById('mf-empresa');
-  if(selU)selU.value='';
-  if(selE)selE.value='';
+  if(selE)Array.from(selE.options).forEach(o=>o.selected=false);
+  // Restaurar todos los usuarios en el select de usuario
+  if(selU){
+    const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
+    selU.innerHTML=registrados.map(u=>{
+      const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
+      return `<option value="${esc(u.email)}">${esc(label)}</option>`;
+    }).join('');
+  }
   loadLiveLocations();
 }
 
