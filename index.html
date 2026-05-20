@@ -2471,17 +2471,30 @@ async function triggerQR(typeName){
 }
 
 function addDocImg(inp){
-  Array.from(inp.files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const ext = file.name.split('.').pop().toLowerCase();
-      formImgs.push({ dataUrl:e.target.result, blob:file, name:`${currentDocType}.${ext}`, isOld:false });
-      renderIG();
-    };
-    reader.readAsDataURL(file);
-  });
+  const files=Array.from(inp.files);
   inp.value='';
-  setTimeout(()=>setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:''),100);
+  (async()=>{
+    for(const file of files){
+      await new Promise(resolve=>{
+        const reader=new FileReader();
+        reader.onload=async e=>{
+          try{
+            const ext=file.name.split('.').pop().toLowerCase();
+            const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
+            formImgs.push({dataUrl:resized,blob:file,name:`${currentDocType}.${ext}`,isOld:false});
+          }catch{
+            const ext=file.name.split('.').pop().toLowerCase();
+            formImgs.push({dataUrl:e.target.result,blob:file,name:`${currentDocType}.${ext}`,isOld:false});
+          }
+          renderIG();
+          resolve();
+        };
+        reader.onerror=()=>resolve();
+        reader.readAsDataURL(file);
+      });
+    }
+    setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:'');
+  })();
 }
 
 function getTurnoFromTime(timeStr) {
@@ -2513,25 +2526,34 @@ function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
 function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'';}
 
 function addImgs(inp){
-  Array.from(inp.files).forEach(file=>{
-    // Captura GPS en este momento (no bloquea)
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        const gps={lat:pos.coords.latitude,lon:pos.coords.longitude,acc:Math.round(pos.coords.accuracy),at:new Date().toISOString()};
-        const reader=new FileReader();
-        reader.onload=e=>{ formImgs.push({dataUrl:e.target.result,blob:file,name:file.name,isOld:false,gps}); renderIG(); };
-        reader.readAsDataURL(file);
-      },
-      ()=>{
-        const reader=new FileReader();
-        reader.onload=e=>{ formImgs.push({dataUrl:e.target.result,blob:file,name:file.name,isOld:false,gps:null}); renderIG(); };
-        reader.readAsDataURL(file);
-      },
-      {maximumAge:10000,timeout:8000,enableHighAccuracy:true}
-    );
-  });
+  const files=Array.from(inp.files);
   inp.value='';
-  setTimeout(()=>setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:''),100);
+  // Procesar fotos de una en una para no saturar la RAM en Android
+  (async()=>{
+    for(const file of files){
+      await new Promise(resolve=>{
+        const reader=new FileReader();
+        reader.onload=async e=>{
+          try{
+            // Redimensionar a máx 1920×1920 — foto de cámara sin resize puede ser >40 MB en RAM
+            const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
+            // GPS: usar posición cacheada si tiene menos de 30 s; no lanzar petición nueva por foto
+            const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<30000)
+              ?{lat:_currentGPS.lat,lon:_currentGPS.lon,acc:_currentGPS.acc,at:new Date().toISOString()}
+              :null;
+            formImgs.push({dataUrl:resized,blob:file,name:file.name,isOld:false,gps});
+          }catch{
+            formImgs.push({dataUrl:e.target.result,blob:file,name:file.name,isOld:false,gps:null});
+          }
+          renderIG();
+          resolve();
+        };
+        reader.onerror=()=>resolve();
+        reader.readAsDataURL(file);
+      });
+    }
+    setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:'');
+  })();
 }
 function updateDocIndicators(){
   const dot=(id,v)=>{const el=document.getElementById(id);if(el)el.classList.toggle('has',v);};
@@ -2541,20 +2563,21 @@ function updateDocIndicators(){
   dot('dot-fotosGenerales', formImgs.some(f=>{const n=f.name.toLowerCase();return !n.startsWith('guiaremitente')&&!n.startsWith('guia_remitente')&&!n.startsWith('guiatransportista')&&!n.startsWith('guia_transportista')&&!n.startsWith('hojaingreso')&&!n.startsWith('hoja_ingreso')&&!n.startsWith('hoja');}));
 }
 function renderIG(){
-  const dUs=formImgs.map(f=>f.dataUrl);
   document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>{
     const nl=f.name.toLowerCase();
     const docLabel=nl.startsWith('guiaremitente')||nl.startsWith('guia_remitente')?'Guía Rem.':
                    nl.startsWith('guiatransportista')||nl.startsWith('guia_transportista')?'Guía Trans.':
                    nl.startsWith('hojaingreso')||nl.startsWith('hoja_ingreso')||nl.startsWith('hoja')?'Hoja Ingreso':'';
-    const gpsTag = f.gps ? `<div style="position:absolute;top:3px;left:3px;background:rgba(5,150,105,.85);color:#fff;font-size:8px;padding:2px 5px;border-radius:10px;font-weight:600">📍${f.gps.lat.toFixed(3)},${f.gps.lon.toFixed(3)}</div>` : '';
-    return`<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGal(${JSON.stringify(dUs).replace(/"/g,'&quot;')},${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
+    const gpsTag=f.gps?`<div style="position:absolute;top:3px;left:3px;background:rgba(5,150,105,.85);color:#fff;font-size:8px;padding:2px 5px;border-radius:10px;font-weight:600">📍${f.gps.lat.toFixed(3)},${f.gps.lon.toFixed(3)}</div>`:'';
+    // openGalForm usa el array formImgs directamente — evita embeber todos los dataUrls en el HTML
+    return`<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGalForm(${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
      ${docLabel?`<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${docLabel}</div>`:''}
      ${gpsTag}
     </div>`;
   }).join('');
   updateDocIndicators();
 }
+function openGalForm(idx){openGal(formImgs.map(f=>f.dataUrl),idx);}
 function rmImg(i){
   const removed = formImgs.splice(i,1)[0];
   if(removed && removed.isOld && removed.name) deletedImgs.push(removed);
