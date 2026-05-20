@@ -7950,7 +7950,7 @@ function toggleAIPanel(){
 
 /* Construye contexto de datos para Claude */
 function _buildAIContext(){
-  const recs=getFilteredRecords?.()??records;
+  const recs=records||[];
   const total=recs.length;
   const byStatus={},byTransp={},byRuta={},byMotivo={},byMes={},byUnidad={};
   let paletas=0,cajas=0,sobres=0;
