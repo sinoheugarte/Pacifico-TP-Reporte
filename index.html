@@ -575,6 +575,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] #scr-dashboard>div>div[style*="background:#fff"]{background:#1e293b !important;border-color:#334155 !important}
 [data-theme="dark"] #signature-pad-wrap{background:#1e293b !important;border-color:#334155 !important}
 [data-theme="dark"] #sig-hint{color:#475569}
+[data-theme="dark"] .sc .v{color:#e2e8f0}
+[data-theme="dark"] .sc.green .v{color:var(--green)}
+[data-theme="dark"] .sc.amber .v{color:#fbbf24}
+[data-theme="dark"] .sc.blue .v{color:#60a5fa}
+[data-theme="dark"] .sc.red .v{color:var(--red)}
 
 /* ── TRANSICIONES DE PANTALLA ───────────────────────────── */
 @keyframes scrFadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
@@ -663,6 +668,61 @@ body.has-pending .pending-dot{display:inline-block}
 .qr-close:hover{background:rgba(255,255,255,.28)}
 .qr-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
   color:rgba(255,255,255,.55);font-size:12px;text-align:center}
+
+/* ── ADMIN GATE (login screen) ────────────────────────── */
+.admin-gate{margin-top:20px;border-top:1px solid var(--border);padding-top:18px}
+.admin-gate-title{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--text2);text-align:center;margin-bottom:14px;text-transform:uppercase}
+.admin-inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);box-sizing:border-box;margin-bottom:8px;outline:none}
+.admin-inp:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(15,35,64,.12)}
+.btn-admin{width:100%;padding:11px;background:#0f2340;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .15s}
+.btn-admin:active{opacity:.8}
+.admin-err{font-size:11px;color:var(--red);text-align:center;margin-top:6px;min-height:16px}
+[data-theme="dark"] .admin-inp{background:#0f172a;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .admin-inp:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.15)}
+
+/* ── USERS SCREEN ─────────────────────────────────────── */
+.users-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 8px;gap:10px}
+.users-hdr-title{font-size:16px;font-weight:700;color:var(--text)}
+.users-hdr-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.users-hdr-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-usr-add{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn-usr-sync{background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.users-tbl-wrap{overflow-x:auto;padding:0 12px 80px;-webkit-overflow-scrolling:touch}
+.users-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.users-tbl th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text2);border-bottom:2px solid var(--border);text-transform:uppercase;white-space:nowrap;background:transparent}
+.users-tbl td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.users-tbl tr:last-child td{border-bottom:none}
+.rol-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.rol-badge.admin{background:#fef3c7;color:#92400e}
+.rol-badge.supervisor{background:#dbeafe;color:#1e40af}
+.rol-badge.conductor{background:#d1fae5;color:#065f46}
+[data-theme="dark"] .rol-badge.admin{background:#451a03;color:#fbbf24}
+[data-theme="dark"] .rol-badge.supervisor{background:#1e3a5f;color:#93c5fd}
+[data-theme="dark"] .rol-badge.conductor{background:#022c22;color:#6ee7b7}
+.btn-usr-edit,.btn-usr-del{border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-usr-edit{background:#e2e8f0;color:var(--text);margin-right:4px}
+.btn-usr-del{background:#fee2e2;color:#dc2626}
+[data-theme="dark"] .btn-usr-edit{background:#334155;color:#e2e8f0}
+[data-theme="dark"] .btn-usr-del{background:#3b0a0a;color:#f87171}
+.btn-usr-edit:hover,.btn-usr-del:hover{opacity:.75}
+.users-empty{text-align:center;color:var(--text2);padding:48px 20px;font-size:13px}
+.admin-logout-wrap{padding:10px 16px 12px;display:flex;justify-content:flex-end}
+.admin-logout-btn{font-size:11px;color:var(--text2);background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* ── USER MODAL ────────────────────────────────────────── */
+#user-modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#user-modal-ov.on{display:flex}
+.user-modal{background:var(--white);border-radius:16px;padding:22px 20px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.35)}
+.user-modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.user-modal .f-row{margin-top:12px}
+.user-modal .f-row label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.user-modal .f-row input,.user-modal .f-row select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);box-sizing:border-box;outline:none}
+.user-modal .f-row input:focus,.user-modal .f-row select:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(15,35,64,.1)}
+[data-theme="dark"] .user-modal .f-row input,[data-theme="dark"] .user-modal .f-row select{background:#0f172a;border-color:#334155;color:#e2e8f0}
+.user-modal-btns{display:flex;gap:10px;margin-top:20px}
+.btn-usr-save{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-usr-cancel{flex:1;background:#e2e8f0;color:var(--text);border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+[data-theme="dark"] .btn-usr-cancel{background:#334155;color:#e2e8f0}
 </style>
 </head>
 <body>
@@ -750,6 +810,14 @@ body.has-pending .pending-dot{display:inline-block}
         <button class="btn-cfg" onclick="saveCfg()">Guardar configuración</button>
       </div>
     </div>
+  </div>
+  <!-- Solo Administradores -->
+  <div class="a-card admin-gate">
+    <div class="admin-gate-title">🔐 Solo Administradores</div>
+    <input class="admin-inp" type="text" id="adminUser" placeholder="Usuario administrador" autocomplete="username">
+    <input class="admin-inp" type="password" id="adminPass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminSignIn()">
+    <button class="btn-admin" onclick="adminSignIn()">Acceder al Panel Admin</button>
+    <div class="admin-err" id="adminErr"></div>
   </div>
   <div style="height:32px"></div>
 </div>
@@ -1229,6 +1297,15 @@ body.has-pending .pending-dot{display:inline-block}
     </svg>
     <span>Ajustes</span>
   </button>
+  <button class="nb" id="nb-users" onclick="showScr('users')" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <span>Usuarios</span>
+  </button>
 </nav>
 <button class="fab" id="fab" onclick="newRecord()">+</button>
 
@@ -1294,6 +1371,42 @@ body.has-pending .pending-dot{display:inline-block}
     <button class="gnav next h" id="gnext" onclick="gnav(1)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
   </div>
   <div class="gstrip" id="gstrip"></div>
+</div>
+
+<!-- ════════════ USUARIOS SCREEN ════════════ -->
+<div class="scr" id="scr-users">
+  <div class="users-hdr">
+    <div>
+      <div class="users-hdr-title">Gestión de Usuarios</div>
+      <div class="users-hdr-sub" id="users-admin-label"></div>
+    </div>
+    <div class="users-hdr-actions">
+      <button class="btn-usr-sync" onclick="syncUsersAction()">☁ Sincronizar</button>
+      <button class="btn-usr-add" onclick="openUserModal()">+ Añadir</button>
+    </div>
+  </div>
+  <div class="users-tbl-wrap">
+    <table class="users-tbl">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Apellidos</th>
+          <th>Email</th>
+          <th>DNI</th>
+          <th>Empresa</th>
+          <th>Rol</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+    <div class="users-empty" id="users-empty" style="display:none">
+      No hay usuarios registrados. Pulsa <strong>+ Añadir</strong> para comenzar.
+    </div>
+  </div>
+  <div class="admin-logout-wrap">
+    <button class="admin-logout-btn" onclick="adminSignOut()">Cerrar sesión admin</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2144,13 +2257,14 @@ function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_K
 function showScr(name){
   closeEM(); document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('scr-'+name).classList.add('on'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   const bb=document.getElementById('backBtn'), fab=document.getElementById('fab'), exp=document.getElementById('expBtn'), nav=document.getElementById('nav');
-  setEl('hdrT',{list:'Reporte de Transporte',form:editingId?'Editar Reporte':'Nuevo Reporte',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Registros'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
+  setEl('hdrT',{list:'Reporte de Transporte',form:editingId?'Editar Reporte':'Nuevo Reporte',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Registros',users:'Gestión de Usuarios'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
   if(name==='list'){bb.style.display='none';fab.style.display='flex';exp.style.display='flex';nav.style.display='flex';document.getElementById('nb-list').classList.add('on');renderList();}
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
   else if(name==='detail'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';}
   else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
+  else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
 
@@ -6233,12 +6347,13 @@ let _idb=null;
 async function idbOpen(){
   if(_idb)return _idb;
   return new Promise((res,rej)=>{
-    const req=indexedDB.open('pacifico_tp_idb',2);
+    const req=indexedDB.open('pacifico_tp_idb',3);
     req.onupgradeneeded=e=>{
       const db=e.target.result;
       if(!db.objectStoreNames.contains('records'))db.createObjectStore('records',{keyPath:'id'});
       if(!db.objectStoreNames.contains('pending'))db.createObjectStore('pending',{keyPath:'id'});
       if(!db.objectStoreNames.contains('audit'))db.createObjectStore('audit',{keyPath:'id',autoIncrement:true});
+      if(!db.objectStoreNames.contains('users'))db.createObjectStore('users',{keyPath:'email'});
     };
     req.onsuccess=e=>{_idb=e.target.result;res(_idb);};
     req.onerror=e=>rej(e.target.error);
@@ -6431,6 +6546,180 @@ function addAudit(action,recId,extra){
 }
 
 /* ════════════════════════════════════════════════════════
+   ADMIN AUTH & GESTIÓN DE USUARIOS
+════════════════════════════════════════════════════════ */
+const ADMIN_DEFAULT_USER='ADMIN';
+const ADMIN_DEFAULT_PASS='PACIFICO-TP';
+let _adminMode=false;
+let _sysUsers=[];
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function _sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function adminSignIn(){
+  const u=(document.getElementById('adminUser').value||'').trim().toUpperCase();
+  const p=document.getElementById('adminPass').value||'';
+  const errEl=document.getElementById('adminErr');
+  if(!u||!p){errEl.textContent='Ingresa usuario y contraseña.';return;}
+
+  let stored=null;
+  try{stored=JSON.parse(localStorage.getItem('ptp_admin_creds'));}catch{}
+  if(!stored){
+    // Primera vez: establecer credenciales por defecto
+    stored={user:ADMIN_DEFAULT_USER,hash:await _sha256(ADMIN_DEFAULT_PASS)};
+    localStorage.setItem('ptp_admin_creds',JSON.stringify(stored));
+  }
+
+  const inputHash=await _sha256(p);
+  if(u===stored.user&&inputHash===stored.hash){
+    errEl.textContent='';
+    document.getElementById('adminUser').value='';
+    document.getElementById('adminPass').value='';
+    enterAdminMode();
+  }else{
+    errEl.textContent='Usuario o contraseña incorrectos.';
+  }
+}
+
+function enterAdminMode(){
+  _adminMode=true;
+  const nb=document.getElementById('nb-users');
+  if(nb)nb.style.display='';
+  loadSysUsers().then(()=>showScr('users')).catch(()=>showScr('users'));
+}
+
+function adminSignOut(){
+  _adminMode=false;
+  const nb=document.getElementById('nb-users');
+  if(nb)nb.style.display='none';
+  showScr('list');
+}
+
+function loadSysUsers(){
+  try{_sysUsers=JSON.parse(localStorage.getItem('ptp_users')||'[]');}catch{_sysUsers=[];}
+  return loadUsersFromSP().catch(()=>{});
+}
+
+async function loadUsersFromSP(){
+  if(!token)return;
+  try{
+    const driveId=await ensureSPDrive();
+    const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}?$select=@microsoft.graph.downloadUrl`);
+    const dlUrl=item['@microsoft.graph.downloadUrl'];
+    const res=await fetch(dlUrl+'&t='+Date.now());
+    if(!res.ok)return;
+    const data=await res.json();
+    if(Array.isArray(data)){
+      _sysUsers=data;
+      localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
+    }
+  }catch(e){console.log('loadUsersFromSP:',e.message?.slice(0,60));}
+}
+
+async function pushUsersSP(){
+  if(!token)return;
+  const driveId=await ensureSPDrive();
+  const content=JSON.stringify(_sysUsers,null,2);
+  await gPut(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}:/content`,content,'application/json');
+}
+
+function renderUsersScreen(){
+  const lbl=document.getElementById('users-admin-label');
+  if(lbl){
+    try{const c=JSON.parse(localStorage.getItem('ptp_admin_creds')||'{}');lbl.textContent='Sesión: '+(c.user||ADMIN_DEFAULT_USER);}catch{}
+  }
+  const tbody=document.getElementById('users-tbody');
+  const empty=document.getElementById('users-empty');
+  if(!tbody)return;
+  if(!_sysUsers.length){
+    tbody.innerHTML='';
+    if(empty)empty.style.display='';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=_sysUsers.map((u,i)=>`<tr>
+    <td>${esc(u.nombre)}</td>
+    <td>${esc(u.apellidos)}</td>
+    <td style="font-size:11px;word-break:break-all">${esc(u.email)}</td>
+    <td>${esc(u.dni)}</td>
+    <td>${esc(u.empresa)}</td>
+    <td><span class="rol-badge ${esc(u.rol||'conductor')}">${esc(u.rol||'conductor')}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn-usr-edit" onclick="openUserModal(${i})">Editar</button>
+      <button class="btn-usr-del" onclick="deleteUser(${i})">Eliminar</button>
+    </td>
+  </tr>`).join('');
+}
+
+function openUserModal(idx){
+  document.getElementById('user-modal-title').textContent=idx===undefined?'Nuevo Usuario':'Editar Usuario';
+  document.getElementById('um-id').value=idx===undefined?'':idx;
+  const u=(idx!==undefined&&_sysUsers[idx])||{};
+  document.getElementById('um-nombre').value=u.nombre||'';
+  document.getElementById('um-apellidos').value=u.apellidos||'';
+  document.getElementById('um-email').value=u.email||'';
+  document.getElementById('um-dni').value=u.dni||'';
+  document.getElementById('um-empresa').value=u.empresa||'';
+  document.getElementById('um-rol').value=u.rol||'conductor';
+  document.getElementById('user-modal-ov').classList.add('on');
+  setTimeout(()=>document.getElementById('um-nombre').focus(),100);
+}
+
+function closeUserModal(){
+  document.getElementById('user-modal-ov').classList.remove('on');
+}
+
+async function saveUser(){
+  const idx=document.getElementById('um-id').value;
+  const nombre=(document.getElementById('um-nombre').value||'').trim();
+  const email=(document.getElementById('um-email').value||'').trim().toLowerCase();
+  if(!nombre||!email){toast('⚠ Nombre y email son requeridos');return;}
+  const u={
+    nombre,
+    apellidos:(document.getElementById('um-apellidos').value||'').trim(),
+    email,
+    dni:(document.getElementById('um-dni').value||'').trim(),
+    empresa:(document.getElementById('um-empresa').value||'').trim(),
+    rol:document.getElementById('um-rol').value||'conductor',
+  };
+  if(idx===''){
+    _sysUsers.push(u);
+  }else{
+    _sysUsers[parseInt(idx)]=u;
+  }
+  localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
+  closeUserModal();
+  renderUsersScreen();
+  toast('✓ Usuario guardado localmente — usa Sincronizar para subir a SharePoint');
+  addAudit(idx===''?'user_add':'user_edit',email,{nombre,rol:u.rol});
+}
+
+async function deleteUser(idx){
+  if(!confirm('¿Eliminar a "'+esc(_sysUsers[idx]?.nombre||'')+'"?'))return;
+  const removed=_sysUsers.splice(idx,1)[0];
+  localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
+  renderUsersScreen();
+  toast('✓ Usuario eliminado');
+  addAudit('user_del',removed?.email||'',{nombre:removed?.nombre});
+}
+
+async function syncUsersAction(){
+  toast('Sincronizando usuarios con SharePoint…');
+  try{
+    await pushUsersSP();
+    toast('✓ Usuarios sincronizados con SharePoint');
+    // Recargar el rol del usuario actual
+    loadUserRole().catch(()=>{});
+  }catch(e){
+    toast('⚠ Error al sincronizar: '+(e.message||'').slice(0,50));
+  }
+}
+
+/* ════════════════════════════════════════════════════════
    SWIPE PARA VOLVER — deslizar desde borde izquierdo
 ════════════════════════════════════════════════════════ */
 let _swipeX=0;
@@ -6468,6 +6757,31 @@ tryAutoLogin().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!navigator.onLine) document.body.classList.add('is-offline');
 </script>
+
+<!-- ════════════ USER MODAL ════════════ -->
+<div id="user-modal-ov" onclick="if(event.target===this)closeUserModal()">
+  <div class="user-modal">
+    <div class="user-modal-title" id="user-modal-title">Nuevo Usuario</div>
+    <input type="hidden" id="um-id">
+    <div class="f-row"><label>Nombre *</label><input type="text" id="um-nombre" placeholder="Nombre"></div>
+    <div class="f-row"><label>Apellidos</label><input type="text" id="um-apellidos" placeholder="Apellidos"></div>
+    <div class="f-row"><label>Email *</label><input type="email" id="um-email" placeholder="correo@empresa.com"></div>
+    <div class="f-row"><label>DNI</label><input type="text" id="um-dni" placeholder="12345678" maxlength="8"></div>
+    <div class="f-row"><label>Empresa</label><input type="text" id="um-empresa" placeholder="Empresa"></div>
+    <div class="f-row">
+      <label>Rol</label>
+      <select id="um-rol">
+        <option value="conductor">Conductor</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="user-modal-btns">
+      <button class="btn-usr-cancel" onclick="closeUserModal()">Cancelar</button>
+      <button class="btn-usr-save" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════ QR SCANNER MODAL ════════════ -->
 <div id="qr-modal">
