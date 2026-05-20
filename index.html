@@ -601,6 +601,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .rc-main{color:#e2e8f0}[data-theme="dark"] .rc-sub,[data-theme="dark"] .lmeta{color:#94a3b8}
 [data-theme="dark"] .rc-num{background:#334155;color:#93c5fd}
 [data-theme="dark"] .f input,[data-theme="dark"] .f select,[data-theme="dark"] .f textarea,[data-theme="dark"] .cfg-input{background:#0f172a;color:#e2e8f0;border-color:#334155}
+[data-theme="dark"] .f input[type="date"],[data-theme="dark"] .f input[type="time"],[data-theme="dark"] .sbar-date-inp{color-scheme:dark}
+[data-theme="dark"] .sbar-date-inp{background:#0f172a;color:#e2e8f0;border-color:#334155}
 [data-theme="dark"] .f label,[data-theme="dark"] .slbl{color:#94a3b8}
 [data-theme="dark"] .btn-s{background:#1e293b;color:#e2e8f0;border-color:#334155}
 [data-theme="dark"] .dhero{background:linear-gradient(135deg,#1e3a5f,#2a4f7a)}
@@ -970,8 +972,8 @@ body.has-pending .pending-dot{display:inline-block}
   .rc-date{font-size:12px}
 
   /* ══ PANTALLA: FORMULARIO (nuevo / editar) ══ */
-  /* Contenedor centrado con ancho máximo */
-  #scr-form{display:flex;flex-direction:column;align-items:center}
+  /* Contenedor centrado con ancho máximo — solo cuando está activo */
+  #scr-form.on{display:flex;flex-direction:column;align-items:center}
   #scr-form>*{width:100%;max-width:960px}
   .fhdr{padding:28px 40px 10px}
   .ft{font-size:24px}
@@ -1084,6 +1086,14 @@ body.has-pending .pending-dot{display:inline-block}
   #dash-charts-wrap .dash-card:has(#tblMultiViajes),
   #dash-charts-wrap .dash-card:has(#tblUltimos),
   #dash-charts-wrap #ai-dash-card{grid-column:span 2}
+  /* Tablas de dashboard más legibles en PC */
+  #tblMultiViajes,#tblUltimos{min-height:120px}
+  #tblMultiViajes table,#tblUltimos table{font-size:13px !important}
+  #tblMultiViajes th,#tblMultiViajes td,
+  #tblUltimos th,#tblUltimos td{padding:10px 14px !important;font-size:13px !important}
+  /* Panel IA más alto en PC */
+  #ai-dash-card .ai-body{min-height:420px}
+  #ai-dash-card #ai-chat{min-height:300px}
 
   /* ══ PANTALLA: MAPA ══ */
   #scr-mapa .users-hdr{padding:16px 32px}
