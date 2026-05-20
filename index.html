@@ -558,6 +558,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .dsec{border-color:#334155;background:#1e293b}
 [data-theme="dark"] .di .v{color:#e2e8f0}[data-theme="dark"] .di .l{color:#94a3b8}
 [data-theme="dark"] .nbox{background:#0f172a;border-color:#334155}
+[data-theme="dark"] .nbox .n{color:#93c5fd}
+[data-theme="dark"] .dst{color:#cbd5e1}
+[data-theme="dark"] .dord{color:rgba(255,255,255,.5)}
+[data-theme="dark"] .dmeta span{color:rgba(255,255,255,.75)}
+[data-theme="dark"] .badge.completado{background:#065f46;color:#6ee7b7}
+[data-theme="dark"] .badge.pendiente{background:#78350f;color:#fcd34d}
+[data-theme="dark"] .badge.en-ruta{background:#1e3a5f;color:#93c5fd}
+[data-theme="dark"] .badge.cancelado{background:#7f1d1d;color:#fca5a5}
+[data-theme="dark"] .badge.def{background:#1e293b;color:#94a3b8}
 [data-theme="dark"] .rtbl thead tr{background:#1e3a5f}
 [data-theme="dark"] .rtbl tbody tr:hover{background:#1e3a5f}
 [data-theme="dark"] .rtbl tbody tr{border-color:#334155}
@@ -1400,7 +1409,8 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="users-hdr-sub" id="users-admin-label"></div>
     </div>
     <div class="users-hdr-actions">
-      <button class="btn-usr-sync" onclick="syncUsersAction()">☁ Sincronizar</button>
+      <button class="btn-usr-sync" onclick="syncUsersAction()" title="Descargar usuarios de SharePoint">↓ Cargar</button>
+      <button class="btn-usr-sync" onclick="pushUsersAction()" title="Subir usuarios a SharePoint" style="margin-right:0">↑ Subir</button>
       <button class="btn-usr-add" onclick="openUserModal()">+ Añadir</button>
     </div>
   </div>
@@ -6583,11 +6593,15 @@ function initSigPad(){
   canvas.width=(canvas.offsetWidth||300)*ratio;
   canvas.height=150*ratio;
   canvas.getContext('2d').scale(ratio,ratio);
-  _sigPad=new SignaturePad(canvas,{penColor:'#0f2340',minWidth:1.5,maxWidth:3.5,backgroundColor:'rgba(255,255,255,0)'});
+  const isDark=document.documentElement.dataset.theme==='dark';
+  _sigPad=new SignaturePad(canvas,{penColor:isDark?'#ffffff':'#0f2340',minWidth:1.5,maxWidth:3.5,backgroundColor:'rgba(255,255,255,0)'});
   _sigPad.addEventListener('beginStroke',()=>{
     document.getElementById('signature-pad-wrap')?.classList.add('sig-done');
-    updateSigDot();
+    document.getElementById('dot-firma')?.classList.add('has');
+    const st=document.getElementById('sig-status');
+    if(st)st.textContent='✓ Firma capturada';
   });
+  _sigPad.addEventListener('endStroke',()=>updateSigDot());
 }
 function clearSig(){
   if(_sigPad)_sigPad.clear();
@@ -6801,7 +6815,8 @@ async function saveUser(){
   localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
   closeUserModal();
   renderUsersScreen();
-  toast('✓ Usuario guardado localmente — usa Sincronizar para subir a SharePoint');
+  toast('✓ Usuario guardado — subiendo a SharePoint…');
+  pushUsersAction().catch(()=>{});
   addAudit(idx===''?'user_add':'user_edit',email,{nombre,rol:u.rol});
 }
 
@@ -6815,14 +6830,23 @@ async function deleteUser(idx){
 }
 
 async function syncUsersAction(){
-  toast('Sincronizando usuarios con SharePoint…');
+  toast('⟳ Descargando usuarios de SharePoint…');
+  try{
+    await loadUsersFromSP();
+    renderUsersScreen();
+    toast('✓ Usuarios cargados de SharePoint');
+  }catch(e){
+    toast('⚠ Error al cargar: '+(e.message||'').slice(0,50));
+  }
+}
+async function pushUsersAction(){
+  toast('⟳ Subiendo usuarios a SharePoint…');
   try{
     await pushUsersSP();
-    toast('✓ Usuarios sincronizados con SharePoint');
-    // Recargar el rol del usuario actual
     loadUserRole().catch(()=>{});
+    toast('✓ Usuarios publicados en SharePoint');
   }catch(e){
-    toast('⚠ Error al sincronizar: '+(e.message||'').slice(0,50));
+    toast('⚠ Error al subir: '+(e.message||'').slice(0,50));
   }
 }
 
@@ -6835,10 +6859,10 @@ let _liveMarkers={};
 let _mapRefInterval=null;
 
 async function startLocationTracking(){
-  if(!token||!user)return;
-  // Publicar posición inmediatamente y luego cada 30 segundos
-  _publishPosition();
+  if(!user)return;
   clearInterval(_trackInterval);
+  // Primera publicación con pequeño delay para que el token esté listo
+  setTimeout(_publishPosition,2000);
   _trackInterval=setInterval(_publishPosition,30000);
 }
 
@@ -6873,8 +6897,9 @@ async function _publishPosition(){
         rol:userRole||'conductor',
       };
       await gPut(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}:/content`,JSON.stringify(locs),'application/json');
+      if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
     }catch(e){console.log('_publishPosition:',e.message?.slice(0,60));}
-  },{maximumAge:15000,timeout:10000,enableHighAccuracy:true});
+  },{maximumAge:5000,timeout:12000,enableHighAccuracy:true});
 }
 
 async function initLiveMap(){
@@ -6931,8 +6956,11 @@ async function loadLiveLocations(){
     if(el)el.textContent=`${activeCount} usuario(s) activo(s) · actualizado ${new Date().toLocaleTimeString('es-PE')}`;
   }catch(e){
     const el=document.getElementById('mapa-last-update');
-    if(el)el.textContent='Sin datos de ubicación disponibles';
-    console.log('loadLiveLocations:',e.message?.slice(0,60));
+    const msg=e.message||'';
+    if(el)el.textContent=msg.includes('404')||msg.includes('itemNotFound')
+      ?'Esperando primera ubicación… (el archivo se crea automáticamente)'
+      :'Sin datos de ubicación disponibles';
+    console.log('loadLiveLocations:',msg.slice(0,60));
   }
 }
 
