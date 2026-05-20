@@ -1175,6 +1175,37 @@ body.has-pending .pending-dot{display:inline-block}
     border-radius:14px
   }
 }
+
+/* ── TELÉFONO ANDROID EN LANDSCAPE: nav siempre abajo ──────────────
+   Detecta teléfono en horizontal: alto < 500px + pantalla táctil.
+   Tablets tienen > 600px de alto en landscape → no se ven afectados. */
+@media (orientation:landscape) and (max-height:500px) and (pointer:coarse){
+  /* Revertir sidebar → bottom nav */
+  .nav{
+    left:50%;top:auto;bottom:0;
+    width:100%;max-width:none;height:auto;
+    transform:translateX(-50%);
+    flex-direction:row;align-items:stretch;justify-content:flex-start;
+    border-top:1px solid var(--border);border-right:none;
+    padding:0;padding-bottom:env(safe-area-inset-bottom,0);
+    overflow-y:visible
+  }
+  .nav::before{display:none !important}
+  .nb{
+    flex:1;width:auto;
+    flex-direction:column;justify-content:center;align-items:center;
+    padding:8px 4px 6px;gap:3px;
+    border-left:none !important;border-radius:0
+  }
+  .nb span{font-size:10px;font-weight:500}
+  .nb svg{width:20px;height:20px}
+  .nb.on{color:var(--navy);background:none !important;border-left-color:transparent !important}
+  [data-theme="dark"] .nb.on{color:#93c5fd;background:none !important;border-left-color:transparent !important}
+  /* Quitar margen izquierdo del sidebar */
+  .hdr{margin-left:0}
+  .scr{margin-left:0;padding-bottom:72px}
+}
+
 /* ═══════════════════════════════════════════════════════
    IA ANALYTICS — Chat + Auto-análisis
    ═══════════════════════════════════════════════════════ */
