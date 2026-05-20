@@ -1028,7 +1028,8 @@ body.has-pending .pending-dot{display:inline-block}
   /* ══ PANTALLA: AJUSTES ══ */
   /* Padding en el contenedor — todos los hijos quedan alineados automáticamente */
   #scr-settings.on{padding:0 40px 40px;display:flex;flex-direction:column;align-items:center}
-  #scr-settings>*{width:100%;max-width:1100px}
+  #scr-settings>*{width:100%;max-width:1100px;box-sizing:border-box}
+  #scr-settings #ucardW{padding:0}
   #scr-settings #ucardW .ucard{margin-top:24px;padding:28px 32px;border-radius:16px}
   #scr-settings #ucardW .uav{width:60px;height:60px;font-size:22px}
   #scr-settings #ucardW .uname{font-size:20px}
@@ -1064,25 +1065,34 @@ body.has-pending .pending-dot{display:inline-block}
   .rtbl th,.rtbl td{padding:10px 14px}
 
   /* ══ PANTALLA: USUARIOS ══ */
-  #scr-users.on{display:flex;flex-direction:column;align-items:center}
-  #scr-users>*{width:100%;max-width:1100px}
-  #scr-users .users-hdr{padding:20px 40px 10px}
-  #scr-users .users-hdr-title{font-size:20px}
+  #scr-users.on{padding:0 40px 40px;display:flex;flex-direction:column;align-items:center}
+  #scr-users>*{width:100%;max-width:1100px;box-sizing:border-box}
+  #scr-users .users-hdr{padding:20px 0 10px}
+  #scr-users .users-hdr-title{font-size:22px;font-weight:700}
   #scr-users .users-hdr-sub{font-size:12px;margin-top:3px}
-  #scr-users .utab-bar{padding:0 40px 14px}
-  #scr-users .users-tbl-wrap{padding:0 40px}
-  .users-tbl{font-size:14px}
-  .users-tbl th{font-size:11px;padding:12px 16px}
-  .users-tbl td{padding:14px 16px}
+  #scr-users .utab-bar{padding:0 0 14px}
+  #scr-users .users-tbl-wrap{padding:0}
+  .users-tbl{font-size:14px;width:100%}
+  .users-tbl th{font-size:11px;padding:14px 18px}
+  .users-tbl td{padding:16px 18px;font-size:14px}
   .perms-wrap{
     display:grid !important;
     grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    padding:16px 40px 4px
+    gap:20px;
+    padding:20px 0 8px
   }
-  #scr-users>div:has(.btn-usr-save){padding:16px 40px}
+  /* Guardar permisos: centrado y color impactante */
+  #scr-users>div:has(.btn-usr-save){padding:16px 0;display:flex;justify-content:center}
+  #scr-users .btn-usr-save{max-width:400px;background:var(--navy);font-size:14px;padding:14px;border-radius:10px}
   .user-modal{max-width:600px}
-  #scr-users .admin-logout-wrap{padding:16px 40px}
+  /* Cerrar sesión admin: centrado, mismo estilo que btn-logout */
+  #scr-users .admin-logout-wrap{padding:16px 0;justify-content:center;display:flex}
+  #scr-users .admin-logout-btn{
+    background:var(--red-light);color:var(--red);
+    border:1.5px solid var(--red);border-radius:var(--rs);
+    padding:12px 32px;font-size:14px;font-weight:700;
+    font-family:'DM Sans',sans-serif;cursor:pointer;min-width:280px
+  }
 
   /* ══ PANTALLA: DASHBOARD ══ */
   #scr-dashboard{padding-bottom:40px}
