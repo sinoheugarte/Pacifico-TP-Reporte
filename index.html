@@ -1068,8 +1068,8 @@ body.has-pending .pending-dot{display:inline-block}
   .rtbl th,.rtbl td{padding:10px 14px}
 
   /* ══ PANTALLA: USUARIOS ══ */
-  #scr-users.on{padding:0 40px 40px;display:flex;flex-direction:column;align-items:center}
-  #scr-users>*{width:100%;max-width:1100px;box-sizing:border-box}
+  #scr-users.on{padding:0 32px 40px;display:flex;flex-direction:column;align-items:center}
+  #scr-users>*{width:100%;max-width:1500px;box-sizing:border-box}
   /* Cabecera */
   #scr-users .users-hdr{padding:25px 0 13px}
   #scr-users .users-hdr-title{font-size:20px;font-weight:700}
@@ -1082,22 +1082,22 @@ body.has-pending .pending-dot{display:inline-block}
   /* Tabla usuarios */
   #scr-users .users-tbl-wrap{padding:0}
   .users-tbl{font-size:15px;width:100%}
-  .users-tbl th{font-size:13px;padding:10px 13px;letter-spacing:.06em}
-  .users-tbl td{padding:13px 13px;font-size:15px}
+  .users-tbl th{font-size:13px;padding:10px 16px;letter-spacing:.06em}
+  .users-tbl td{padding:13px 16px;font-size:15px}
   .btn-usr-edit,.btn-usr-del{font-size:14px;padding:6px 11px;border-radius:8px}
-  /* Permisos — tarjetas */
+  /* Permisos — tarjetas: 3 columnas con ancho generoso */
   .perms-wrap{
     display:grid !important;
     grid-template-columns:repeat(3,1fr);
-    gap:15px;
+    gap:20px;
     padding:15px 0 10px
   }
-  #scr-users .perm-card-hdr{padding:15px 18px 13px}
+  #scr-users .perm-card-hdr{padding:15px 20px 13px}
   #scr-users .perm-card-role{font-size:16px}
-  #scr-users .perm-row{padding:11px 18px}
+  #scr-users .perm-row{padding:11px 20px}
   #scr-users .perm-row-label{font-size:15px}
   #scr-users .perm-row-icon{font-size:18px}
-  #scr-users .perm-pill{font-size:14px;padding:6px 13px}
+  #scr-users .perm-pill{font-size:14px;padding:6px 13px;white-space:nowrap}
   /* Guardar permisos */
   #utab-content-perms>div:has(.btn-usr-save){padding:16px 0 8px;display:flex;justify-content:center}
   #scr-users .btn-usr-save{
