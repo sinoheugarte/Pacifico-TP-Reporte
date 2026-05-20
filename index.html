@@ -2521,6 +2521,7 @@ async function setupOneDrive(){
     renderUserCard();
     setSdot('ok');
     loadUserRole().catch(()=>{});
+    loadPermsFromSP().catch(()=>{});
     startLocationTracking().catch(()=>{});
   }catch(e){
     console.error('Setup:', e); setSdot('err'); toast('⚠ Error conectando: '+e.message?.slice(0,80));
@@ -4126,8 +4127,12 @@ async function refreshRecords(){
   if(btn){btn.disabled=true;btn.style.animation='spin360 .8s linear infinite';}
   try{
     await loadRecordsFromOD();
-    // Sincronizar usuarios en segundo plano si es admin
-    if(_adminMode) loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});
+    // Recargar usuarios y permisos desde SharePoint para todos los usuarios
+    loadPermsFromSP().catch(()=>{});
+    loadUsersFromSP().then(()=>{
+      loadUserRole().catch(()=>{});
+      if(_adminMode){renderUsersScreen();_updateMapFilterOptions();}
+    }).catch(()=>{});
   }finally{
     if(btn){btn.disabled=false;btn.style.animation='';}
   }
@@ -7409,6 +7414,39 @@ async function _usuariosPath(){
   }
 }
 
+async function _permsPath(){
+  try{
+    const driveId=await ensureSPDrive();
+    return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/permisos.json')}`;
+  }catch(e){
+    return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/permisos.json')}`;
+  }
+}
+
+async function loadPermsFromSP(){
+  if(!token)return;
+  try{
+    const basePath=await _permsPath();
+    const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
+    const dlUrl=item['@microsoft.graph.downloadUrl'];
+    const res=await fetch(dlUrl+'&t='+Date.now());
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data&&typeof data==='object'){
+      _rolePerms=data;
+      localStorage.setItem('ptp_role_perms',JSON.stringify(_rolePerms));
+      applyRoleRestrictions();
+    }
+  }catch(e){console.log('loadPermsFromSP:',e.message?.slice(0,60));}
+}
+
+async function pushPermsSP(){
+  if(!token)return;
+  const basePath=await _permsPath();
+  const content=JSON.stringify(_rolePerms,null,2);
+  await gPut(`${basePath}:/content`,content,'application/json');
+}
+
 function loadSysUsers(){
   try{_sysUsers=JSON.parse(localStorage.getItem('ptp_users')||'[]');}catch{_sysUsers=[];}
   return loadUsersFromSP().catch(()=>{});
@@ -7989,12 +8027,17 @@ function setPermPill(btn,rol,action,val){
   _rolePerms[rol][action]=rawVal;
 }
 
-function savePermsAction(){
-  // Guardar el estado actual en memoria (sin recargar desde localStorage)
+async function savePermsAction(){
   if(!_rolePerms)loadRolePerms();
   localStorage.setItem('ptp_role_perms',JSON.stringify(_rolePerms));
-  toast('✓ Permisos guardados');
   applyRoleRestrictions();
+  toast('⟳ Guardando permisos…');
+  try{
+    await pushPermsSP();
+    toast('✓ Permisos guardados y sincronizados');
+  }catch(e){
+    toast('⚠ Guardado local OK — sin conexión a SharePoint');
+  }
 }
 
 function applyRoleRestrictions(){
