@@ -961,7 +961,7 @@ body.has-pending .pending-dot{display:inline-block}
   .rlist{
     padding:12px 32px 32px;
     display:grid;
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns:repeat(3,1fr);
     gap:16px
   }
   .rc{font-size:13px;padding:18px}
@@ -1020,13 +1020,17 @@ body.has-pending .pending-dot{display:inline-block}
   #scr-detail .nbox .l{font-size:11px}
 
   /* ══ PANTALLA: AJUSTES ══ */
-  #scr-settings{padding-bottom:40px}
-  #scr-settings #ucardW .ucard{margin:20px 32px 0}
+  #scr-settings{padding-bottom:40px;display:flex;flex-direction:column;align-items:center}
+  #scr-settings>*{width:100%;max-width:1100px}
+  #scr-settings #ucardW .ucard{margin:24px 40px 0;padding:28px 32px;border-radius:16px}
+  #scr-settings #ucardW .uav{width:60px;height:60px;font-size:22px}
+  #scr-settings #ucardW .uname{font-size:20px}
+  #scr-settings #ucardW .uemail{font-size:13px}
   .ssec-wrap{
     display:grid !important;
     grid-template-columns:1fr 1fr;
-    gap:16px;
-    padding:16px 32px 0;
+    gap:20px;
+    padding:20px 40px 0;
     margin:0
   }
   .ssec-wrap .ssec{
@@ -1036,12 +1040,12 @@ body.has-pending .pending-dot{display:inline-block}
   }
   .ssec-wrap .ssec:first-child{border-bottom:1px solid var(--border)}
   #scr-settings>.ssec{
-    margin:16px 32px 0;
+    margin:20px 40px 0;
     border-radius:var(--r);
     border:1px solid var(--border)
   }
-  #scr-settings>div:last-child{padding:20px 32px}
-  .btn-logout{max-width:400px}
+  #scr-settings>div:last-child{padding:24px 40px}
+  .btn-logout{max-width:440px}
 
   /* ══ PANTALLA: REPORTES (tabla registros) ══ */
   #scr-records .sbar{padding:12px 32px 0}
@@ -1052,19 +1056,25 @@ body.has-pending .pending-dot{display:inline-block}
   .rtbl th,.rtbl td{padding:10px 14px}
 
   /* ══ PANTALLA: USUARIOS ══ */
-  #scr-users .users-hdr{padding:16px 32px}
-  #scr-users .utab-bar{padding:0 32px 12px}
-  #scr-users .users-tbl-wrap{padding:0 32px}
-  .users-tbl{font-size:13px}
+  #scr-users{display:flex;flex-direction:column;align-items:center}
+  #scr-users>*{width:100%;max-width:1100px}
+  #scr-users .users-hdr{padding:20px 40px 10px}
+  #scr-users .users-hdr-title{font-size:20px}
+  #scr-users .users-hdr-sub{font-size:12px;margin-top:3px}
+  #scr-users .utab-bar{padding:0 40px 14px}
+  #scr-users .users-tbl-wrap{padding:0 40px}
+  .users-tbl{font-size:14px}
+  .users-tbl th{font-size:11px;padding:12px 16px}
+  .users-tbl td{padding:14px 16px}
   .perms-wrap{
     display:grid !important;
     grid-template-columns:repeat(3,1fr);
     gap:12px;
-    padding:16px 32px 4px
+    padding:16px 40px 4px
   }
-  #scr-users>div:has(.btn-usr-save){padding:16px 32px}
-  .user-modal{max-width:560px}
-  #scr-users .admin-logout-wrap{padding:16px 32px}
+  #scr-users>div:has(.btn-usr-save){padding:16px 40px}
+  .user-modal{max-width:600px}
+  #scr-users .admin-logout-wrap{padding:16px 40px}
 
   /* ══ PANTALLA: DASHBOARD ══ */
   #scr-dashboard{padding-bottom:40px}
@@ -1106,10 +1116,12 @@ body.has-pending .pending-dot{display:inline-block}
   #ai-dash-card #ai-chat{min-height:300px}
 
   /* ══ PANTALLA: MAPA ══ */
-  #scr-mapa .users-hdr{padding:16px 32px}
-  #scr-mapa #mapa-gps-status{margin:0 32px 6px}
-  .mf-bar{padding:0 24px 10px;gap:12px}
-  .mf-summary{padding:0 24px 6px}
+  #scr-mapa .users-hdr{padding:20px 40px 10px}
+  #scr-mapa .users-hdr-title{font-size:20px}
+  #scr-mapa .users-hdr-sub{font-size:12px;margin-top:3px}
+  #scr-mapa #mapa-gps-status{margin:0 40px 8px;font-size:13px;padding:10px 16px;border-radius:10px}
+  .mf-bar{padding:0 40px 12px;gap:14px}
+  .mf-summary{padding:0 40px 8px;font-size:13px}
   #live-map{
     margin:0 32px 16px !important;
     height:calc(100vh - 200px) !important;
