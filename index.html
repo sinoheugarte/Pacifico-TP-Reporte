@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f2340">
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <title>Pacífico Transportation — Reportes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -723,6 +725,15 @@ body.has-pending .pending-dot{display:inline-block}
 .btn-usr-save{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 .btn-usr-cancel{flex:1;background:#e2e8f0;color:var(--text);border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 [data-theme="dark"] .btn-usr-cancel{background:#334155;color:#e2e8f0}
+
+/* ── LIVE MAP ────────────────────────────────────────────── */
+.leaflet-container{font-family:'DM Sans',sans-serif}
+.map-popup-name{font-weight:700;font-size:13px;color:#0f2340;margin-bottom:2px}
+.map-popup-sub{font-size:11px;color:#64748b}
+.map-popup-ts{font-size:10px;color:#94a3b8;margin-top:4px}
+.user-marker-active{background:#059669}
+.user-marker-warn{background:#f59e0b}
+.user-marker-idle{background:#94a3b8}
 </style>
 </head>
 <body>
@@ -1306,6 +1317,14 @@ body.has-pending .pending-dot{display:inline-block}
     </svg>
     <span>Usuarios</span>
   </button>
+  <button class="nb" id="nb-mapa" onclick="showScr('mapa')" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+      <line x1="8" y1="2" x2="8" y2="18"/>
+      <line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+    <span>Mapa</span>
+  </button>
 </nav>
 <button class="fab" id="fab" onclick="newRecord()">+</button>
 
@@ -1407,6 +1426,19 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="admin-logout-wrap">
     <button class="admin-logout-btn" onclick="adminSignOut()">Cerrar sesión admin</button>
   </div>
+</div>
+
+<div class="scr" id="scr-mapa">
+  <div class="users-hdr">
+    <div>
+      <div class="users-hdr-title">Mapa en Vivo</div>
+      <div class="users-hdr-sub" id="mapa-last-update">Cargando…</div>
+    </div>
+    <div class="users-hdr-actions">
+      <button class="btn-usr-sync" onclick="refreshLiveMap()">↺ Actualizar</button>
+    </div>
+  </div>
+  <div id="live-map" style="height:calc(100vh - 180px);min-height:300px;border-radius:12px;margin:0 12px 12px;overflow:hidden;border:1px solid var(--border)"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1878,6 +1910,7 @@ async function setupOneDrive(){
     renderUserCard();
     setSdot('ok');
     loadUserRole().catch(()=>{});
+    startLocationTracking().catch(()=>{});
   }catch(e){
     console.error('Setup:', e); setSdot('err'); toast('⚠ Error conectando: '+e.message?.slice(0,80));
   }
@@ -2257,7 +2290,7 @@ function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_K
 function showScr(name){
   closeEM(); document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('scr-'+name).classList.add('on'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   const bb=document.getElementById('backBtn'), fab=document.getElementById('fab'), exp=document.getElementById('expBtn'), nav=document.getElementById('nav');
-  setEl('hdrT',{list:'Reporte de Transporte',form:editingId?'Editar Reporte':'Nuevo Reporte',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Registros',users:'Gestión de Usuarios'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
+  setEl('hdrT',{list:'Reporte de Transporte',form:editingId?'Editar Reporte':'Nuevo Reporte',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Registros',users:'Gestión de Usuarios',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
   if(name==='list'){bb.style.display='none';fab.style.display='flex';exp.style.display='flex';nav.style.display='flex';document.getElementById('nb-list').classList.add('on');renderList();}
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
@@ -2265,6 +2298,7 @@ function showScr(name){
   else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
   else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();}
+  else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
 
@@ -2480,9 +2514,21 @@ function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'
 
 function addImgs(inp){
   Array.from(inp.files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=e=>{ formImgs.push({dataUrl:e.target.result, blob:file, name:file.name, isOld:false}); renderIG(); };
-    reader.readAsDataURL(file);
+    // Captura GPS en este momento (no bloquea)
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const gps={lat:pos.coords.latitude,lon:pos.coords.longitude,acc:Math.round(pos.coords.accuracy),at:new Date().toISOString()};
+        const reader=new FileReader();
+        reader.onload=e=>{ formImgs.push({dataUrl:e.target.result,blob:file,name:file.name,isOld:false,gps}); renderIG(); };
+        reader.readAsDataURL(file);
+      },
+      ()=>{
+        const reader=new FileReader();
+        reader.onload=e=>{ formImgs.push({dataUrl:e.target.result,blob:file,name:file.name,isOld:false,gps:null}); renderIG(); };
+        reader.readAsDataURL(file);
+      },
+      {maximumAge:10000,timeout:8000,enableHighAccuracy:true}
+    );
   });
   inp.value='';
   setTimeout(()=>setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:''),100);
@@ -2501,8 +2547,10 @@ function renderIG(){
     const docLabel=nl.startsWith('guiaremitente')||nl.startsWith('guia_remitente')?'Guía Rem.':
                    nl.startsWith('guiatransportista')||nl.startsWith('guia_transportista')?'Guía Trans.':
                    nl.startsWith('hojaingreso')||nl.startsWith('hoja_ingreso')||nl.startsWith('hoja')?'Hoja Ingreso':'';
+    const gpsTag = f.gps ? `<div style="position:absolute;top:3px;left:3px;background:rgba(5,150,105,.85);color:#fff;font-size:8px;padding:2px 5px;border-radius:10px;font-weight:600">📍${f.gps.lat.toFixed(3)},${f.gps.lon.toFixed(3)}</div>` : '';
     return`<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGal(${JSON.stringify(dUs).replace(/"/g,'&quot;')},${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
      ${docLabel?`<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${docLabel}</div>`:''}
+     ${gpsTag}
     </div>`;
   }).join('');
   updateDocIndicators();
@@ -2552,8 +2600,14 @@ async function saveRecord(){
     updatedBy: user?.email || '',
   };
   // GPS
+  const firstPhotoGps = formImgs.find(f=>f.gps)?.gps;
   if(_currentGPS){rec.gpsLat=_currentGPS.lat;rec.gpsLon=_currentGPS.lon;rec.gpsAcc=_currentGPS.acc;rec.gpsAt=_currentGPS.at;}
+  else if(firstPhotoGps){rec.gpsLat=firstPhotoGps.lat;rec.gpsLon=firstPhotoGps.lon;rec.gpsAcc=firstPhotoGps.acc;rec.gpsAt=firstPhotoGps.at;}
   else if(existingRec?.gpsLat){rec.gpsLat=existingRec.gpsLat;rec.gpsLon=existingRec.gpsLon;rec.gpsAcc=existingRec.gpsAcc;rec.gpsAt=existingRec.gpsAt;}
+  // Array con GPS por foto (solo las que tienen)
+  const photoGpsArr = formImgs.filter(f=>f.gps).map((f,i)=>({idx:formImgs.indexOf(f),name:f.name,...f.gps}));
+  if(photoGpsArr.length) rec.imageGps = photoGpsArr;
+  else if(existingRec?.imageGps) rec.imageGps = existingRec.imageGps;
   // Firma digital
   const _sigData=getSigData();
   if(_sigData){rec.signatureData=_sigData;rec.signedAt=new Date().toISOString();rec.signedBy=user?.email||'';}
@@ -2733,6 +2787,7 @@ function showDet(id){
       <div class="di"><div class="l">Precisión</div><div class="v">±${r.gpsAcc}m</div></div>
       <div class="di"><div class="l">Capturado</div><div class="v" style="font-size:12px">${new Date(r.gpsAt).toLocaleString('es-PE')}</div></div>
       <div class="di w"><div class="l">Mapa</div><div class="v"><a href="https://maps.google.com/?q=${r.gpsLat},${r.gpsLon}" target="_blank" style="color:var(--ms);font-weight:600;text-decoration:none">📍 Ver en Google Maps ↗</a></div></div>
+      ${r.imageGps?.length>1?`<div class="di w"><div class="l">GPS por foto (${r.imageGps.length})</div><div class="v" style="font-size:11px;line-height:1.8">${r.imageGps.map(g=>`<span style="display:block">📷 ${esc(g.name||'foto '+g.idx)}: ${g.lat.toFixed(5)},${g.lon.toFixed(5)} ±${g.acc}m</span>`).join('')}</div></div>`:''}
     </div></div>`:''}
     ${r.signatureData?`<div class="dsec"><div class="dst">Firma del Receptor</div>
       <img src="${r.signatureData}" style="max-width:100%;border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-top:8px;display:block">
@@ -6589,6 +6644,8 @@ function enterAdminMode(){
   _adminMode=true;
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='';
+  const nbM=document.getElementById('nb-mapa');
+  if(nbM)nbM.style.display='';
   loadSysUsers().then(()=>showScr('users')).catch(()=>showScr('users'));
 }
 
@@ -6596,6 +6653,8 @@ function adminSignOut(){
   _adminMode=false;
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='none';
+  const nbM=document.getElementById('nb-mapa');
+  if(nbM)nbM.style.display='none';
   showScr('list');
 }
 
@@ -6717,6 +6776,120 @@ async function syncUsersAction(){
   }catch(e){
     toast('⚠ Error al sincronizar: '+(e.message||'').slice(0,50));
   }
+}
+
+/* ════════════════════════════════════════════════════════
+   TRACKING EN VIVO — publica posición en SharePoint c/30s
+════════════════════════════════════════════════════════ */
+let _trackInterval=null;
+let _liveMap=null;
+let _liveMarkers={};
+let _mapRefInterval=null;
+
+async function startLocationTracking(){
+  if(!token||!user)return;
+  // Publicar posición inmediatamente y luego cada 30 segundos
+  _publishPosition();
+  clearInterval(_trackInterval);
+  _trackInterval=setInterval(_publishPosition,30000);
+}
+
+function stopLocationTracking(){
+  clearInterval(_trackInterval);
+  clearInterval(_mapRefInterval);
+  _trackInterval=null;
+}
+
+async function _publishPosition(){
+  if(!navigator.geolocation||!token||!user)return;
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const driveId=await ensureSPDrive();
+      // Leer objeto actual
+      let locs={};
+      try{
+        const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}?$select=@microsoft.graph.downloadUrl`);
+        const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
+        if(r.ok)locs=await r.json();
+      }catch{}
+      // Actualizar entrada del usuario actual
+      locs[user.email]={
+        nombre:user.name||user.email,
+        email:user.email,
+        lat:pos.coords.latitude,
+        lon:pos.coords.longitude,
+        acc:Math.round(pos.coords.accuracy),
+        speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null, // km/h
+        heading:pos.coords.heading,
+        ts:new Date().toISOString(),
+        rol:userRole||'conductor',
+      };
+      await gPut(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}:/content`,JSON.stringify(locs),'application/json');
+    }catch(e){console.log('_publishPosition:',e.message?.slice(0,60));}
+  },{maximumAge:15000,timeout:10000,enableHighAccuracy:true});
+}
+
+async function initLiveMap(){
+  if(_liveMap){_liveMap.invalidateSize();loadLiveLocations();return;}
+  await new Promise(r=>setTimeout(r,150)); // esperar render del div
+  const mapEl=document.getElementById('live-map');
+  if(!mapEl)return;
+  _liveMap=L.map('live-map',{zoomControl:true}).setView([-12.046,-77.043],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap',maxZoom:19
+  }).addTo(_liveMap);
+  loadLiveLocations();
+  clearInterval(_mapRefInterval);
+  _mapRefInterval=setInterval(loadLiveLocations,30000);
+}
+
+async function loadLiveLocations(){
+  if(!token||!_liveMap)return;
+  try{
+    const driveId=await ensureSPDrive();
+    const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}?$select=@microsoft.graph.downloadUrl`);
+    const res=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
+    if(!res.ok)return;
+    const locs=await res.json();
+    const now=Date.now();
+    const bounds=[];
+    // Limpiar marcadores viejos
+    Object.keys(_liveMarkers).forEach(e=>{if(!locs[e]){_liveMap.removeLayer(_liveMarkers[e]);delete _liveMarkers[e];}});
+    Object.values(locs).forEach(u=>{
+      const ageMs=now-new Date(u.ts).getTime();
+      const ageMin=ageMs/60000;
+      const color=ageMin<2?'#059669':ageMin<5?'#f59e0b':'#94a3b8';
+      const icon=L.divIcon({
+        className:'',
+        html:`<div style="width:36px;height:36px;background:${color};border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:16px">🚛</div>`,
+        iconSize:[36,36],iconAnchor:[18,18],popupAnchor:[0,-20]
+      });
+      const speedTxt=u.speed!=null?` · ${u.speed} km/h`:'';
+      const ageTxt=ageMin<1?'Ahora mismo':ageMin<60?`Hace ${Math.round(ageMin)} min`:`Hace ${Math.round(ageMin/60)}h`;
+      const popup=`<div class="map-popup-name">${esc(u.nombre)}</div>
+        <div class="map-popup-sub">${esc(u.rol||'conductor')}${speedTxt}</div>
+        <div class="map-popup-ts">${ageTxt} · ±${u.acc}m</div>
+        <div style="margin-top:6px"><a href="https://maps.google.com/?q=${u.lat},${u.lon}" target="_blank" style="font-size:11px;color:#1d4ed8">📍 Ver en Google Maps ↗</a></div>`;
+      if(_liveMarkers[u.email]){
+        _liveMarkers[u.email].setLatLng([u.lat,u.lon]).setIcon(icon).setPopupContent(popup);
+      }else{
+        _liveMarkers[u.email]=L.marker([u.lat,u.lon],{icon}).addTo(_liveMap).bindPopup(popup);
+      }
+      if(ageMin<5) bounds.push([u.lat,u.lon]);
+    });
+    if(bounds.length>0) _liveMap.fitBounds(bounds,{padding:[40,40],maxZoom:15});
+    const activeCount=Object.values(locs).filter(u=>(now-new Date(u.ts).getTime())<300000).length;
+    const el=document.getElementById('mapa-last-update');
+    if(el)el.textContent=`${activeCount} usuario(s) activo(s) · actualizado ${new Date().toLocaleTimeString('es-PE')}`;
+  }catch(e){
+    const el=document.getElementById('mapa-last-update');
+    if(el)el.textContent='Sin datos de ubicación disponibles';
+    console.log('loadLiveLocations:',e.message?.slice(0,60));
+  }
+}
+
+function refreshLiveMap(){
+  loadLiveLocations();
 }
 
 /* ════════════════════════════════════════════════════════
