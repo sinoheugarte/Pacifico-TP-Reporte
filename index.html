@@ -743,6 +743,44 @@ body.has-pending .pending-dot{display:inline-block}
 .user-marker-active{background:#059669}
 .user-marker-warn{background:#f59e0b}
 .user-marker-idle{background:#94a3b8}
+.mapa-filters{display:flex;align-items:flex-end;gap:10px;padding:0 12px 10px;flex-wrap:wrap}
+.mapa-filter-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:120px}
+.mapa-filter-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
+.mapa-filter-sel{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;cursor:pointer}
+.mapa-filter-sel:focus{border-color:var(--navy)}
+.mapa-filter-clear{align-self:flex-end;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+[data-theme="dark"] .mapa-filter-sel{background:#1e293b;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .mapa-filter-clear{border-color:#334155;color:#94a3b8}
+/* ── ADMIN TABS ───────────────────────────────────────── */
+.utab-bar{display:flex;gap:2px;padding:0 12px 12px;border-bottom:1px solid var(--border);margin-bottom:0}
+.utab{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;color:var(--text2);background:transparent;cursor:pointer;transition:all .15s}
+.utab.on{background:var(--navy);color:#fff}
+.utab:not(.on):hover{background:var(--border)}
+[data-theme="dark"] .utab.on{background:#1e3a5f;color:#93c5fd}
+[data-theme="dark"] .utab:not(.on){color:#94a3b8}
+/* ── PERMS PANEL ─────────────────────────────────────── */
+.perms-wrap{padding:14px 14px 4px;display:flex;flex-direction:column;gap:12px}
+.perm-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+.perm-card-hdr{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--border)}
+.perm-card-role{font-size:13px;font-weight:700;color:var(--text)}
+.perm-rows{padding:8px 0}
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border)}
+.perm-row:last-child{border-bottom:none}
+.perm-row-label{font-size:12px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:7px}
+.perm-row-icon{font-size:14px;width:20px;text-align:center}
+.perm-sel-wrap{display:flex;gap:4px}
+.perm-pill{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.perm-pill.sel-todos{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+.perm-pill.sel-suyos{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.perm-pill.sel-no{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+[data-theme="dark"] .perm-card{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .perm-card-hdr{border-color:#334155}
+[data-theme="dark"] .perm-row{border-color:#334155}
+[data-theme="dark"] .perm-row-label{color:#e2e8f0}
+[data-theme="dark"] .perm-pill{border-color:#334155;color:#94a3b8}
+[data-theme="dark"] .perm-pill.sel-todos{background:#022c22;color:#6ee7b7;border-color:#065f46}
+[data-theme="dark"] .perm-pill.sel-suyos{background:#451a03;color:#fcd34d;border-color:#92400e}
+[data-theme="dark"] .perm-pill.sel-no{background:#3b0a0a;color:#f87171;border-color:#7f1d1d}
 </style>
 </head>
 <body>
@@ -1405,32 +1443,47 @@ body.has-pending .pending-dot{display:inline-block}
 <div class="scr" id="scr-users">
   <div class="users-hdr">
     <div>
-      <div class="users-hdr-title">Gestión de Usuarios</div>
+      <div class="users-hdr-title">Administración</div>
       <div class="users-hdr-sub" id="users-admin-label"></div>
     </div>
-    <div class="users-hdr-actions">
+    <div class="users-hdr-actions" id="users-hdr-actions">
       <button class="btn-usr-sync" onclick="syncUsersAction()" title="Descargar usuarios de SharePoint">↓ Cargar</button>
       <button class="btn-usr-sync" onclick="pushUsersAction()" title="Subir usuarios a SharePoint" style="margin-right:0">↑ Subir</button>
       <button class="btn-usr-add" onclick="openUserModal()">+ Añadir</button>
     </div>
   </div>
-  <div class="users-tbl-wrap">
-    <table class="users-tbl">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Apellidos</th>
-          <th>Email</th>
-          <th>DNI</th>
-          <th>Empresa</th>
-          <th>Rol</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="users-tbody"></tbody>
-    </table>
-    <div class="users-empty" id="users-empty" style="display:none">
-      No hay usuarios registrados. Pulsa <strong>+ Añadir</strong> para comenzar.
+  <!-- Tabs -->
+  <div class="utab-bar">
+    <button class="utab on" id="utab-users" onclick="switchUsersTab('users')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Usuarios
+    </button>
+    <button class="utab" id="utab-perms" onclick="switchUsersTab('perms')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Permisos
+    </button>
+  </div>
+  <!-- Tab: Usuarios -->
+  <div id="utab-content-users">
+    <div class="users-tbl-wrap">
+      <table class="users-tbl">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Apellidos</th><th>Email</th><th>DNI</th><th>Empresa</th><th>Rol</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+      <div class="users-empty" id="users-empty" style="display:none">
+        No hay usuarios registrados. Pulsa <strong>+ Añadir</strong> para comenzar.
+      </div>
+    </div>
+  </div>
+  <!-- Tab: Permisos -->
+  <div id="utab-content-perms" style="display:none">
+    <div class="perms-wrap" id="perms-wrap"></div>
+    <div style="padding:12px 16px">
+      <button class="btn-usr-save" style="width:100%;max-width:320px" onclick="savePermsAction()">Guardar permisos</button>
     </div>
   </div>
   <div class="admin-logout-wrap">
@@ -1448,7 +1501,22 @@ body.has-pending .pending-dot{display:inline-block}
       <button class="btn-usr-sync" onclick="refreshLiveMap()">↺ Actualizar</button>
     </div>
   </div>
-  <div id="live-map" style="height:calc(100vh - 180px);min-height:300px;border-radius:12px;margin:0 12px 12px;overflow:hidden;border:1px solid var(--border)"></div>
+  <div class="mapa-filters" id="mapa-filters">
+    <div class="mapa-filter-group">
+      <label class="mapa-filter-label">Usuario</label>
+      <select class="mapa-filter-sel" id="mf-usuario" onchange="applyMapFilters()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="mapa-filter-group">
+      <label class="mapa-filter-label">Empresa</label>
+      <select class="mapa-filter-sel" id="mf-empresa" onchange="applyMapFilters()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <button class="mapa-filter-clear" onclick="clearMapFilters()">✕ Limpiar</button>
+  </div>
+  <div id="live-map" style="height:calc(100vh - 230px);min-height:280px;border-radius:12px;margin:0 12px 12px;overflow:hidden;border:1px solid var(--border)"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -6651,7 +6719,7 @@ async function loadUserRole(){
     if(!res.ok)return;
     const users=await res.json();
     const found=users.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
-    if(found?.rol){userRole=found.rol.toLowerCase();renderUserCard();}
+    if(found?.rol){userRole=found.rol.toLowerCase();renderUserCard();applyRoleRestrictions();}
   }catch(e){console.log('usuarios.json:',e.message?.slice(0,60));}
 }
 
@@ -6885,13 +6953,15 @@ async function _publishPosition(){
         if(r.ok)locs=await r.json();
       }catch{}
       // Actualizar entrada del usuario actual
+      const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
       locs[user.email]={
         nombre:user.name||user.email,
         email:user.email,
+        empresa:meUser?.empresa||'',
         lat:pos.coords.latitude,
         lon:pos.coords.longitude,
         acc:Math.round(pos.coords.accuracy),
-        speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null, // km/h
+        speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null,
         heading:pos.coords.heading,
         ts:new Date().toISOString(),
         rol:userRole||'conductor',
@@ -6924,11 +6994,14 @@ async function loadLiveLocations(){
     const res=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
     if(!res.ok)return;
     const locs=await res.json();
+    _allLocs=locs;
+    _updateMapFilterOptions(locs);
     const now=Date.now();
+    const filtered=_applyLocFilter(locs);
     const bounds=[];
-    // Limpiar marcadores viejos
-    Object.keys(_liveMarkers).forEach(e=>{if(!locs[e]){_liveMap.removeLayer(_liveMarkers[e]);delete _liveMarkers[e];}});
-    Object.values(locs).forEach(u=>{
+    // Limpiar marcadores que ya no aplican
+    Object.keys(_liveMarkers).forEach(e=>{if(!filtered[e]){_liveMap.removeLayer(_liveMarkers[e]);delete _liveMarkers[e];}});
+    Object.values(filtered).forEach(u=>{
       const ageMs=now-new Date(u.ts).getTime();
       const ageMin=ageMs/60000;
       const color=ageMin<2?'#059669':ageMin<5?'#f59e0b':'#94a3b8';
@@ -6952,8 +7025,9 @@ async function loadLiveLocations(){
     });
     if(bounds.length>0) _liveMap.fitBounds(bounds,{padding:[40,40],maxZoom:15});
     const activeCount=Object.values(locs).filter(u=>(now-new Date(u.ts).getTime())<300000).length;
+    const filtCount=Object.keys(filtered).length;
     const el=document.getElementById('mapa-last-update');
-    if(el)el.textContent=`${activeCount} usuario(s) activo(s) · actualizado ${new Date().toLocaleTimeString('es-PE')}`;
+    if(el)el.textContent=`${activeCount} activo(s)${filtCount<activeCount?' · mostrando '+filtCount:''} · ${new Date().toLocaleTimeString('es-PE')}`;
   }catch(e){
     const el=document.getElementById('mapa-last-update');
     const msg=e.message||'';
@@ -6966,6 +7040,154 @@ async function loadLiveLocations(){
 
 function refreshLiveMap(){
   loadLiveLocations();
+}
+
+let _allLocs={};
+function _updateMapFilterOptions(locs){
+  const selU=document.getElementById('mf-usuario');
+  const selE=document.getElementById('mf-empresa');
+  if(!selU||!selE)return;
+  const curU=selU.value, curE=selE.value;
+  const usuarios=Object.values(locs);
+  const empresas=[...new Set(usuarios.map(u=>u.empresa||'').filter(Boolean))].sort();
+  selU.innerHTML='<option value="">Todos</option>'+usuarios.map(u=>`<option value="${esc(u.email)}">${esc(u.nombre||u.email)}</option>`).join('');
+  selE.innerHTML='<option value="">Todas</option>'+empresas.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
+  selU.value=curU; selE.value=curE;
+}
+function _applyLocFilter(locs){
+  const fu=document.getElementById('mf-usuario')?.value||'';
+  const fe=document.getElementById('mf-empresa')?.value||'';
+  if(!fu&&!fe)return locs;
+  const out={};
+  Object.entries(locs).forEach(([k,u])=>{
+    if(fu&&u.email!==fu)return;
+    if(fe&&(u.empresa||'')!==fe)return;
+    out[k]=u;
+  });
+  return out;
+}
+function applyMapFilters(){
+  if(!_allLocs||Object.keys(_allLocs).length===0)return;
+  const now=Date.now();
+  const filtered=_applyLocFilter(_allLocs);
+  Object.keys(_liveMarkers).forEach(e=>{if(!filtered[e]){_liveMap?.removeLayer(_liveMarkers[e]);delete _liveMarkers[e];}});
+  // re-render filtered markers (re-use existing render logic)
+  loadLiveLocations();
+}
+function clearMapFilters(){
+  const selU=document.getElementById('mf-usuario');
+  const selE=document.getElementById('mf-empresa');
+  if(selU)selU.value='';
+  if(selE)selE.value='';
+  loadLiveLocations();
+}
+
+/* ════════════════════════════════════════════════════════
+   PERMISOS POR ROL
+════════════════════════════════════════════════════════ */
+const DEFAULT_PERMS={
+  conductor:{ver:'todos',crear:true,editar:true,eliminar:'suyos'},
+  supervisor:{ver:'todos',crear:true,editar:true,eliminar:'todos'},
+  admin:{ver:'todos',crear:true,editar:true,eliminar:'todos'},
+};
+let _rolePerms=null;
+
+function loadRolePerms(){
+  try{_rolePerms=JSON.parse(localStorage.getItem('ptp_role_perms'))||null;}catch{}
+  if(!_rolePerms)_rolePerms=JSON.parse(JSON.stringify(DEFAULT_PERMS));
+  return _rolePerms;
+}
+
+function getRolePerm(rol,action){
+  const p=(_rolePerms||loadRolePerms())[rol]||DEFAULT_PERMS[rol]||DEFAULT_PERMS.conductor;
+  return p[action];
+}
+
+function renderPermsPanel(){
+  loadRolePerms();
+  const roles=['conductor','supervisor','admin'];
+  const roleIcons={conductor:'🚛',supervisor:'👁',admin:'⚙'};
+  const roleColors={conductor:'#065f46',supervisor:'#1e40af',admin:'#92400e'};
+  const roleBg={conductor:'#d1fae5',supervisor:'#dbeafe',admin:'#fef3c7'};
+  const actions=[
+    {key:'ver',   label:'Ver registros', icon:'👁', opts:['todos','suyos','no']},
+    {key:'crear', label:'Crear registros',icon:'✏', opts:[true,false]},
+    {key:'editar',label:'Editar registros',icon:'📝',opts:[true,false]},
+    {key:'eliminar',label:'Eliminar',     icon:'🗑', opts:['todos','suyos','no']},
+  ];
+  const optLabel={todos:'✓ Todos',suyos:'⚠ Solo suyos',no:'✗ Ninguno',true:'✓ Sí',false:'✗ No'};
+  const optClass={todos:'sel-todos',suyos:'sel-suyos',no:'sel-no',true:'sel-todos',false:'sel-no'};
+  const wrap=document.getElementById('perms-wrap');
+  if(!wrap)return;
+  wrap.innerHTML=roles.map(rol=>`
+    <div class="perm-card">
+      <div class="perm-card-hdr">
+        <span style="font-size:20px">${roleIcons[rol]}</span>
+        <div>
+          <div class="perm-card-role">${rol.charAt(0).toUpperCase()+rol.slice(1)}</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:1px">Configurar permisos de acceso</div>
+        </div>
+        <span class="rol-badge ${rol}" style="margin-left:auto">${rol}</span>
+      </div>
+      <div class="perm-rows">
+        ${actions.map(a=>{
+          const cur=_rolePerms[rol]?.[a.key];
+          return`<div class="perm-row">
+            <div class="perm-row-label"><span class="perm-row-icon">${a.icon}</span>${a.label}</div>
+            <div class="perm-sel-wrap">
+              ${a.opts.map(opt=>`<button class="perm-pill${String(cur)===String(opt)?' '+optClass[String(opt)]:''}"
+                onclick="setPermPill(this,'${rol}','${a.key}','${opt}')"
+                data-rol="${rol}" data-action="${a.key}" data-val="${opt}">
+                ${optLabel[String(opt)]}
+              </button>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function setPermPill(btn,rol,action,val){
+  // Desmarcar hermanos
+  btn.closest('.perm-sel-wrap').querySelectorAll('.perm-pill').forEach(b=>{
+    b.className='perm-pill';
+  });
+  // Marcar el seleccionado
+  const optClass={todos:'sel-todos',suyos:'sel-suyos',no:'sel-no',true:'sel-todos',false:'sel-no'};
+  const rawVal=val==='true'?true:val==='false'?false:val;
+  btn.classList.add(optClass[String(rawVal)]||'sel-todos');
+  // Actualizar modelo
+  loadRolePerms();
+  _rolePerms[rol][action]=rawVal;
+}
+
+function savePermsAction(){
+  loadRolePerms();
+  localStorage.setItem('ptp_role_perms',JSON.stringify(_rolePerms));
+  toast('✓ Permisos guardados');
+  // Aplicar al rol actual del usuario logueado
+  applyRoleRestrictions();
+}
+
+function applyRoleRestrictions(){
+  loadRolePerms();
+  const rol=userRole||'conductor';
+  const p=_rolePerms[rol]||DEFAULT_PERMS[rol];
+  // FAB (crear)
+  const fab=document.getElementById('fab');
+  if(fab)fab.style.display=p.crear?'flex':'none';
+}
+
+function switchUsersTab(tab){
+  document.getElementById('utab-content-users').style.display=tab==='users'?'':'none';
+  document.getElementById('utab-content-perms').style.display=tab==='perms'?'':'none';
+  document.getElementById('utab-users').classList.toggle('on',tab==='users');
+  document.getElementById('utab-perms').classList.toggle('on',tab==='perms');
+  // Ajustar botones de cabecera
+  const actions=document.getElementById('users-hdr-actions');
+  if(actions)actions.style.display=tab==='users'?'flex':'none';
+  if(tab==='perms')renderPermsPanel();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -7000,6 +7222,7 @@ function showSkeletons(n=4){
 }
 
 loadCfg(); initDarkMode(); showSkeletons(); showScr('list');
+loadRolePerms(); applyRoleRestrictions();
 (function(){ var d=new Date(); var s=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-'+(String(d.getDate()).padStart(2,'0')); document.getElementById('srch-desde').value=s; })();
 loadCacheRecordsAsync().then(()=>{ renderList(); updatePendingIndicator(); }).catch(()=>{ loadCacheRecords(); renderList(); });
 tryAutoLogin().catch(()=>{});
