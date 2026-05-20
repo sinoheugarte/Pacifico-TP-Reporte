@@ -7420,15 +7420,17 @@ function _mfUpdateBadges(){
     const btn=document.getElementById('mfb-'+type);
     const badge=document.getElementById('mfbadge-'+type);
     if(!btn||!badge)return;
+    const total=document.getElementById('mfl-'+type)?.querySelectorAll('.mf-opt').length||0;
     if(sel.length===0){
-      badge.textContent=type==='empresa'?'Todas':'Todos';
+      // Sin filtro: mostrar total
+      badge.textContent=total?'· '+total:(type==='empresa'?'Todas':'Todos');
       btn.classList.remove('filtered');
     }else{
-      badge.textContent=sel.length+' sel.';
+      // Con filtro: X de Y
+      badge.textContent=sel.length+' de '+(total||sel.length);
       btn.classList.add('filtered');
     }
   });
-  // Mostrar/ocultar botón limpiar
   const anyFilter=_mfState.empresa.length||_mfState.usuario.length;
   const clrBtn=document.getElementById('mf-clear-btn');
   if(clrBtn)clrBtn.style.display=anyFilter?'':'none';
