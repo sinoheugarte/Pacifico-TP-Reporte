@@ -1482,20 +1482,35 @@ body.has-pending .pending-dot{display:inline-block}
   </div>
   <div class="ssec" id="settings-sec-ai" style="display:none">
     <div class="ssect">Inteligencia Artificial</div>
-    <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
-      <div><div class="srl">API Key de Gemini</div><div class="srs">Clave gratuita de Google — aistudio.google.com/apikey</div></div>
+    <!-- Selector de proveedor -->
+    <div class="srow" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div><div class="srl">Proveedor de IA</div><div class="srs">Selecciona con qué servicio deseas usar el chatbot</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="ai-provider-btns">
+        <button onclick="selectAIProvider('gemini')" id="ai-prov-gemini"
+          style="border:2px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;background:#fff;color:var(--text)">
+          Google Gemini
+        </button>
+        <button onclick="selectAIProvider('groq')" id="ai-prov-groq"
+          style="border:2px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;background:#fff;color:var(--text)">
+          Groq (Llama)
+        </button>
+        <button onclick="selectAIProvider('claude')" id="ai-prov-claude"
+          style="border:2px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;background:#fff;color:var(--text)">
+          Anthropic Claude
+        </button>
+      </div>
+    </div>
+    <!-- Clave API dinámica -->
+    <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px;margin-top:4px">
+      <div><div class="srl" id="ai-key-label">API Key</div><div class="srs" id="ai-key-hint"></div></div>
       <div style="display:flex;gap:8px;width:100%">
-        <input type="password" id="ai-key-inp" placeholder="AIza…" autocomplete="off"
+        <input type="password" id="ai-key-inp" placeholder="" autocomplete="off"
           style="flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);background:#fff;outline:none;transition:border-color .15s"
           oninput="this.style.borderColor='var(--navy)'"
           value="">
         <button onclick="saveAIKey()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">Guardar</button>
       </div>
       <div id="ai-key-status" style="font-size:11px;color:var(--green);display:none">✓ Clave guardada</div>
-    </div>
-    <div class="srow">
-      <div><div class="srl">Modelo</div><div class="srs">claude-sonnet-4-6 (recomendado)</div></div>
-      <div class="srv" style="color:var(--text)">Sonnet 4.6</div>
     </div>
   </div>
   <div style="padding:16px 18px">
@@ -7907,29 +7922,61 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch
 if(!navigator.onLine) document.body.classList.add('is-offline');
 
 /* ═══════════════════════════════════════════════════════
-   IA ANALYTICS — Gemini API Chatbot + Auto-análisis
+   IA ANALYTICS — Multi-proveedor: Gemini / Groq / Claude
    ═══════════════════════════════════════════════════════ */
 let _aiHistory=[];
-const AI_MODEL='gemini-2.0-flash';
 
-function _aiKey(){return localStorage.getItem('ptp_gemini_key')||'';}
+const _AI_PROVIDERS={
+  gemini:{label:'Google Gemini',model:'gemini-2.0-flash',placeholder:'AIza…',hint:'Clave gratuita — aistudio.google.com/apikey',lsKey:'ptp_gemini_key'},
+  groq:  {label:'Groq (Llama)',  model:'llama-3.3-70b-versatile',placeholder:'gsk_…',hint:'Clave gratuita — console.groq.com',lsKey:'ptp_groq_key'},
+  claude:{label:'Anthropic Claude',model:'claude-sonnet-4-6',placeholder:'sk-ant-api03-…',hint:'console.anthropic.com/settings/keys',lsKey:'ptp_claude_key'}
+};
+
+function _aiProvider(){return localStorage.getItem('ptp_ai_provider')||'gemini';}
+function _aiKey(){const p=_AI_PROVIDERS[_aiProvider()];return localStorage.getItem(p.lsKey)||'';}
+
+function selectAIProvider(name){
+  localStorage.setItem('ptp_ai_provider',name);
+  _refreshAIProviderUI();
+}
+
+function _refreshAIProviderUI(){
+  const prov=_aiProvider();
+  const cfg=_AI_PROVIDERS[prov];
+  /* Botones */
+  ['gemini','groq','claude'].forEach(n=>{
+    const btn=document.getElementById('ai-prov-'+n);
+    if(!btn)return;
+    const active=n===prov;
+    btn.style.borderColor=active?'var(--navy)':'var(--border)';
+    btn.style.background=active?'var(--navy)':'#fff';
+    btn.style.color=active?'#fff':'var(--text)';
+  });
+  /* Label y hint */
+  const lbl=document.getElementById('ai-key-label');
+  const hint=document.getElementById('ai-key-hint');
+  const inp=document.getElementById('ai-key-inp');
+  if(lbl)lbl.textContent='API Key de '+cfg.label;
+  if(hint)hint.textContent=cfg.hint;
+  if(inp){inp.placeholder=cfg.placeholder;inp.value=localStorage.getItem(cfg.lsKey)||'';}
+}
 
 function saveAIKey(){
   const v=document.getElementById('ai-key-inp')?.value?.trim();
   if(!v){toast('⚠ Ingresa una clave válida');return;}
-  localStorage.setItem('ptp_gemini_key',v);
+  const cfg=_AI_PROVIDERS[_aiProvider()];
+  localStorage.setItem(cfg.lsKey,v);
   const st=document.getElementById('ai-key-status');
   if(st){st.style.display='';setTimeout(()=>st.style.display='none',3000);}
-  toast('✓ Clave API de Gemini guardada');
+  toast('✓ Clave de '+cfg.label+' guardada');
   renderAIContent();
 }
 
-/* Mostrar sección AI en Settings solo para admin */
+/* Mostrar sección AI en Settings solo para admin/supervisor */
 function _showAISettings(){
   const sec=document.getElementById('settings-sec-ai');
   if(sec)sec.style.display=(userRole==='admin'||userRole==='supervisor')?'':'none';
-  const inp=document.getElementById('ai-key-inp');
-  if(inp&&!inp.value)inp.value=_aiKey();
+  _refreshAIProviderUI();
 }
 
 /* Toggle panel IA */
@@ -7996,31 +8043,44 @@ REGLAS:
 async function _callClaude(messages){
   const key=_aiKey();
   if(!key)throw new Error('NO_KEY');
+  const prov=_aiProvider();
+  const cfg=_AI_PROVIDERS[prov];
   const ctx=_buildAIContext();
   const systemText=_AI_SYSTEM+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
-  /* Convertir historial de mensajes al formato Gemini */
-  const contents=messages.map(m=>({
-    role:m.role==='assistant'?'model':'user',
-    parts:[{text:m.content}]
-  }));
-  const resp=await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${key}`,
-    {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        system_instruction:{parts:[{text:systemText}]},
-        contents,
-        generationConfig:{maxOutputTokens:1200,temperature:0.4}
-      })
-    }
-  );
-  if(!resp.ok){
-    const err=await resp.json().catch(()=>({}));
-    throw new Error(err.error?.message||`HTTP ${resp.status}`);
+
+  if(prov==='gemini'){
+    const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+    const resp=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${key}`,
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({system_instruction:{parts:[{text:systemText}]},contents,generationConfig:{maxOutputTokens:1200,temperature:0.4}})}
+    );
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+    const d=await resp.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text||'Sin respuesta';
   }
-  const data=await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text||'Sin respuesta';
+
+  if(prov==='groq'){
+    const msgs=[{role:'system',content:systemText},...messages.map(m=>({role:m.role,content:m.content}))];
+    const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:cfg.model,messages:msgs,max_tokens:1200,temperature:0.4})
+    });
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+    const d=await resp.json();
+    return d.choices?.[0]?.message?.content||'Sin respuesta';
+  }
+
+  /* claude */
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:cfg.model,max_tokens:1200,system:systemText,messages})
+  });
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+  const d=await resp.json();
+  return d.content[0].text;
 }
 
 /* Render del contenido del panel IA */
@@ -8028,10 +8088,12 @@ function renderAIContent(){
   const wrap=document.getElementById('ai-content');
   if(!wrap)return;
   if(!_aiKey()){
+    const _pc=_AI_PROVIDERS[_aiProvider()];
     wrap.innerHTML=`<div class="ai-nokey">
-      <strong>🤖 Configura tu API Key de Gemini</strong>
-      Para activar el asistente IA ve a <b>Ajustes → Inteligencia Artificial</b><br>
-      e ingresa tu clave de Google Gemini (gratuita en aistudio.google.com/apikey).
+      <strong>🤖 Configura tu API Key</strong>
+      Para activar el asistente IA ve a <b>Ajustes → Inteligencia Artificial</b>,<br>
+      selecciona el proveedor (actualmente <b>${_pc.label}</b>) e ingresa tu clave.<br>
+      <small style="opacity:.7">${_pc.hint}</small>
       <br><button class="ai-nokey-btn" onclick="showScr('settings')">Ir a Ajustes →</button>
     </div>`;
     return;
