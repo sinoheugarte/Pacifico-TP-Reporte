@@ -3645,7 +3645,11 @@ function setSdot(s){const d=document.getElementById('sdot');if(!d)return;d.class
 async function refreshRecords(){
   const btn=document.getElementById('refreshBtn');
   if(btn){btn.disabled=true;btn.style.animation='spin360 .8s linear infinite';}
-  try{await loadRecordsFromOD();}finally{
+  try{
+    await loadRecordsFromOD();
+    // Sincronizar usuarios en segundo plano si es admin
+    if(_adminMode) loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});
+  }finally{
     if(btn){btn.disabled=false;btn.style.animation='';}
   }
 }
