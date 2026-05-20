@@ -970,11 +970,16 @@ body.has-pending .pending-dot{display:inline-block}
   .rc-date{font-size:12px}
 
   /* ══ PANTALLA: FORMULARIO (nuevo / editar) ══ */
-  .fhdr{padding:24px 32px 8px}
-  .ft{font-size:22px}
-  .fsec{padding:16px 32px 0}
+  /* Contenedor centrado con ancho máximo */
+  #scr-form{display:flex;flex-direction:column;align-items:center}
+  #scr-form>*{width:100%;max-width:960px}
+  .fhdr{padding:28px 40px 10px}
+  .ft{font-size:24px}
+  .fs{font-size:13px;margin-top:4px}
+  .slbl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text2);margin-bottom:10px}
+  .fsec{padding:20px 40px 0}
   /* Campos en grid de 2 columnas — los .fr se "disuelven" al grid padre */
-  #scr-form .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  #scr-form .fg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   #scr-form .fg>.fr{display:contents}
   #scr-form .fg>.fr>.f{min-width:0}
   /* Campo con textarea ocupa las 2 columnas */
@@ -982,15 +987,15 @@ body.has-pending .pending-dot{display:inline-block}
   /* Fila de Cantidades: 3 campos en una fila */
   #scr-form .fsec:has(#f-paletas) .fr{
     display:grid;grid-template-columns:repeat(3,1fr);
-    gap:12px;grid-column:span 2
+    gap:16px;grid-column:span 2
   }
   /* Sección de fotos */
-  .isec{padding:16px 32px 0}
-  .igrid{grid-template-columns:repeat(5,1fr);gap:10px}
+  .isec{padding:20px 40px 0}
+  .igrid{grid-template-columns:repeat(6,1fr);gap:12px}
   .iadd-row{max-width:500px}
-  .faction{padding:20px 32px 0;max-width:520px}
+  .faction{padding:24px 40px 0;max-width:960px}
   /* Firma: ancho razonable */
-  #signature-pad-wrap{max-width:600px}
+  #signature-pad-wrap{max-width:680px}
 
   /* ══ PANTALLA: DETALLE ══ */
   #scr-detail .dhero{padding:24px 32px}
@@ -1051,8 +1056,18 @@ body.has-pending .pending-dot{display:inline-block}
 
   /* ══ PANTALLA: DASHBOARD ══ */
   #scr-dashboard{padding-bottom:40px}
-  #scr-dashboard #dashKpis,
-  #scr-dashboard #dashKpis2{padding:0 32px 10px}
+  /* Todos los KPIs en una sola fila de 6 */
+  #dash-kpis-wrap{display:flex;gap:14px;padding:20px 32px 14px}
+  #dash-kpis-wrap #dashKpis,
+  #dash-kpis-wrap #dashKpis2{
+    flex:1;display:grid;gap:14px;padding:0
+  }
+  #dash-kpis-wrap #dashKpis{grid-template-columns:repeat(3,1fr)}
+  #dash-kpis-wrap #dashKpis2{grid-template-columns:repeat(3,1fr)}
+  /* KPI cards más grandes en PC */
+  #dash-kpis-wrap>div>div{padding:20px 16px !important}
+  #dash-kpis-wrap>div>div>div:first-child{font-size:32px !important}
+  #dash-kpis-wrap>div>div>div:last-child{font-size:11px !important;margin-top:6px !important}
   /* Grid 2 columnas para gráficos */
   #dash-charts-wrap{
     display:grid !important;
@@ -1610,8 +1625,10 @@ body.has-pending .pending-dot{display:inline-block}
   </div>
 
   <!-- KPI GRID -->
-  <div id="dashKpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 8px"></div>
-  <div id="dashKpis2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 10px"></div>
+  <div id="dash-kpis-wrap">
+    <div id="dashKpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 8px"></div>
+    <div id="dashKpis2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 10px"></div>
+  </div>
 
   <!-- CHARTS -->
   <div id="dash-charts-wrap" style="padding:0 14px;display:flex;flex-direction:column;gap:14px;padding-bottom:20px">
