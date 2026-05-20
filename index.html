@@ -862,6 +862,169 @@ body.has-pending .pending-dot{display:inline-block}
 [data-theme="dark"] .perm-pill.sel-todos{background:#022c22;color:#6ee7b7;border-color:#065f46}
 [data-theme="dark"] .perm-pill.sel-suyos{background:#451a03;color:#fcd34d;border-color:#92400e}
 [data-theme="dark"] .perm-pill.sel-no{background:#3b0a0a;color:#f87171;border-color:#7f1d1d}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE DESKTOP (≥768px) — Solo PC / web
+   El modo móvil no se ve afectado.
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width:768px){
+
+  /* ── CUERPO: sin límite de 480px ── */
+  body{max-width:100%}
+
+  /* ── HEADER: desplazado al lado del sidebar ── */
+  .hdr{margin-left:220px;padding:14px 32px 12px}
+  .hdr-t{font-size:16px}
+  .hdr-s{font-size:11px}
+
+  /* ── NAV → SIDEBAR IZQUIERDO ── */
+  .nav{
+    left:0;top:0;bottom:auto;
+    width:220px;max-width:220px;height:100vh;
+    transform:none;
+    flex-direction:column;align-items:stretch;
+    border-top:none;border-right:1px solid var(--border);
+    padding:16px 0 20px;
+    justify-content:flex-start;
+    overflow-y:auto
+  }
+  .nb{
+    flex:none;width:100%;
+    flex-direction:row;justify-content:flex-start;
+    padding:11px 20px;gap:12px;border-radius:0;
+    border-left:3px solid transparent
+  }
+  .nb span{font-size:13px;font-weight:500}
+  .nb svg{width:20px;height:20px}
+  .nb.on{
+    color:var(--navy);background:rgba(15,35,64,.06);
+    border-left-color:var(--navy)
+  }
+  [data-theme="dark"] .nb.on{background:rgba(147,197,253,.08);border-left-color:#93c5fd}
+
+  /* Logo/marca en tope del sidebar */
+  .nav::before{
+    content:'PACÍFICO TP';
+    display:block;padding:0 20px 16px;
+    font-size:10px;font-weight:700;letter-spacing:.12em;
+    color:var(--text2);border-bottom:1px solid var(--border);
+    margin-bottom:8px
+  }
+
+  /* ── TODAS LAS PANTALLAS ── */
+  .scr{margin-left:220px;padding-bottom:40px}
+
+  /* ══ PANTALLA: REGISTROS (list) ══ */
+  .stats{grid-template-columns:repeat(3,1fr);padding:20px 32px 8px;gap:12px}
+  .stats-row2{padding:0 32px 8px;gap:12px}
+  .sc .v{font-size:22px}
+  #scr-list .sbar{padding:12px 32px 0}
+  #scr-list .fpills{padding:10px 32px 6px}
+  #scr-list .lmeta{padding:6px 32px 0;font-size:13px}
+  .rlist{
+    padding:10px 32px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px
+  }
+  .rc{font-size:13px}
+  .rc-main{font-size:15px}
+
+  /* ══ PANTALLA: FORMULARIO (nuevo / editar) ══ */
+  .fhdr{padding:24px 32px 8px}
+  .ft{font-size:22px}
+  .fsec{padding:16px 32px 0}
+  /* Campos en grid de 2 columnas — los .fr se "disuelven" al grid padre */
+  #scr-form .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  #scr-form .fg>.fr{display:contents}
+  #scr-form .fg>.fr>.f{min-width:0}
+  /* Campo con textarea ocupa las 2 columnas */
+  #scr-form .fg>.f:has(textarea){grid-column:span 2}
+  /* Fila de Cantidades: 3 campos en una fila */
+  #scr-form .fsec:has(#f-paletas) .fr{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:12px;grid-column:span 2
+  }
+  /* Sección de fotos */
+  .isec{padding:16px 32px 0}
+  .igrid{grid-template-columns:repeat(5,1fr);gap:10px}
+  .iadd-row{max-width:500px}
+  .faction{padding:20px 32px 0;max-width:520px}
+  /* Firma: ancho razonable */
+  #signature-pad-wrap{max-width:600px}
+
+  /* ══ PANTALLA: DETALLE ══ */
+  #scr-detail .dhero{padding:24px 32px}
+  #scr-detail .druta{font-size:24px}
+  #scr-detail .dsec{padding:18px 32px}
+  #scr-detail .dgrid{grid-template-columns:repeat(3,1fr);gap:14px}
+  #scr-detail .dimgs{grid-template-columns:repeat(4,1fr);gap:10px}
+  #scr-detail .dact{padding:20px 32px;max-width:640px}
+  #scr-detail .dnums{gap:14px}
+  #scr-detail .nbox .n{font-size:28px}
+
+  /* ══ PANTALLA: AJUSTES ══ */
+  #scr-settings{padding-bottom:40px}
+  #scr-settings #ucardW .ucard{margin:20px 32px 0}
+  .ssec-wrap{
+    display:grid !important;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    padding:16px 32px 0;
+    margin:0
+  }
+  .ssec-wrap .ssec{
+    border-radius:var(--r);
+    border:1px solid var(--border);
+    margin:0
+  }
+  .ssec-wrap .ssec:first-child{border-bottom:1px solid var(--border)}
+  #scr-settings>.ssec{
+    margin:16px 32px 0;
+    border-radius:var(--r);
+    border:1px solid var(--border)
+  }
+  #scr-settings>div:last-child{padding:20px 32px}
+  .btn-logout{max-width:400px}
+
+  /* ══ PANTALLA: REPORTES (tabla registros) ══ */
+  #scr-records .sbar{padding:12px 32px 0}
+  #scr-records .fpills{padding:10px 32px 6px}
+  #scr-records>div{padding-left:32px;padding-right:32px}
+  .rtbl-wrap{border-radius:var(--r);border:1px solid var(--border);overflow:hidden;margin-top:8px}
+  .rtbl{font-size:13px}
+  .rtbl th,.rtbl td{padding:10px 14px}
+
+  /* ══ PANTALLA: USUARIOS ══ */
+  #scr-users .users-hdr{padding:16px 32px}
+  #scr-users .utab-bar{padding:0 32px 12px}
+  #scr-users .users-tbl-wrap{padding:0 32px}
+  .users-tbl{font-size:13px}
+  .perms-wrap{
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    padding:16px 32px 4px
+  }
+  #scr-users>div:has(.btn-usr-save){padding:16px 32px}
+  .user-modal{max-width:560px}
+  #scr-users .admin-logout-wrap{padding:16px 32px}
+
+  /* ══ PANTALLA: DASHBOARD ══ */
+  #scr-dashboard{padding-bottom:40px}
+
+  /* ══ PANTALLA: MAPA ══ */
+  #scr-mapa .users-hdr{padding:16px 32px}
+  #scr-mapa #mapa-gps-status{margin:0 32px 6px}
+  .mf-bar{padding:0 24px 10px;gap:12px}
+  .mf-summary{padding:0 24px 6px}
+  #live-map{
+    margin:0 32px 16px !important;
+    height:calc(100vh - 200px) !important;
+    min-height:520px;
+    border-radius:14px
+  }
+}
 </style>
 </head>
 <body>
