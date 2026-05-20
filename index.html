@@ -2480,7 +2480,7 @@ function addDocImg(inp){
         reader.onload=async e=>{
           try{
             const ext=file.name.split('.').pop().toLowerCase();
-            const resized=await resizeDataUrl(e.target.result,1920,1920,0.85);
+            const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
             formImgs.push({dataUrl:resized,blob:file,name:`${currentDocType}.${ext}`,isOld:false});
           }catch{
             const ext=file.name.split('.').pop().toLowerCase();
@@ -2536,7 +2536,7 @@ function addImgs(inp){
         reader.onload=async e=>{
           try{
             // Redimensionar a máx 1920×1920 — foto de cámara sin resize puede ser >40 MB en RAM
-            const resized=await resizeDataUrl(e.target.result,1920,1920,0.85);
+            const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
             // GPS: usar posición cacheada si tiene menos de 30 s; no lanzar petición nueva por foto
             const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<30000)
               ?{lat:_currentGPS.lat,lon:_currentGPS.lon,acc:_currentGPS.acc,at:new Date().toISOString()}
