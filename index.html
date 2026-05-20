@@ -2622,9 +2622,17 @@ async function saveRecord(){
     createdBy: existingRec?.createdBy || user?.email || '',
     updatedBy: user?.email || '',
   };
-  // GPS
+  // GPS — capturar posición AHORA (al guardar), no cuando se abrió el formulario
+  const el=document.getElementById('gps-status');
+  if(el){el.className='gps-pill wait';el.innerHTML='📡 Obteniendo ubicación…';}
+  const saveGPS = await captureGPSNow();
+  if(saveGPS){
+    _currentGPS=saveGPS;
+    if(el){el.className='gps-pill';el.innerHTML=`📍 ${saveGPS.lat.toFixed(5)}, ${saveGPS.lon.toFixed(5)} ±${saveGPS.acc}m`;}
+  }
   const firstPhotoGps = formImgs.find(f=>f.gps)?.gps;
-  if(_currentGPS){rec.gpsLat=_currentGPS.lat;rec.gpsLon=_currentGPS.lon;rec.gpsAcc=_currentGPS.acc;rec.gpsAt=_currentGPS.at;}
+  if(saveGPS){rec.gpsLat=saveGPS.lat;rec.gpsLon=saveGPS.lon;rec.gpsAcc=saveGPS.acc;rec.gpsAt=saveGPS.at;}
+  else if(_currentGPS){rec.gpsLat=_currentGPS.lat;rec.gpsLon=_currentGPS.lon;rec.gpsAcc=_currentGPS.acc;rec.gpsAt=_currentGPS.at;}
   else if(firstPhotoGps){rec.gpsLat=firstPhotoGps.lat;rec.gpsLon=firstPhotoGps.lon;rec.gpsAcc=firstPhotoGps.acc;rec.gpsAt=firstPhotoGps.at;}
   else if(existingRec?.gpsLat){rec.gpsLat=existingRec.gpsLat;rec.gpsLon=existingRec.gpsLon;rec.gpsAcc=existingRec.gpsAcc;rec.gpsAt=existingRec.gpsAt;}
   // Array con GPS por foto (solo las que tienen)
@@ -6527,6 +6535,23 @@ window.addEventListener('offline',()=>{
    GPS — captura automática de ubicación
 ════════════════════════════════════════════════════════ */
 let _currentGPS=null;
+
+/* Devuelve una promesa con la posición actual — timeout 6 s */
+function captureGPSNow(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation){resolve(null);return;}
+    const t=setTimeout(()=>resolve(null),6000);
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        clearTimeout(t);
+        resolve({lat:pos.coords.latitude,lon:pos.coords.longitude,acc:Math.round(pos.coords.accuracy),at:new Date().toISOString()});
+      },
+      ()=>{clearTimeout(t);resolve(null);},
+      {maximumAge:0,timeout:6000,enableHighAccuracy:true}
+    );
+  });
+}
+
 function captureGPS(){
   const el=document.getElementById('gps-status');
   if(!navigator.geolocation){
