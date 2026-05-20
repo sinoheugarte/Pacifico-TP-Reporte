@@ -4111,9 +4111,13 @@ function renderDashboard(){
   if(last5.length>0){
     let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Viaje</th><th ${thS}>Ruta</th><th ${thS}>Status</th></tr>`;
     const sBadge=(s)=>{
-      const colors={completado:'#15803D',pendiente:'#92400E','en-ruta':'#1E40AF',cancelado:'#991B1B'};
-      const bgs={completado:'#F0FDF4',pendiente:'#FFFBEB','en-ruta':'#DBEAFE',cancelado:'#FFF5F5'};
-      return `<span style="background:${bgs[s]||'#f1f5f9'};color:${colors[s]||'#64748b'};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase">${s||'—'}</span>`;
+      const colors=_dk
+        ?{completado:'#6ee7b7',pendiente:'#fcd34d','en-ruta':'#93c5fd',cancelado:'#fca5a5'}
+        :{completado:'#065f46',pendiente:'#92400e','en-ruta':'#1e40af',cancelado:'#991b1b'};
+      const bgs=_dk
+        ?{completado:'#065f46',pendiente:'#78350f','en-ruta':'#1e3a5f',cancelado:'#7f1d1d'}
+        :{completado:'#F0FDF4',pendiente:'#FFFBEB','en-ruta':'#DBEAFE',cancelado:'#FFF5F5'};
+      return `<span style="background:${bgs[s]||(_dk?'#1e293b':'#f1f5f9')};color:${colors[s]||(_dk?'#94a3b8':'#64748b')};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase">${s||'—'}</span>`;
     };
     last5.forEach((r,i)=>{
       h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${r.viaje||'—'}</td><td ${tdS(i)}>${(r.ruta||'—').substring(0,20)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
