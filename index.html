@@ -648,10 +648,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 /* Columna fecha/hora */
 [data-theme="dark"] .rtbl td.td-date{color:#cbd5e1}
 /* Badges de status en tabla */
+[data-theme="dark"] .rtbl .b-completado{background:#065f46;color:#6ee7b7}
+[data-theme="dark"] .rtbl .b-pendiente{background:#78350f;color:#fcd34d}
 [data-theme="dark"] .rtbl .b-en-ruta{background:#1e3a5f;color:#93c5fd}
-[data-theme="dark"] .rtbl .b-pendiente{background:#451a03;color:#fcd34d}
-[data-theme="dark"] .rtbl .b-completado{background:#022c22;color:#6ee7b7}
-[data-theme="dark"] .rtbl .b-cancelado{background:#3b0a0a;color:#fca5a5}
+[data-theme="dark"] .rtbl .b-cancelado{background:#7f1d1d;color:#fca5a5}
 [data-theme="dark"] .rtbl .b-default{background:#1e293b;color:#94a3b8}
 /* Botones de columnas visibles */
 [data-theme="dark"] .rtbl-col-btn{background:#1e293b;color:#94a3b8;border-color:#334155}
@@ -713,11 +713,11 @@ body.has-pending .pending-dot{display:inline-block}
 .rtbl td.td-orden{font-weight:700;color:var(--navy);font-family:'DM Mono',monospace}
 .rtbl td.td-trunc{max-width:130px;overflow:hidden;text-overflow:ellipsis}
 .rtbl .badge-sm{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.03em}
-.rtbl .b-completado{background:var(--green-light);color:var(--green)}
-.rtbl .b-en-ruta{background:#dbeafe;color:#1d4ed8}
+.rtbl .b-completado{background:var(--green-light);color:#065f46}
+.rtbl .b-en-ruta{background:#dbeafe;color:#1e40af}
 .rtbl .b-pendiente{background:var(--amber-light);color:#92400e}
-.rtbl .b-cancelado{background:var(--red-light);color:var(--red)}
-.rtbl .b-default{background:#f1f5f9;color:var(--text2)}
+.rtbl .b-cancelado{background:var(--red-light);color:#991b1b}
+.rtbl .b-default{background:var(--bg);color:var(--text2)}
 .rtbl-empty{text-align:center;padding:40px 16px;color:var(--text2);font-size:14px}
 .rtbl-meta{font-size:12px;color:var(--text2);padding:8px 2px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
 .rtbl-col-toggle{display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px}
