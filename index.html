@@ -1032,6 +1032,24 @@ body.has-pending .pending-dot{display:inline-block}
 
   /* ══ PANTALLA: DASHBOARD ══ */
   #scr-dashboard{padding-bottom:40px}
+  #scr-dashboard #dashKpis,
+  #scr-dashboard #dashKpis2{padding:0 32px 10px}
+  /* Grid 2 columnas para gráficos */
+  #dash-charts-wrap{
+    display:grid !important;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    padding:0 32px 40px !important
+  }
+  /* Altura mayor para todas las áreas de gráfico en PC */
+  #dash-charts-wrap .dash-chart-area{height:320px !important}
+  /* Tendencia mensual ocupa ancho completo (mejor para línea de tiempo) */
+  #dash-charts-wrap .dash-card:has(#chartMensual){grid-column:span 2}
+  #dash-charts-wrap .dash-card:has(#chartMensual) .dash-chart-area{height:280px !important}
+  /* Tablas y panel IA también ancho completo */
+  #dash-charts-wrap .dash-card:has(#tblMultiViajes),
+  #dash-charts-wrap .dash-card:has(#tblUltimos),
+  #dash-charts-wrap #ai-dash-card{grid-column:span 2}
 
   /* ══ PANTALLA: MAPA ══ */
   #scr-mapa .users-hdr{padding:16px 32px}
@@ -1575,48 +1593,48 @@ body.has-pending .pending-dot{display:inline-block}
   <div id="dashKpis2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 10px"></div>
 
   <!-- CHARTS -->
-  <div style="padding:0 14px;display:flex;flex-direction:column;gap:14px;padding-bottom:20px">
+  <div id="dash-charts-wrap" style="padding:0 14px;display:flex;flex-direction:column;gap:14px;padding-bottom:20px">
 
     <!-- Status pie -->
     <div class="dash-card">
       <div class="dash-card-title">Estado de Reportes</div>
-      <div style="position:relative;height:200px"><canvas id="chartStatus"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:200px"><canvas id="chartStatus"></canvas></div>
     </div>
 
     <!-- Motivos donut -->
     <div class="dash-card">
       <div class="dash-card-title">Motivos de Traslado</div>
-      <div style="position:relative;height:180px"><canvas id="chartMotivos"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:180px"><canvas id="chartMotivos"></canvas></div>
     </div>
 
     <!-- Transportistas bar -->
     <div class="dash-card">
       <div class="dash-card-title">Top Transportistas</div>
-      <div style="position:relative;height:220px"><canvas id="chartTransp"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartTransp"></canvas></div>
     </div>
 
     <!-- Unidades bar -->
     <div class="dash-card">
       <div class="dash-card-title">Tipos de Unidad</div>
-      <div style="position:relative;height:200px"><canvas id="chartUnidad"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:200px"><canvas id="chartUnidad"></canvas></div>
     </div>
 
     <!-- Tendencia mensual line -->
     <div class="dash-card">
       <div class="dash-card-title">Tendencia Mensual</div>
-      <div style="position:relative;height:200px"><canvas id="chartMensual"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:200px"><canvas id="chartMensual"></canvas></div>
     </div>
 
     <!-- Rutas -->
     <div class="dash-card">
       <div class="dash-card-title">Top Rutas</div>
-      <div style="position:relative;height:220px"><canvas id="chartRutas"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartRutas"></canvas></div>
     </div>
 
     <!-- Cantidades bar -->
     <div class="dash-card">
       <div class="dash-card-title">Totales de Carga</div>
-      <div style="position:relative;height:180px"><canvas id="chartCarga"></canvas></div>
+      <div class="dash-chart-area" style="position:relative;height:180px"><canvas id="chartCarga"></canvas></div>
     </div>
 
     <!-- ÓRDENES CON MÚLTIPLES VIAJES -->
