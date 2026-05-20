@@ -996,8 +996,11 @@ body.has-pending .pending-dot{display:inline-block}
   .igrid{grid-template-columns:repeat(6,1fr);gap:12px}
   .iadd-row{max-width:500px}
   .faction{padding:24px 40px 0;max-width:960px}
-  /* Firma: ancho razonable */
-  #signature-pad-wrap{max-width:680px}
+  /* Firma centrada */
+  #signature-pad-wrap{max-width:680px;margin:0 auto}
+  #scr-form .fsec:has(#signature-pad-wrap)>div[style]{margin-left:auto;margin-right:auto;max-width:680px}
+  /* Botones cámara/archivo centrados */
+  .iadd-row{max-width:500px;margin:10px auto 0}
 
   /* ══ PANTALLA: DETALLE ══ */
   #scr-detail.on{display:flex;flex-direction:column;align-items:center}
@@ -1014,15 +1017,19 @@ body.has-pending .pending-dot{display:inline-block}
   #scr-detail .di .v{font-size:15px}
   #scr-detail .dimgs{grid-template-columns:repeat(6,1fr);gap:12px}
   #scr-detail .dact{padding:24px 48px;gap:14px;max-width:1000px}
+  /* Firma del receptor centrada en detalle */
+  #scr-detail .dsec img[src^="data:"]{max-width:600px;display:block;margin:8px auto 0}
+  #scr-detail .dsec img[src^="data:"]+div{text-align:center}
   #scr-detail .dnums{gap:18px}
   #scr-detail .nbox{padding:18px 20px;border-radius:12px}
   #scr-detail .nbox .n{font-size:36px}
   #scr-detail .nbox .l{font-size:11px}
 
   /* ══ PANTALLA: AJUSTES ══ */
-  #scr-settings.on{padding-bottom:40px;display:flex;flex-direction:column;align-items:center}
+  /* Padding en el contenedor — todos los hijos quedan alineados automáticamente */
+  #scr-settings.on{padding:0 40px 40px;display:flex;flex-direction:column;align-items:center}
   #scr-settings>*{width:100%;max-width:1100px}
-  #scr-settings #ucardW .ucard{margin:24px 40px 0;padding:28px 32px;border-radius:16px}
+  #scr-settings #ucardW .ucard{margin-top:24px;padding:28px 32px;border-radius:16px}
   #scr-settings #ucardW .uav{width:60px;height:60px;font-size:22px}
   #scr-settings #ucardW .uname{font-size:20px}
   #scr-settings #ucardW .uemail{font-size:13px}
@@ -1030,7 +1037,7 @@ body.has-pending .pending-dot{display:inline-block}
     display:grid !important;
     grid-template-columns:1fr 1fr;
     gap:20px;
-    padding:20px 40px 0;
+    padding:20px 0 0;
     margin:0
   }
   .ssec-wrap .ssec{
@@ -1040,12 +1047,13 @@ body.has-pending .pending-dot{display:inline-block}
   }
   .ssec-wrap .ssec:first-child{border-bottom:1px solid var(--border)}
   #scr-settings>.ssec{
-    margin:20px 40px 0;
+    margin:20px 0 0;
     border-radius:var(--r);
     border:1px solid var(--border)
   }
-  #scr-settings>div:last-child{padding:24px 40px}
-  .btn-logout{max-width:440px}
+  /* Botón cerrar sesión centrado */
+  #scr-settings>div:last-child{padding:24px 0;display:flex;justify-content:center}
+  .btn-logout{max-width:440px;width:100%}
 
   /* ══ PANTALLA: REPORTES (tabla registros) ══ */
   #scr-records .sbar{padding:12px 32px 0}
