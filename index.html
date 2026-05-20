@@ -1500,6 +1500,7 @@ body.has-pending .pending-dot{display:inline-block}
       <button class="btn-usr-sync" onclick="refreshLiveMap()">↺ Actualizar</button>
     </div>
   </div>
+  <div id="mapa-gps-status" style="display:none;margin:0 12px 6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;line-height:1.4"></div>
   <div class="mapa-filters" id="mapa-filters">
     <div class="mapa-filter-group">
       <label class="mapa-filter-label">Usuario</label>
@@ -1568,7 +1569,7 @@ function saveCfg(){
   const redir  = document.getElementById('cfgRedir').value.trim()  || APP_URL;
   const spSite = document.getElementById('cfgSpSite').value.trim() || DEFAULT_SP_SITE;
   cfg={cid,tid,redir,spSite,photoStorage:cfg.photoStorage||'sp',dbStorage:cfg.dbStorage||'sp'};
-  spDriveId=null;
+  spDriveId=null; _ubicPath=null;
   localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
   localStorage.removeItem(TOKEN_KEY);
   document.getElementById('aErr').classList.remove('on');
@@ -1748,7 +1749,7 @@ async function tryAutoLogin(){
 
 async function signOut(){
   if(!confirm('¿Cerrar sesión de Microsoft?')) return;
-  user=null; records=[]; token=null;
+  user=null; records=[]; token=null; _ubicPath=null;
   localStorage.removeItem(TOKEN_KEY);
   document.getElementById('authWall').classList.add('on');
   setSdot('off');
@@ -6799,9 +6800,14 @@ function adminSignOut(){
 let _usersRefInterval=null;
 
 async function _usuariosPath(){
-  if(cfg.dbStorage==='od') return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
-  const driveId=await ensureSPDrive();
-  return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
+  // usuarios.json es compartido — SP primero, OD como fallback
+  try{
+    const driveId=await ensureSPDrive();
+    return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
+  }catch(e){
+    console.log('_usuariosPath SP fallback:',e.message?.slice(0,60));
+    return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
+  }
 }
 
 function loadSysUsers(){
@@ -6975,47 +6981,83 @@ function stopLocationTracking(){
   _trackInterval=null;
 }
 
+// ubicaciones.json es siempre compartido — intentar SP primero, OD personal como último recurso
+let _ubicPath=null; // cache de ruta resuelta
 async function _ubicacionesReadPath(){
-  if(cfg.dbStorage==='od'){
-    return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+  if(_ubicPath)return _ubicPath;
+  // Intentar SharePoint (datos compartidos entre todos los usuarios)
+  try{
+    const driveId=await ensureSPDrive();
+    _ubicPath=`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+    return _ubicPath;
+  }catch(e){
+    console.log('_ubicacionesReadPath SP error:',e.message?.slice(0,80));
   }
-  const driveId=await ensureSPDrive();
-  return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+  // Fallback: OneDrive personal (datos solo visibles para este usuario)
+  _ubicPath=`me/drive/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+  return _ubicPath;
 }
+
+function _setMapGpsStatus(msg, color){
+  const el=document.getElementById('mapa-gps-status');
+  if(!el)return;
+  if(!msg){el.style.display='none';return;}
+  el.style.display='';
+  el.style.background=color==='green'?'#dcfce7':color==='red'?'#fee2e2':color==='warn'?'#fef9c3':'#f1f5f9';
+  el.style.color=color==='green'?'#166534':color==='red'?'#991b1b':color==='warn'?'#92400e':'#475569';
+  el.textContent=msg;
+}
+
 async function _publishPosition(){
   if(!navigator.geolocation||!token||!user)return;
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    try{
-      const basePath=await _ubicacionesReadPath();
-      // Leer objeto actual
-      let locs={};
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
       try{
-        const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
-        const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
-        if(r.ok)locs=await r.json();
-      }catch{}
-      // Actualizar entrada del usuario actual
-      const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
-      locs[user.email]={
-        nombre:(meUser?(meUser.nombre||'')+(meUser.apellidos?' '+meUser.apellidos:''):'')||user.name||user.email,
-        email:user.email,
-        empresa:meUser?.empresa||'',
-        lat:pos.coords.latitude,
-        lon:pos.coords.longitude,
-        acc:Math.round(pos.coords.accuracy),
-        speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null,
-        heading:pos.coords.heading,
-        ts:new Date().toISOString(),
-        rol:userRole||'conductor',
-      };
-      await gPut(`${basePath}:/content`,JSON.stringify(locs),'application/json');
-      if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
-    }catch(e){console.log('_publishPosition:',e.message?.slice(0,60));}
-  },{maximumAge:5000,timeout:12000,enableHighAccuracy:true});
+        const basePath=await _ubicacionesReadPath();
+        let locs={};
+        try{
+          const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
+          const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
+          if(r.ok)locs=await r.json();
+        }catch{}
+        const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
+        locs[user.email]={
+          nombre:(meUser?(meUser.nombre||'')+(meUser.apellidos?' '+meUser.apellidos:''):'')||user.name||user.email,
+          email:user.email,
+          empresa:meUser?.empresa||'',
+          lat:pos.coords.latitude,
+          lon:pos.coords.longitude,
+          acc:Math.round(pos.coords.accuracy),
+          speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null,
+          heading:pos.coords.heading,
+          ts:new Date().toISOString(),
+          rol:userRole||'conductor',
+        };
+        await gPut(`${basePath}:/content`,JSON.stringify(locs),'application/json');
+        _setMapGpsStatus(`📍 Tu ubicación publicada · ±${Math.round(pos.coords.accuracy)}m`,'green');
+        if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
+      }catch(e){
+        const msg=e.message||'';
+        console.log('_publishPosition error:',msg.slice(0,80));
+        _setMapGpsStatus('⚠ Error al publicar ubicación: '+msg.slice(0,60),'red');
+      }
+    },
+    err=>{
+      // Callback de error de geolocalización (permiso denegado, timeout, etc.)
+      let txt='';
+      if(err.code===1)      txt='⛔ Permiso de ubicación denegado — activa el GPS en ajustes de la app/navegador';
+      else if(err.code===2) txt='📡 No se pudo obtener señal GPS — asegúrate de estar en un área con cobertura';
+      else if(err.code===3) txt='⏱ Tiempo de espera GPS agotado — intentando de nuevo…';
+      else                  txt='❓ Error GPS: '+err.message;
+      console.log('GPS error code',err.code,err.message);
+      _setMapGpsStatus(txt, err.code===1?'red':'warn');
+    },
+    {maximumAge:5000,timeout:12000,enableHighAccuracy:true}
+  );
 }
 
 async function initLiveMap(){
-  if(_liveMap){_liveMap.invalidateSize();loadLiveLocations();return;}
+  if(_liveMap){_liveMap.invalidateSize();_updateMapFilterOptions({});loadLiveLocations();return;}
   await new Promise(r=>setTimeout(r,150)); // esperar render del div
   const mapEl=document.getElementById('live-map');
   if(!mapEl)return;
@@ -7023,7 +7065,12 @@ async function initLiveMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'© OpenStreetMap',maxZoom:19
   }).addTo(_liveMap);
-  _updateMapFilterOptions({});
+  // Asegurar que _sysUsers esté cargado antes de poblar filtros
+  if(!_sysUsers.length){
+    loadUsersFromSP().then(()=>_updateMapFilterOptions({})).catch(()=>{});
+  } else {
+    _updateMapFilterOptions({});
+  }
   loadLiveLocations();
   clearInterval(_mapRefInterval);
   _mapRefInterval=setInterval(loadLiveLocations,30000);
