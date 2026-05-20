@@ -1483,9 +1483,9 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="ssec" id="settings-sec-ai" style="display:none">
     <div class="ssect">Inteligencia Artificial</div>
     <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
-      <div><div class="srl">API Key de Claude</div><div class="srs">Necesaria para el chatbot IA en el Dashboard</div></div>
+      <div><div class="srl">API Key de Gemini</div><div class="srs">Clave gratuita de Google — aistudio.google.com/apikey</div></div>
       <div style="display:flex;gap:8px;width:100%">
-        <input type="password" id="ai-key-inp" placeholder="sk-ant-api…" autocomplete="off"
+        <input type="password" id="ai-key-inp" placeholder="AIza…" autocomplete="off"
           style="flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);background:#fff;outline:none;transition:border-color .15s"
           oninput="this.style.borderColor='var(--navy)'"
           value="">
@@ -7907,26 +7907,20 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch
 if(!navigator.onLine) document.body.classList.add('is-offline');
 
 /* ═══════════════════════════════════════════════════════
-   IA ANALYTICS — Claude API Chatbot + Auto-análisis
+   IA ANALYTICS — Gemini API Chatbot + Auto-análisis
    ═══════════════════════════════════════════════════════ */
 let _aiHistory=[];
-const AI_MODEL='claude-sonnet-4-6';
-const AI_MAX_TOKENS=1200;
+const AI_MODEL='gemini-2.0-flash';
 
-function _aiKey(){
-  const k=localStorage.getItem('ptp_claude_key');
-  if(k)return k;
-  const p=['sk-ant-','api03-o7253F9-CLmlD_ltq6TSK','FYmInCbLjp8NGU11svdVg1VJtmru3ohNG_','22qSnSR9TSQx2KF---guLAbvlBOl4qg-TSPPVwAA'];
-  return p.join('');
-}
+function _aiKey(){return localStorage.getItem('ptp_gemini_key')||'';}
 
 function saveAIKey(){
   const v=document.getElementById('ai-key-inp')?.value?.trim();
   if(!v){toast('⚠ Ingresa una clave válida');return;}
-  localStorage.setItem('ptp_claude_key',v);
+  localStorage.setItem('ptp_gemini_key',v);
   const st=document.getElementById('ai-key-status');
   if(st){st.style.display='';setTimeout(()=>st.style.display='none',3000);}
-  toast('✓ Clave API de Claude guardada');
+  toast('✓ Clave API de Gemini guardada');
   renderAIContent();
 }
 
@@ -8003,23 +7997,30 @@ async function _callClaude(messages){
   const key=_aiKey();
   if(!key)throw new Error('NO_KEY');
   const ctx=_buildAIContext();
-  const system=_AI_SYSTEM+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({model:AI_MODEL,max_tokens:AI_MAX_TOKENS,system,messages})
-  });
+  const systemText=_AI_SYSTEM+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
+  /* Convertir historial de mensajes al formato Gemini */
+  const contents=messages.map(m=>({
+    role:m.role==='assistant'?'model':'user',
+    parts:[{text:m.content}]
+  }));
+  const resp=await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${key}`,
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:systemText}]},
+        contents,
+        generationConfig:{maxOutputTokens:1200,temperature:0.4}
+      })
+    }
+  );
   if(!resp.ok){
     const err=await resp.json().catch(()=>({}));
     throw new Error(err.error?.message||`HTTP ${resp.status}`);
   }
   const data=await resp.json();
-  return data.content[0].text;
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'Sin respuesta';
 }
 
 /* Render del contenido del panel IA */
@@ -8028,9 +8029,9 @@ function renderAIContent(){
   if(!wrap)return;
   if(!_aiKey()){
     wrap.innerHTML=`<div class="ai-nokey">
-      <strong>🤖 Configura tu API Key de Claude</strong>
+      <strong>🤖 Configura tu API Key de Gemini</strong>
       Para activar el asistente IA ve a <b>Ajustes → Inteligencia Artificial</b><br>
-      e ingresa tu clave de Anthropic.
+      e ingresa tu clave de Google Gemini (gratuita en aistudio.google.com/apikey).
       <br><button class="ai-nokey-btn" onclick="showScr('settings')">Ir a Ajustes →</button>
     </div>`;
     return;
