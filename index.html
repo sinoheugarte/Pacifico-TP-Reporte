@@ -7224,10 +7224,11 @@ async function initLiveMap(){
   await new Promise(r=>setTimeout(r,150)); // esperar render del div
   const mapEl=document.getElementById('live-map');
   if(!mapEl)return;
-  _liveMap=L.map('live-map',{zoomControl:true}).setView([-12.046,-77.043],12);
+  _liveMap=L.map('live-map',{zoomControl:false}).setView([-12.046,-77.043],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'© OpenStreetMap',maxZoom:19
   }).addTo(_liveMap);
+  L.control.zoom({position:'bottomleft'}).addTo(_liveMap);
   // Asegurar que _sysUsers esté cargado antes de poblar filtros
   if(!_sysUsers.length){
     loadUsersFromSP().then(()=>_updateMapFilterOptions()).catch(()=>{});
@@ -7422,8 +7423,8 @@ function _mfUpdateBadges(){
     if(!btn||!badge)return;
     const total=document.getElementById('mfl-'+type)?.querySelectorAll('.mf-opt').length||0;
     if(sel.length===0){
-      // Sin filtro: mostrar total
-      badge.textContent=total?'· '+total:(type==='empresa'?'Todas':'Todos');
+      // Sin filtro: mostrar "Todas/Todos · N"
+      badge.textContent=total?(type==='empresa'?'Todas':'Todos')+' · '+total:(type==='empresa'?'Todas':'Todos');
       btn.classList.remove('filtered');
     }else{
       // Con filtro: X de Y
