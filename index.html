@@ -792,19 +792,46 @@ body.has-pending .pending-dot{display:inline-block}
 .user-marker-active{background:#059669}
 .user-marker-warn{background:#f59e0b}
 .user-marker-idle{background:#94a3b8}
-.mapa-filters{display:flex;align-items:flex-start;gap:10px;padding:0 12px 10px;flex-wrap:wrap}
-.mapa-filter-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
-.mapa-filter-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
-.mapa-filter-sel{border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;cursor:pointer}
-.mapa-filter-sel:focus{border-color:var(--navy)}
-.mapa-filter-multi{padding:4px 2px;height:100px;overflow-y:auto;resize:none}
-.mapa-filter-multi option{padding:5px 10px;border-radius:5px;cursor:pointer;margin:1px 2px}
-.mapa-filter-multi option:checked,.mapa-filter-multi option:selected{background:var(--navy);color:#fff}
-.mapa-filter-hint{font-size:9px;color:#94a3b8;margin-top:1px}
-.mapa-filter-clear{align-self:flex-end;margin-top:22px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-[data-theme="dark"] .mapa-filter-sel{background:#1e293b;border-color:#334155;color:#e2e8f0}
-[data-theme="dark"] .mapa-filter-multi option:checked{background:#1d4ed8}
-[data-theme="dark"] .mapa-filter-clear{border-color:#334155;color:#94a3b8}
+/* ── FILTROS MAPA ESTILO EXCEL ──────────────────────────── */
+.mf-bar{display:flex;align-items:center;gap:8px;padding:0 12px 8px;flex-wrap:wrap;position:relative}
+.mf-btn-wrap{position:relative}
+.mf-btn{display:flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:var(--white);color:var(--text);font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:border-color .15s,background .15s;white-space:nowrap}
+.mf-btn:hover{border-color:var(--navy)}
+.mf-btn.active{border-color:var(--navy);background:#eff6ff;color:var(--navy)}
+.mf-btn.filtered{border-color:#1d4ed8;background:#1d4ed8;color:#fff}
+.mf-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;background:var(--bg);color:var(--text2);border:1px solid var(--border)}
+.mf-btn.filtered .mf-badge{background:rgba(255,255,255,.25);color:#fff;border-color:transparent}
+.mf-chev{transition:transform .2s;flex-shrink:0}
+.mf-btn.active .mf-chev{transform:rotate(180deg)}
+.mf-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:220px;max-width:280px;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:800;overflow:hidden;flex-direction:column}
+.mf-dropdown.open{display:flex}
+.mf-drop-search{padding:10px 10px 6px}
+.mf-search-inp{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;box-sizing:border-box}
+.mf-search-inp:focus{border-color:var(--navy)}
+.mf-sel-all{display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;background:var(--bg);border-bottom:1px solid var(--border);user-select:none}
+.mf-sel-all input{accent-color:var(--navy);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.mf-drop-list{max-height:160px;overflow-y:auto;padding:4px 0}
+.mf-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:var(--text);cursor:pointer;transition:background .1s;user-select:none}
+.mf-opt:hover{background:var(--bg)}
+.mf-opt input{accent-color:var(--navy);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.mf-drop-footer{padding:8px 10px;border-top:1px solid var(--border)}
+.mf-apply-btn{width:100%;padding:8px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer}
+.mf-apply-btn:active{opacity:.85}
+.mf-clear-btn{padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--red);font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.mf-summary{padding:0 12px 6px;font-size:11px;font-weight:600;color:var(--text2);min-height:16px}
+.mf-summary b{color:var(--navy)}
+#mf-backdrop{display:none;position:fixed;inset:0;z-index:799}
+#mf-backdrop.on{display:block}
+[data-theme="dark"] .mf-btn{background:#1e293b;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .mf-btn.active{background:#1e3a5f;color:#93c5fd;border-color:#1d4ed8}
+[data-theme="dark"] .mf-btn.filtered{background:#1d4ed8;color:#fff}
+[data-theme="dark"] .mf-dropdown{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .mf-search-inp{background:#0f172a;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .mf-sel-all{background:#0f172a;border-color:#334155;color:#93c5fd}
+[data-theme="dark"] .mf-opt:hover{background:#0f172a}
+[data-theme="dark"] .mf-opt{color:#e2e8f0}
+[data-theme="dark"] .mf-drop-footer{border-color:#334155}
+[data-theme="dark"] .mf-badge{background:#0f172a;border-color:#334155;color:#94a3b8}
 /* ── ADMIN TABS ───────────────────────────────────────── */
 .utab-bar{display:flex;gap:2px;padding:0 12px 12px;border-bottom:1px solid var(--border);margin-bottom:0}
 .utab{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;color:var(--text2);background:transparent;cursor:pointer;transition:all .15s}
@@ -1560,20 +1587,51 @@ body.has-pending .pending-dot{display:inline-block}
     </div>
   </div>
   <div id="mapa-gps-status" style="display:none;margin:0 12px 6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;line-height:1.4"></div>
-  <div class="mapa-filters" id="mapa-filters">
-    <div class="mapa-filter-group">
-      <label class="mapa-filter-label">Empresa</label>
-      <select class="mapa-filter-sel mapa-filter-multi" id="mf-empresa" multiple size="4" onchange="onEmpresaFilterChange()">
-      </select>
+  <!-- Filtros estilo Excel -->
+  <div class="mf-bar" id="mapa-filters">
+    <div class="mf-btn-wrap" id="mfw-empresa">
+      <button class="mf-btn" id="mfb-empresa" onclick="toggleMapFilter('empresa')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span>Empresa</span>
+        <span class="mf-badge" id="mfbadge-empresa">Todas</span>
+        <svg class="mf-chev" id="mfchev-empresa" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="mf-dropdown" id="mfd-empresa">
+        <div class="mf-drop-search"><input class="mf-search-inp" id="mfs-empresa" placeholder="Buscar empresa…" oninput="mfSearch('empresa')" autocomplete="off"></div>
+        <label class="mf-sel-all" id="mfsa-empresa">
+          <input type="checkbox" id="mfca-empresa" onchange="mfSelAll('empresa',this)" checked>
+          <span>Seleccionar todas</span>
+        </label>
+        <div class="mf-drop-list" id="mfl-empresa"></div>
+        <div class="mf-drop-footer">
+          <button class="mf-apply-btn" onclick="mfApply('empresa')">✓ Aplicar</button>
+        </div>
+      </div>
     </div>
-    <div class="mapa-filter-group">
-      <label class="mapa-filter-label">Usuario</label>
-      <select class="mapa-filter-sel mapa-filter-multi" id="mf-usuario" multiple size="4" onchange="applyMapFilters()">
-      </select>
+    <div class="mf-btn-wrap" id="mfw-usuario">
+      <button class="mf-btn" id="mfb-usuario" onclick="toggleMapFilter('usuario')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span>Usuario</span>
+        <span class="mf-badge" id="mfbadge-usuario">Todos</span>
+        <svg class="mf-chev" id="mfchev-usuario" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="mf-dropdown" id="mfd-usuario">
+        <div class="mf-drop-search"><input class="mf-search-inp" id="mfs-usuario" placeholder="Buscar usuario…" oninput="mfSearch('usuario')" autocomplete="off"></div>
+        <label class="mf-sel-all" id="mfsa-usuario">
+          <input type="checkbox" id="mfca-usuario" onchange="mfSelAll('usuario',this)" checked>
+          <span>Seleccionar todos</span>
+        </label>
+        <div class="mf-drop-list" id="mfl-usuario"></div>
+        <div class="mf-drop-footer">
+          <button class="mf-apply-btn" onclick="mfApply('usuario')">✓ Aplicar</button>
+        </div>
+      </div>
     </div>
-    <button class="mapa-filter-clear" onclick="clearMapFilters()">✕ Limpiar</button>
+    <button class="mf-clear-btn" id="mf-clear-btn" onclick="clearMapFilters()" style="display:none">✕ Limpiar</button>
   </div>
-  <div id="live-map" style="height:calc(100vh - 230px);min-height:280px;border-radius:12px;margin:0 12px 12px;overflow:hidden;border:1px solid var(--border)"></div>
+  <div class="mf-summary" id="mf-summary"></div>
+  <div id="mf-backdrop" onclick="closeAllMapDropdowns()"></div>
+  <div id="live-map" style="height:calc(100vh - 260px);min-height:260px;border-radius:12px;margin:0 12px 12px;overflow:hidden;border:1px solid var(--border)"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2432,7 +2490,7 @@ function showScr(name){
   else if(name==='detail'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';}
   else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
-  else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});startUsersAutoRefresh();}
+  else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});startUsersAutoRefresh();}
   else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
@@ -3651,7 +3709,7 @@ async function refreshRecords(){
   try{
     await loadRecordsFromOD();
     // Sincronizar usuarios en segundo plano si es admin
-    if(_adminMode) loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});
+    if(_adminMode) loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});
   }finally{
     if(btn){btn.disabled=false;btn.style.animation='';}
   }
@@ -6947,7 +7005,7 @@ function startUsersAutoRefresh(){
   clearInterval(_usersRefInterval);
   _usersRefInterval=setInterval(()=>{
     if(!document.getElementById('scr-users')?.classList.contains('on'))return;
-    loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});
+    loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});
   },60000);
 }
 
@@ -7045,7 +7103,7 @@ async function syncUsersAction(){
   try{
     await loadUsersFromSP();
     renderUsersScreen();
-    _updateMapFilterOptions({});
+    _updateMapFilterOptions();
     toast('✓ Usuarios sincronizados');
   }catch(e){
     toast('⚠ Error al sincronizar: '+(e.message||'').slice(0,50));
@@ -7162,7 +7220,7 @@ async function _publishPosition(){
 }
 
 async function initLiveMap(){
-  if(_liveMap){_liveMap.invalidateSize();_updateMapFilterOptions({});loadLiveLocations();return;}
+  if(_liveMap){_liveMap.invalidateSize();_updateMapFilterOptions();loadLiveLocations();return;}
   await new Promise(r=>setTimeout(r,150)); // esperar render del div
   const mapEl=document.getElementById('live-map');
   if(!mapEl)return;
@@ -7172,9 +7230,9 @@ async function initLiveMap(){
   }).addTo(_liveMap);
   // Asegurar que _sysUsers esté cargado antes de poblar filtros
   if(!_sysUsers.length){
-    loadUsersFromSP().then(()=>_updateMapFilterOptions({})).catch(()=>{});
+    loadUsersFromSP().then(()=>_updateMapFilterOptions()).catch(()=>{});
   } else {
-    _updateMapFilterOptions({});
+    _updateMapFilterOptions();
   }
   loadLiveLocations();
   clearInterval(_mapRefInterval);
@@ -7190,7 +7248,7 @@ async function loadLiveLocations(){
     if(!res.ok)return;
     const locs=await res.json();
     _allLocs=locs;
-    _updateMapFilterOptions(locs);
+    _updateMapFilterOptions();
     const now=Date.now();
     const filtered=_applyLocFilter(locs);
     const bounds=[];
@@ -7222,7 +7280,8 @@ async function loadLiveLocations(){
     const activeCount=Object.values(locs).filter(u=>(now-new Date(u.ts).getTime())<300000).length;
     const filtCount=Object.keys(filtered).length;
     const el=document.getElementById('mapa-last-update');
-    if(el)el.textContent=`${activeCount} activo(s)${filtCount<activeCount?' · mostrando '+filtCount:''} · ${new Date().toLocaleTimeString('es-PE')}`;
+    if(el)el.textContent=`${activeCount} activo(s) · ${new Date().toLocaleTimeString('es-PE')}`;
+    _mfUpdateSummary(activeCount, filtCount);
   }catch(e){
     const el=document.getElementById('mapa-last-update');
     const msg=e.message||'';
@@ -7249,79 +7308,166 @@ function animatedRefreshMap(){
 }
 
 let _allLocs={};
-function _getSelVals(id){
-  const sel=document.getElementById(id);
-  if(!sel)return[];
-  return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean);
-}
-function _updateMapFilterOptions(locs){
-  const selU=document.getElementById('mf-usuario');
-  const selE=document.getElementById('mf-empresa');
-  if(!selU||!selE)return;
-  const prevE=_getSelVals('mf-empresa');
-  const prevU=_getSelVals('mf-usuario');
+// Estado de filtros del mapa
+let _mfState={empresa:[],usuario:[]};
+
+function _mfUserLabel(u){return((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';}
+
+function _updateMapFilterOptions(){
   const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
   const empresas=[...new Set(registrados.map(u=>u.empresa||'').filter(Boolean))].sort();
-  // Reconstruir opciones de empresa (preservar selección previa)
-  selE.innerHTML=empresas.map(e=>
-    `<option value="${esc(e)}"${prevE.includes(e)?' selected':''}>${esc(e)}</option>`
-  ).join('');
-  // Usuarios filtrados por empresas seleccionadas (cascada)
-  const selEVals=_getSelVals('mf-empresa');
-  const visibles=selEVals.length
-    ? registrados.filter(u=>selEVals.includes(u.empresa||''))
+  _mfRenderList('empresa', empresas.map(e=>({val:e,label:e})));
+  const visibles=_mfState.empresa.length
+    ? registrados.filter(u=>_mfState.empresa.includes(u.empresa||''))
     : registrados;
-  selU.innerHTML=visibles.map(u=>{
-    const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
-    return `<option value="${esc(u.email)}"${prevU.includes(u.email)?' selected':''}>${esc(label)}</option>`;
-  }).join('');
+  _mfRenderList('usuario', visibles.map(u=>({val:u.email,label:_mfUserLabel(u)})));
+  _mfUpdateBadges();
 }
-function onEmpresaFilterChange(){
-  // Cascada: recalcular opciones de usuario según empresas seleccionadas
-  const selU=document.getElementById('mf-usuario');
-  if(!selU)return;
-  const selEVals=_getSelVals('mf-empresa');
-  const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
-  const visibles=selEVals.length
-    ? registrados.filter(u=>selEVals.includes(u.empresa||''))
-    : registrados;
-  // Preservar selección de usuarios que aún son visibles
-  const prevU=_getSelVals('mf-usuario');
-  selU.innerHTML=visibles.map(u=>{
-    const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
-    return `<option value="${esc(u.email)}"${prevU.includes(u.email)?' selected':''}>${esc(label)}</option>`;
-  }).join('');
-  applyMapFilters();
+
+function _mfRenderList(type, items){
+  const list=document.getElementById('mfl-'+type);
+  if(!list)return;
+  const sel=_mfState[type];
+  list.innerHTML=items.map(item=>`
+    <label class="mf-opt">
+      <input type="checkbox" value="${esc(item.val)}"
+        ${sel.includes(item.val)||sel.length===0?'checked':''}
+        onchange="_mfCheck('${type}',this)">
+      <span>${esc(item.label)}</span>
+    </label>`).join('');
+  // Actualizar checkbox "seleccionar todos"
+  const ca=document.getElementById('mfca-'+type);
+  if(ca) ca.checked=sel.length===0||sel.length===items.length;
 }
+
+function _mfCheck(type, cb){
+  const val=cb.value;
+  if(cb.checked){
+    if(!_mfState[type].includes(val)) _mfState[type].push(val);
+  }else{
+    _mfState[type]=_mfState[type].filter(v=>v!==val);
+  }
+  // Si nada marcado, tratar como "todos"
+  const list=document.getElementById('mfl-'+type);
+  const total=list?list.querySelectorAll('input[type=checkbox]').length:0;
+  const ca=document.getElementById('mfca-'+type);
+  if(ca) ca.checked=_mfState[type].length===0||_mfState[type].length===total;
+  // Cascada: al cambiar empresa recalcular usuarios visibles
+  if(type==='empresa'){
+    const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
+    const visibles=_mfState.empresa.length
+      ? registrados.filter(u=>_mfState.empresa.includes(u.empresa||''))
+      : registrados;
+    // Limpiar selección de usuarios que ya no son visibles
+    _mfState.usuario=_mfState.usuario.filter(e=>visibles.some(u=>u.email===e));
+    _mfRenderList('usuario', visibles.map(u=>({val:u.email,label:_mfUserLabel(u)})));
+  }
+}
+
+function mfSelAll(type, cb){
+  const list=document.getElementById('mfl-'+type);
+  if(!list)return;
+  list.querySelectorAll('input[type=checkbox]').forEach(inp=>{inp.checked=cb.checked;});
+  _mfState[type]=cb.checked?[]:[...list.querySelectorAll('input[type=checkbox]')].map(i=>i.value);
+  if(type==='empresa'){
+    const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
+    const visibles=_mfState.empresa.length
+      ? registrados.filter(u=>_mfState.empresa.includes(u.empresa||''))
+      : registrados;
+    _mfState.usuario=[];
+    _mfRenderList('usuario', visibles.map(u=>({val:u.email,label:_mfUserLabel(u)})));
+  }
+}
+
+function mfSearch(type){
+  const q=(document.getElementById('mfs-'+type)?.value||'').toLowerCase();
+  const list=document.getElementById('mfl-'+type);
+  if(!list)return;
+  list.querySelectorAll('.mf-opt').forEach(opt=>{
+    const txt=opt.querySelector('span')?.textContent.toLowerCase()||'';
+    opt.style.display=txt.includes(q)?'':'none';
+  });
+}
+
+function toggleMapFilter(type){
+  const isOpen=document.getElementById('mfd-'+type)?.classList.contains('open');
+  closeAllMapDropdowns();
+  if(!isOpen){
+    document.getElementById('mfd-'+type)?.classList.add('open');
+    document.getElementById('mfb-'+type)?.classList.add('active');
+    document.getElementById('mf-backdrop')?.classList.add('on');
+    document.getElementById('mfs-'+type)?.focus();
+  }
+}
+
+function closeAllMapDropdowns(){
+  ['empresa','usuario'].forEach(t=>{
+    document.getElementById('mfd-'+t)?.classList.remove('open');
+    document.getElementById('mfb-'+t)?.classList.remove('active');
+  });
+  document.getElementById('mf-backdrop')?.classList.remove('on');
+}
+
+function mfApply(type){
+  closeAllMapDropdowns();
+  _mfUpdateBadges();
+  loadLiveLocations();
+}
+
+function _mfUpdateBadges(){
+  ['empresa','usuario'].forEach(type=>{
+    const sel=_mfState[type];
+    const btn=document.getElementById('mfb-'+type);
+    const badge=document.getElementById('mfbadge-'+type);
+    if(!btn||!badge)return;
+    if(sel.length===0){
+      badge.textContent=type==='empresa'?'Todas':'Todos';
+      btn.classList.remove('filtered');
+    }else{
+      badge.textContent=sel.length+' sel.';
+      btn.classList.add('filtered');
+    }
+  });
+  // Mostrar/ocultar botón limpiar
+  const anyFilter=_mfState.empresa.length||_mfState.usuario.length;
+  const clrBtn=document.getElementById('mf-clear-btn');
+  if(clrBtn)clrBtn.style.display=anyFilter?'':'none';
+}
+
 function _applyLocFilter(locs){
-  const fu=_getSelVals('mf-usuario');
-  const fe=_getSelVals('mf-empresa');
-  if(!fu.length&&!fe.length)return locs;
+  const fe=_mfState.empresa.length?_mfState.empresa:null;
+  const fu=_mfState.usuario.length?_mfState.usuario:null;
+  if(!fe&&!fu)return locs;
   const out={};
   Object.entries(locs).forEach(([k,u])=>{
-    if(fe.length&&!fe.includes(u.empresa||''))return;
-    if(fu.length&&!fu.includes(u.email))return;
+    if(fe&&!fe.includes(u.empresa||''))return;
+    if(fu&&!fu.includes(u.email))return;
     out[k]=u;
   });
   return out;
 }
+
 function applyMapFilters(){
   if(!_allLocs||Object.keys(_allLocs).length===0)return;
   loadLiveLocations();
 }
+
 function clearMapFilters(){
-  const selU=document.getElementById('mf-usuario');
-  const selE=document.getElementById('mf-empresa');
-  if(selE)Array.from(selE.options).forEach(o=>o.selected=false);
-  // Restaurar todos los usuarios en el select de usuario
-  if(selU){
-    const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
-    selU.innerHTML=registrados.map(u=>{
-      const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
-      return `<option value="${esc(u.email)}">${esc(label)}</option>`;
-    }).join('');
-  }
+  _mfState={empresa:[],usuario:[]};
+  _mfUpdateBadges();
+  _updateMapFilterOptions();
   loadLiveLocations();
+}
+
+function _mfUpdateSummary(total, filtered){
+  const el=document.getElementById('mf-summary');
+  if(!el)return;
+  const anyFilter=_mfState.empresa.length||_mfState.usuario.length;
+  if(!anyFilter){
+    el.textContent=total?`${total} usuario${total!==1?'s':''} en mapa`:'';
+  }else{
+    el.innerHTML=`Mostrando <b>${filtered}</b> de <b>${total}</b> usuario${total!==1?'s':''}`;
+  }
 }
 
 /* ════════════════════════════════════════════════════════
