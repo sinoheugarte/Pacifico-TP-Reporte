@@ -935,20 +935,39 @@ body.has-pending .pending-dot{display:inline-block}
   .scr{margin-left:220px;padding-bottom:40px}
 
   /* ══ PANTALLA: REGISTROS (list) ══ */
-  .stats{grid-template-columns:repeat(3,1fr);padding:20px 32px 8px;gap:12px}
-  .stats-row2{padding:0 32px 8px;gap:12px}
-  .sc .v{font-size:22px}
+  /* Todos los KPIs en una sola fila */
+  #stats-wrap{
+    display:flex;gap:16px;
+    padding:20px 32px 10px
+  }
+  #stats-wrap .stats{
+    flex:3;display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;padding:0
+  }
+  #stats-wrap .stats-row2{
+    flex:2;display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;padding:0
+  }
+  .sc{padding:18px 16px}
+  .sc .v{font-size:28px}
+  .sc .l{font-size:11px;margin-top:4px}
   #scr-list .sbar{padding:12px 32px 0}
   #scr-list .fpills{padding:10px 32px 6px}
   #scr-list .lmeta{padding:6px 32px 0;font-size:13px}
   .rlist{
-    padding:10px 32px;
+    padding:12px 32px 32px;
     display:grid;
     grid-template-columns:repeat(2,1fr);
-    gap:12px
+    gap:16px
   }
-  .rc{font-size:13px}
-  .rc-main{font-size:15px}
+  .rc{font-size:13px;padding:18px}
+  .rc-main{font-size:16px}
+  .rc-sub{font-size:13px}
+  .rc-top{margin-bottom:14px}
+  .rc-num{font-size:12px;padding:3px 8px}
+  .rc-date{font-size:12px}
 
   /* ══ PANTALLA: FORMULARIO (nuevo / editar) ══ */
   .fhdr{padding:24px 32px 8px}
@@ -1259,8 +1278,10 @@ body.has-pending .pending-dot{display:inline-block}
 
 <!-- LIST -->
 <div class="scr on" id="scr-list">
-  <div class="stats" id="stats"></div>
-  <div class="stats-row2" id="stats2"></div>
+  <div id="stats-wrap">
+    <div class="stats" id="stats"></div>
+    <div class="stats-row2" id="stats2"></div>
+  </div>
   <div class="sbar">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
