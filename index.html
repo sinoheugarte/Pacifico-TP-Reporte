@@ -1447,8 +1447,7 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="users-hdr-sub" id="users-admin-label"></div>
     </div>
     <div class="users-hdr-actions" id="users-hdr-actions">
-      <button class="btn-usr-sync" onclick="syncUsersAction()" title="Descargar usuarios de SharePoint">↓ Cargar</button>
-      <button class="btn-usr-sync" onclick="pushUsersAction()" title="Subir usuarios a SharePoint" style="margin-right:0">↑ Subir</button>
+      <button class="btn-usr-sync" onclick="syncUsersAction()" title="Sincronizar usuarios ahora" id="btn-users-sync">⟳ Sincronizar</button>
       <button class="btn-usr-add" onclick="openUserModal()">+ Añadir</button>
     </div>
   </div>
@@ -2375,7 +2374,7 @@ function showScr(name){
   else if(name==='detail'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';}
   else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
-  else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();}
+  else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});startUsersAutoRefresh();}
   else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
@@ -6789,11 +6788,20 @@ function enterAdminMode(){
 
 function adminSignOut(){
   _adminMode=false;
+  stopUsersAutoRefresh();
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='none';
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='none';
   showScr('list');
+}
+
+let _usersRefInterval=null;
+
+async function _usuariosPath(){
+  if(cfg.dbStorage==='od') return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
+  const driveId=await ensureSPDrive();
+  return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
 }
 
 function loadSysUsers(){
@@ -6804,8 +6812,8 @@ function loadSysUsers(){
 async function loadUsersFromSP(){
   if(!token)return;
   try{
-    const driveId=await ensureSPDrive();
-    const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}?$select=@microsoft.graph.downloadUrl`);
+    const basePath=await _usuariosPath();
+    const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
     const dlUrl=item['@microsoft.graph.downloadUrl'];
     const res=await fetch(dlUrl+'&t='+Date.now());
     if(!res.ok)return;
@@ -6819,9 +6827,22 @@ async function loadUsersFromSP(){
 
 async function pushUsersSP(){
   if(!token)return;
-  const driveId=await ensureSPDrive();
+  const basePath=await _usuariosPath();
   const content=JSON.stringify(_sysUsers,null,2);
-  await gPut(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}:/content`,content,'application/json');
+  await gPut(`${basePath}:/content`,content,'application/json');
+}
+
+function startUsersAutoRefresh(){
+  clearInterval(_usersRefInterval);
+  _usersRefInterval=setInterval(()=>{
+    if(!document.getElementById('scr-users')?.classList.contains('on'))return;
+    loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions({});}).catch(()=>{});
+  },60000);
+}
+
+function stopUsersAutoRefresh(){
+  clearInterval(_usersRefInterval);
+  _usersRefInterval=null;
 }
 
 function renderUsersScreen(){
@@ -6901,18 +6922,24 @@ async function deleteUser(idx){
   const removed=_sysUsers.splice(idx,1)[0];
   localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
   renderUsersScreen();
-  toast('✓ Usuario eliminado');
+  toast('✓ Usuario eliminado — actualizando…');
+  pushUsersAction().catch(()=>{});
   addAudit('user_del',removed?.email||'',{nombre:removed?.nombre});
 }
 
 async function syncUsersAction(){
-  toast('⟳ Descargando usuarios de SharePoint…');
+  const btn=document.getElementById('btn-users-sync');
+  if(btn)btn.disabled=true;
+  toast('⟳ Sincronizando usuarios…');
   try{
     await loadUsersFromSP();
     renderUsersScreen();
-    toast('✓ Usuarios cargados de SharePoint');
+    _updateMapFilterOptions({});
+    toast('✓ Usuarios sincronizados');
   }catch(e){
-    toast('⚠ Error al cargar: '+(e.message||'').slice(0,50));
+    toast('⚠ Error al sincronizar: '+(e.message||'').slice(0,50));
+  }finally{
+    if(btn)btn.disabled=false;
   }
 }
 async function pushUsersAction(){
