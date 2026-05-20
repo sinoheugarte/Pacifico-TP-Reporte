@@ -7785,6 +7785,7 @@ function animatedRefreshMap(){
 let _allLocs={};
 // Estado de filtros del mapa
 let _mfState={empresa:[],usuario:[]};
+let _mfNone={empresa:false,usuario:false}; // true = "Todos" desmarcado, nada seleccionado
 
 function _mfUserLabel(u){return((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';}
 
@@ -7806,27 +7807,28 @@ function _mfRenderList(type, items){
   list.innerHTML=items.map(item=>`
     <label class="mf-opt">
       <input type="checkbox" value="${esc(item.val)}"
-        ${sel.includes(item.val)||sel.length===0?'checked':''}
+        ${(sel.includes(item.val)||(!_mfNone[type]&&sel.length===0))?'checked':''}
         onchange="_mfCheck('${type}',this)">
       <span>${esc(item.label)}</span>
     </label>`).join('');
   // Actualizar checkbox "seleccionar todos"
   const ca=document.getElementById('mfca-'+type);
-  if(ca) ca.checked=sel.length===0||sel.length===items.length;
+  if(ca) ca.checked=!_mfNone[type]&&(sel.length===0||sel.length===items.length);
 }
 
 function _mfCheck(type, cb){
   const val=cb.value;
   if(cb.checked){
+    _mfNone[type]=false;
     if(!_mfState[type].includes(val)) _mfState[type].push(val);
   }else{
     _mfState[type]=_mfState[type].filter(v=>v!==val);
+    if(_mfState[type].length===0) _mfNone[type]=true;
   }
-  // Si nada marcado, tratar como "todos"
   const list=document.getElementById('mfl-'+type);
   const total=list?list.querySelectorAll('input[type=checkbox]').length:0;
   const ca=document.getElementById('mfca-'+type);
-  if(ca) ca.checked=_mfState[type].length===0||_mfState[type].length===total;
+  if(ca) ca.checked=!_mfNone[type]&&(_mfState[type].length===0||_mfState[type].length===total);
   // Cascada: al cambiar empresa recalcular usuarios visibles
   if(type==='empresa'){
     const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
@@ -7843,13 +7845,13 @@ function mfSelAll(type, cb){
   const list=document.getElementById('mfl-'+type);
   if(!list)return;
   list.querySelectorAll('input[type=checkbox]').forEach(inp=>{inp.checked=cb.checked;});
-  _mfState[type]=cb.checked?[]:[...list.querySelectorAll('input[type=checkbox]')].map(i=>i.value);
+  _mfNone[type]=!cb.checked;
+  _mfState[type]=cb.checked?[]:[];  // [] = todos cuando Todos marcado; [] + _mfNone = nada
   if(type==='empresa'){
     const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
-    const visibles=_mfState.empresa.length
-      ? registrados.filter(u=>_mfState.empresa.includes(u.empresa||''))
-      : registrados;
+    const visibles=registrados; // sin filtro de empresa = todos
     _mfState.usuario=[];
+    _mfNone.usuario=!cb.checked;
     _mfRenderList('usuario', visibles.map(u=>({val:u.email,label:_mfUserLabel(u)})));
   }
 }
@@ -7892,26 +7894,30 @@ function mfApply(type){
 function _mfUpdateBadges(){
   ['empresa','usuario'].forEach(type=>{
     const sel=_mfState[type];
+    const none=_mfNone[type];
     const btn=document.getElementById('mfb-'+type);
     const badge=document.getElementById('mfbadge-'+type);
     if(!btn||!badge)return;
     const total=document.getElementById('mfl-'+type)?.querySelectorAll('.mf-opt').length||0;
-    if(sel.length===0){
-      // Sin filtro: mostrar "Todas/Todos · N"
+    if(none){
+      badge.textContent='Ninguno';
+      btn.classList.add('filtered');
+    }else if(sel.length===0){
       badge.textContent=total?(type==='empresa'?'Todas':'Todos')+' · '+total:(type==='empresa'?'Todas':'Todos');
       btn.classList.remove('filtered');
     }else{
-      // Con filtro: X de Y
       badge.textContent=sel.length+' de '+(total||sel.length);
       btn.classList.add('filtered');
     }
   });
-  const anyFilter=_mfState.empresa.length||_mfState.usuario.length;
+  const anyFilter=_mfNone.empresa||_mfNone.usuario||_mfState.empresa.length||_mfState.usuario.length;
   const clrBtn=document.getElementById('mf-clear-btn');
   if(clrBtn)clrBtn.style.display=anyFilter?'':'none';
 }
 
 function _applyLocFilter(locs){
+  // _mfNone=true significa que ese filtro excluye todo
+  if(_mfNone.empresa||_mfNone.usuario) return {};
   const fe=_mfState.empresa.length?_mfState.empresa:null;
   const fu=_mfState.usuario.length?_mfState.usuario:null;
   if(!fe&&!fu)return locs;
@@ -7931,6 +7937,7 @@ function applyMapFilters(){
 
 function clearMapFilters(){
   _mfState={empresa:[],usuario:[]};
+  _mfNone={empresa:false,usuario:false};
   _mfUpdateBadges();
   _updateMapFilterOptions();
   loadLiveLocations();
