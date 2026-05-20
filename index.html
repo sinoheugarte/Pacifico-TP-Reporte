@@ -636,6 +636,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] #signature-pad-wrap{background:#fff !important;border-color:#334155 !important}
 [data-theme="dark"] #sig-hint{color:#475569}
 [data-theme="dark"] .sc .v{color:#e2e8f0}
+/* ── DASHBOARD CARDS Y TÍTULOS ── */
+.dash-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.dash-card-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+[data-theme="dark"] .dash-card{background:#1e293b !important;border-color:#334155 !important}
+[data-theme="dark"] .dash-card-title{color:#93c5fd !important}
+/* Título principal "Dashboard Ejecutivo" */
+[data-theme="dark"] #scr-dashboard .dash-exec-title{color:#e2e8f0 !important}
+/* Columna Orden de tabla Reportes */
+[data-theme="dark"] .rtbl td.td-orden{color:#93c5fd}
 [data-theme="dark"] .sc.green .v{color:var(--green)}
 [data-theme="dark"] .sc.amber .v{color:#fbbf24}
 [data-theme="dark"] .sc.blue .v{color:#60a5fa}
@@ -1444,7 +1453,7 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="fp" data-f="cancelado" onclick="setDashFil(this)">Cancelado</div>
   </div>
   <div style="padding:0 14px 8px;display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:15px;font-weight:700;color:var(--navy)">Dashboard Ejecutivo</div>
+    <div class="dash-exec-title" style="font-size:15px;font-weight:700;color:var(--navy)">Dashboard Ejecutivo</div>
     <div style="display:flex;gap:8px">
       <button onclick="showExportFilter('pdf')" style="background:var(--red-light);color:var(--red);border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF
@@ -1476,56 +1485,56 @@ body.has-pending .pending-dot{display:inline-block}
   <div style="padding:0 14px;display:flex;flex-direction:column;gap:14px;padding-bottom:20px">
 
     <!-- Status pie -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Estado de Reportes</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Estado de Reportes</div>
       <div style="position:relative;height:200px"><canvas id="chartStatus"></canvas></div>
     </div>
 
     <!-- Motivos donut -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Motivos de Traslado</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Motivos de Traslado</div>
       <div style="position:relative;height:180px"><canvas id="chartMotivos"></canvas></div>
     </div>
 
     <!-- Transportistas bar -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Top Transportistas</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Top Transportistas</div>
       <div style="position:relative;height:220px"><canvas id="chartTransp"></canvas></div>
     </div>
 
     <!-- Unidades bar -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Tipos de Unidad</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Tipos de Unidad</div>
       <div style="position:relative;height:200px"><canvas id="chartUnidad"></canvas></div>
     </div>
 
     <!-- Tendencia mensual line -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Tendencia Mensual</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Tendencia Mensual</div>
       <div style="position:relative;height:200px"><canvas id="chartMensual"></canvas></div>
     </div>
 
     <!-- Rutas -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Top Rutas</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Top Rutas</div>
       <div style="position:relative;height:220px"><canvas id="chartRutas"></canvas></div>
     </div>
 
     <!-- Cantidades bar -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Totales de Carga</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Totales de Carga</div>
       <div style="position:relative;height:180px"><canvas id="chartCarga"></canvas></div>
     </div>
 
     <!-- ÓRDENES CON MÚLTIPLES VIAJES -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Órdenes con Múltiples Viajes</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Órdenes con Múltiples Viajes</div>
       <div id="tblMultiViajes" style="overflow-x:auto"></div>
     </div>
 
     <!-- ÚLTIMOS REGISTROS -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Últimos 5 Registros</div>
+    <div class="dash-card">
+      <div class="dash-card-title">Últimos 5 Registros</div>
       <div id="tblUltimos" style="overflow-x:auto"></div>
     </div>
 
@@ -4060,8 +4069,10 @@ function renderDashboard(){
   });
   const multiViajes=Object.values(ovMap).filter(v=>v.recs>1).sort((a,b)=>b.recs-a.recs);
   const tblS='style="width:100%;border-collapse:collapse;font-size:12px"';
-  const thS='style="background:#0f2340;color:#fff;padding:8px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em"';
-  const tdS=(i)=>`style="padding:8px 10px;border-bottom:1px solid #e2e8f0;background:${i%2===0?'#fff':'#f8fafc'}"`;
+  const _dk=document.documentElement.dataset.theme==='dark';
+  const thS=`style="background:${_dk?'#1e3a5f':'#0f2340'};color:#e2e8f0;padding:8px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em"`;
+  const tdS=(i)=>`style="padding:8px 10px;border-bottom:1px solid ${_dk?'#334155':'#e2e8f0'};background:${_dk?(i%2===0?'#1e293b':'#0f172a'):(i%2===0?'#fff':'#f8fafc')};color:${_dk?'#e2e8f0':'#0f172a'}"`;
+
   if(multiViajes.length>0){
     let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Motivo</th><th ${thS}>Viajes</th><th ${thS}>Registros</th></tr>`;
     multiViajes.slice(0,10).forEach((v,i)=>{
