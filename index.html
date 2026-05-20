@@ -7634,19 +7634,93 @@ let _trackInterval=null;
 let _liveMap=null;
 let _liveMarkers={};
 let _mapRefInterval=null;
+let _watchId=null;      // ID de watchPosition activo
+let _wakeLock=null;     // Screen Wake Lock
+let _lastPos=null;      // Última posición conocida (para publicar al ir a background)
+let _pubThrottle=null;  // Throttle: evitar publicar más de 1 vez cada 15s
+
+/* ── WAKE LOCK: mantiene la pantalla encendida ── */
+async function _requestWakeLock(){
+  if(!('wakeLock' in navigator))return;
+  try{
+    _wakeLock=await navigator.wakeLock.request('screen');
+    _wakeLock.addEventListener('release',()=>{
+      // El sistema liberó el lock (llamada, batería baja, etc.) — reintentar al volver
+      _wakeLock=null;
+    });
+  }catch(e){console.log('WakeLock:',e.message);}
+}
+
+async function _releaseWakeLock(){
+  if(_wakeLock){try{await _wakeLock.release();}catch{}  _wakeLock=null;}
+}
+
+/* ── VISIBILITYCHANGE: detectar cuando el usuario minimiza ── */
+function _onVisibilityChange(){
+  if(document.hidden){
+    // App en segundo plano: publicar última posición conocida y avisar
+    if(_lastPos) _doPublish(_lastPos).catch(()=>{});
+    _setMapGpsStatus('⏸ App en segundo plano — rastreo pausado. Vuelve a la app para continuar.','warn');
+  }else{
+    // App vuelve al frente: reactivar Wake Lock y limpiar aviso
+    _requestWakeLock();
+    if(_lastPos) _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(_lastPos.coords.accuracy)}m`,'green');
+  }
+}
 
 async function startLocationTracking(){
   if(!user)return;
+  // Detener tracking anterior
+  if(_watchId!=null){navigator.geolocation.clearWatch(_watchId);_watchId=null;}
   clearInterval(_trackInterval);
-  // Primera publicación con pequeño delay para que el token esté listo
-  setTimeout(_publishPosition,2000);
-  _trackInterval=setInterval(_publishPosition,30000);
+
+  // Solicitar Wake Lock para mantener pantalla encendida
+  await _requestWakeLock();
+
+  // Escuchar cambios de visibilidad
+  document.removeEventListener('visibilitychange',_onVisibilityChange);
+  document.addEventListener('visibilitychange',_onVisibilityChange);
+
+  // watchPosition: GPS continuo, callback en cada cambio de posición
+  if(navigator.geolocation){
+    _watchId=navigator.geolocation.watchPosition(
+      pos=>{
+        _lastPos=pos;
+        if(document.hidden)return; // app en background — no publicar en intervalo
+        // Throttle: publicar máx. 1 vez cada 15 segundos
+        if(_pubThrottle)return;
+        _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
+        _doPublish(pos).catch(()=>{});
+      },
+      err=>{
+        let txt='';
+        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — activa el GPS en ajustes';
+        else if(err.code===2) txt='📡 Sin señal GPS — asegúrate de tener cobertura';
+        else if(err.code===3) txt='⏱ Tiempo de espera GPS agotado — reintentando…';
+        else                  txt='❓ Error GPS: '+err.message;
+        _setMapGpsStatus(txt, err.code===1?'red':'warn');
+      },
+      {enableHighAccuracy:true,maximumAge:5000,timeout:15000}
+    );
+    // Primera publicación inmediata
+    setTimeout(()=>{
+      if(_lastPos)_doPublish(_lastPos).catch(()=>{});
+      else navigator.geolocation.getCurrentPosition(
+        pos=>{_lastPos=pos;_doPublish(pos).catch(()=>{});},
+        ()=>{},
+        {enableHighAccuracy:true,timeout:12000}
+      );
+    },1500);
+  }
 }
 
 function stopLocationTracking(){
+  if(_watchId!=null){navigator.geolocation.clearWatch(_watchId);_watchId=null;}
   clearInterval(_trackInterval);
   clearInterval(_mapRefInterval);
   _trackInterval=null;
+  _releaseWakeLock();
+  document.removeEventListener('visibilitychange',_onVisibilityChange);
 }
 
 // ubicaciones.json es siempre compartido — intentar SP primero, OD personal como último recurso
@@ -7676,52 +7750,38 @@ function _setMapGpsStatus(msg, color){
   el.textContent=msg;
 }
 
-async function _publishPosition(){
-  if(!navigator.geolocation||!token||!user)return;
-  navigator.geolocation.getCurrentPosition(
-    async pos=>{
-      try{
-        const basePath=await _ubicacionesReadPath();
-        let locs={};
-        try{
-          const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
-          const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
-          if(r.ok)locs=await r.json();
-        }catch{}
-        const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
-        locs[user.email]={
-          nombre:(meUser?(meUser.nombre||'')+(meUser.apellidos?' '+meUser.apellidos:''):'')||user.name||user.email,
-          email:user.email,
-          empresa:meUser?.empresa||'',
-          lat:pos.coords.latitude,
-          lon:pos.coords.longitude,
-          acc:Math.round(pos.coords.accuracy),
-          speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null,
-          heading:pos.coords.heading,
-          ts:new Date().toISOString(),
-          rol:userRole||'conductor',
-        };
-        await gPut(`${basePath}:/content`,JSON.stringify(locs),'application/json');
-        _setMapGpsStatus(`📍 Tu ubicación publicada · ±${Math.round(pos.coords.accuracy)}m`,'green');
-        if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
-      }catch(e){
-        const msg=e.message||'';
-        console.log('_publishPosition error:',msg.slice(0,80));
-        _setMapGpsStatus('⚠ Error al publicar ubicación: '+msg.slice(0,60),'red');
-      }
-    },
-    err=>{
-      // Callback de error de geolocalización (permiso denegado, timeout, etc.)
-      let txt='';
-      if(err.code===1)      txt='⛔ Permiso de ubicación denegado — activa el GPS en ajustes de la app/navegador';
-      else if(err.code===2) txt='📡 No se pudo obtener señal GPS — asegúrate de estar en un área con cobertura';
-      else if(err.code===3) txt='⏱ Tiempo de espera GPS agotado — intentando de nuevo…';
-      else                  txt='❓ Error GPS: '+err.message;
-      console.log('GPS error code',err.code,err.message);
-      _setMapGpsStatus(txt, err.code===1?'red':'warn');
-    },
-    {maximumAge:5000,timeout:12000,enableHighAccuracy:true}
-  );
+async function _doPublish(pos){
+  if(!token||!user)return;
+  try{
+    const basePath=await _ubicacionesReadPath();
+    let locs={};
+    try{
+      const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
+      const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
+      if(r.ok)locs=await r.json();
+    }catch{}
+    const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
+    locs[user.email]={
+      nombre:(meUser?(meUser.nombre||'')+(meUser.apellidos?' '+meUser.apellidos:''):'')||user.name||user.email,
+      email:user.email,
+      empresa:meUser?.empresa||'',
+      lat:pos.coords.latitude,
+      lon:pos.coords.longitude,
+      acc:Math.round(pos.coords.accuracy),
+      speed:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):null,
+      heading:pos.coords.heading,
+      ts:new Date().toISOString(),
+      rol:userRole||'conductor',
+    };
+    await gPut(`${basePath}:/content`,JSON.stringify(locs),'application/json');
+    if(!document.hidden)
+      _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(pos.coords.accuracy)}m`,'green');
+    if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
+  }catch(e){
+    const msg=e.message||'';
+    console.log('_doPublish error:',msg.slice(0,80));
+    if(!document.hidden)_setMapGpsStatus('⚠ Error al publicar ubicación: '+msg.slice(0,60),'red');
+  }
 }
 
 async function initLiveMap(){
