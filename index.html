@@ -1045,6 +1045,55 @@ body.has-pending .pending-dot{display:inline-block}
     border-radius:14px
   }
 }
+/* ═══════════════════════════════════════════════════════
+   IA ANALYTICS — Chat + Auto-análisis
+   ═══════════════════════════════════════════════════════ */
+.ai-card{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.ai-card-hdr{background:linear-gradient(135deg,#0f2340 0%,#1a3a5c 100%);color:#fff;padding:13px 16px;display:flex;align-items:center;gap:10px}
+.ai-hdr-icon{width:30px;height:30px;background:rgba(245,158,11,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-hdr-text{flex:1;min-width:0}
+.ai-hdr-title{font-size:13px;font-weight:700}
+.ai-hdr-sub{font-size:10px;opacity:.55;margin-top:1px}
+.ai-toggle-btn{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:4px;display:flex;align-items:center;transition:transform .2s}
+.ai-toggle-btn.open{transform:rotate(180deg)}
+.ai-body{border-top:1px solid var(--border)}
+.ai-actions{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg)}
+.ai-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 6px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--text);font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s}
+.ai-action-btn:hover{border-color:var(--navy);color:var(--navy)}
+.ai-action-btn:active{background:var(--bg)}
+.ai-action-btn.loading{opacity:.6;pointer-events:none}
+.ai-analysis-zone{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.ai-result-card{border-radius:var(--rs);padding:10px 12px;font-size:12px;line-height:1.7;border:1px solid var(--border);background:var(--bg)}
+.ai-result-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ai-chat-msgs{height:260px;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin;background:#fff}
+.ai-bubble{max-width:88%;padding:8px 11px;border-radius:12px;font-size:12px;line-height:1.65;word-break:break-word;white-space:pre-wrap}
+.ai-bubble.user{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.ai-bubble.bot{background:var(--bg);border:1px solid var(--border);color:var(--text);align-self:flex-start;border-bottom-left-radius:3px}
+.ai-bubble.typing{opacity:.6;font-style:italic}
+.ai-chat-bar{display:flex;gap:7px;padding:8px 10px;border-top:1px solid var(--border);background:#fff}
+.ai-chat-inp{flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;outline:none;resize:none;min-height:36px;max-height:72px;line-height:1.4}
+.ai-chat-inp:focus{border-color:var(--navy)}
+.ai-send{width:36px;height:36px;border-radius:var(--rs);background:var(--navy);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.ai-send:disabled{opacity:.4;cursor:default}
+.ai-send:not(:disabled):active{background:var(--navy2)}
+.ai-nokey{padding:18px 14px;text-align:center;font-size:12px;color:var(--text2);line-height:1.7;background:#fff}
+.ai-nokey strong{display:block;font-size:13px;color:var(--text);margin-bottom:6px}
+.ai-nokey-btn{display:inline-block;margin-top:10px;background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:8px 18px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+/* dark */
+[data-theme="dark"] .ai-card{border-color:#334155}
+[data-theme="dark"] .ai-body{border-color:#334155}
+[data-theme="dark"] .ai-actions{background:#0f172a;border-color:#334155}
+[data-theme="dark"] .ai-action-btn{background:#1e293b;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .ai-action-btn:hover{border-color:#93c5fd;color:#93c5fd}
+[data-theme="dark"] .ai-analysis-zone{border-color:#334155}
+[data-theme="dark"] .ai-result-card{background:#0f172a;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .ai-result-label{color:#94a3b8}
+[data-theme="dark"] .ai-chat-msgs{background:#1e293b}
+[data-theme="dark"] .ai-bubble.bot{background:#0f172a;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .ai-chat-bar{background:#1e293b;border-color:#334155}
+[data-theme="dark"] .ai-chat-inp{background:#0f172a;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .ai-nokey{background:#1e293b;color:#94a3b8}
+[data-theme="dark"] .ai-nokey strong{color:#e2e8f0}
 </style>
 </head>
 <body>
@@ -1431,6 +1480,24 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="srv" id="sPending">0<span class="pending-dot"></span></div>
     </div>
   </div>
+  <div class="ssec" id="settings-sec-ai" style="display:none">
+    <div class="ssect">Inteligencia Artificial</div>
+    <div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div><div class="srl">API Key de Claude</div><div class="srs">Necesaria para el chatbot IA en el Dashboard</div></div>
+      <div style="display:flex;gap:8px;width:100%">
+        <input type="password" id="ai-key-inp" placeholder="sk-ant-api…" autocomplete="off"
+          style="flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);background:#fff;outline:none;transition:border-color .15s"
+          oninput="this.style.borderColor='var(--navy)'"
+          value="">
+        <button onclick="saveAIKey()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">Guardar</button>
+      </div>
+      <div id="ai-key-status" style="font-size:11px;color:var(--green);display:none">✓ Clave guardada</div>
+    </div>
+    <div class="srow">
+      <div><div class="srl">Modelo</div><div class="srs">claude-sonnet-4-6 (recomendado)</div></div>
+      <div class="srv" style="color:var(--text)">Sonnet 4.6</div>
+    </div>
+  </div>
   <div style="padding:16px 18px">
     <button class="btn-logout" onclick="signOut()">Cerrar sesión de Microsoft</button>
   </div>
@@ -1547,6 +1614,25 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="dash-card">
       <div class="dash-card-title">Últimos 5 Registros</div>
       <div id="tblUltimos" style="overflow-x:auto"></div>
+    </div>
+
+    <!-- IA ANALYTICS -->
+    <div class="ai-card" id="ai-dash-card">
+      <div class="ai-card-hdr">
+        <div class="ai-hdr-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3" fill="#f59e0b" stroke="none"/></svg>
+        </div>
+        <div class="ai-hdr-text">
+          <div class="ai-hdr-title">IA Analytics · Claude</div>
+          <div class="ai-hdr-sub">Análisis inteligente de tus datos de transporte</div>
+        </div>
+        <button class="ai-toggle-btn open" id="ai-toggle-btn" onclick="toggleAIPanel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      </div>
+      <div class="ai-body" id="ai-body">
+        <div id="ai-content"></div>
+      </div>
     </div>
 
   </div>
@@ -2671,7 +2757,7 @@ function showScr(name){
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
   else if(name==='detail'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';}
-  else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();}
+  else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();_showAISettings?.();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
   else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});startUsersAutoRefresh();}
   else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
@@ -7819,6 +7905,238 @@ loadCacheRecordsAsync().then(()=>{ renderList(); updatePendingIndicator(); }).ca
 tryAutoLogin().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!navigator.onLine) document.body.classList.add('is-offline');
+
+/* ═══════════════════════════════════════════════════════
+   IA ANALYTICS — Claude API Chatbot + Auto-análisis
+   ═══════════════════════════════════════════════════════ */
+let _aiHistory=[];
+const AI_MODEL='claude-sonnet-4-6';
+const AI_MAX_TOKENS=1200;
+
+function _aiKey(){return localStorage.getItem('ptp_claude_key')||'';}
+
+function saveAIKey(){
+  const v=document.getElementById('ai-key-inp')?.value?.trim();
+  if(!v){toast('⚠ Ingresa una clave válida');return;}
+  localStorage.setItem('ptp_claude_key',v);
+  const st=document.getElementById('ai-key-status');
+  if(st){st.style.display='';setTimeout(()=>st.style.display='none',3000);}
+  toast('✓ Clave API de Claude guardada');
+  renderAIContent();
+}
+
+/* Mostrar sección AI en Settings solo para admin */
+function _showAISettings(){
+  const sec=document.getElementById('settings-sec-ai');
+  if(sec)sec.style.display=(userRole==='admin'||userRole==='supervisor')?'':'none';
+  const inp=document.getElementById('ai-key-inp');
+  if(inp&&!inp.value)inp.value=_aiKey();
+}
+
+/* Toggle panel IA */
+function toggleAIPanel(){
+  const body=document.getElementById('ai-body');
+  const btn=document.getElementById('ai-toggle-btn');
+  if(!body||!btn)return;
+  const hidden=body.style.display==='none';
+  body.style.display=hidden?'':'none';
+  btn.classList.toggle('open',hidden);
+}
+
+/* Construye contexto de datos para Claude */
+function _buildAIContext(){
+  const recs=getFilteredRecords?.()??records;
+  const total=recs.length;
+  const byStatus={},byTransp={},byRuta={},byMotivo={},byMes={},byUnidad={};
+  let paletas=0,cajas=0,sobres=0;
+  const hoy=new Date();
+  const semanaAtras=new Date(hoy-7*864e5);
+
+  recs.forEach(r=>{
+    byStatus[r.status||'sin_estado']=(byStatus[r.status||'sin_estado']||0)+1;
+    if(r.transportista)byTransp[r.transportista]=(byTransp[r.transportista]||0)+1;
+    if(r.ruta)byRuta[r.ruta]=(byRuta[r.ruta]||0)+1;
+    if(r.motivo)byMotivo[r.motivo]=(byMotivo[r.motivo]||0)+1;
+    if(r.tipoUnidad)byUnidad[r.tipoUnidad]=(byUnidad[r.tipoUnidad]||0)+1;
+    if(r.fechaInicio){const m=r.fechaInicio.slice(0,7);byMes[m]=(byMes[m]||0)+1;}
+    paletas+=(parseInt(r.paletas)||0);
+    cajas+=(parseInt(r.cajas)||0);
+    sobres+=(parseInt(r.sobres)||0);
+  });
+
+  const top=obj=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const ultimos=recs.slice(-15).map(r=>({
+    orden:r.orden,fecha:r.fechaInicio,transportista:r.transportista,
+    ruta:r.ruta,status:r.status,motivo:r.motivo,
+    viaje:r.viaje,turno:r.turnoInicio
+  }));
+  const estaSemana=recs.filter(r=>r.fechaInicio&&new Date(r.fechaInicio)>=semanaAtras);
+
+  return JSON.stringify({
+    resumen:{total,semanaActual:estaSemana.length,paletas,cajas,sobres},
+    porEstado:byStatus,
+    topTransportistas:top(byTransp),
+    topRutas:top(byRuta),
+    porMotivo:byMotivo,
+    porTipoUnidad:byUnidad,
+    tendenciaMensual:Object.entries(byMes).sort(),
+    ultimos15Registros:ultimos
+  },null,2);
+}
+
+const _AI_SYSTEM=`Eres el asistente de análisis de datos de Pacífico Transportation SAC, empresa peruana de logística y transporte.
+Tienes acceso en tiempo real a los registros de transporte de la empresa.
+REGLAS:
+- Responde SIEMPRE en español, de forma concisa y directa.
+- Usa los datos del contexto para responder preguntas numéricas con precisión.
+- Para anomalías: identifica patrones inusuales, cancelaciones altas, concentración extrema en un proveedor, etc.
+- Para predicciones: basa tus estimaciones en la tendencia mensual histórica.
+- Usa emojis con moderación para hacer la respuesta más legible.
+- Nunca inventes datos que no estén en el contexto.`;
+
+async function _callClaude(messages){
+  const key=_aiKey();
+  if(!key)throw new Error('NO_KEY');
+  const ctx=_buildAIContext();
+  const system=_AI_SYSTEM+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({model:AI_MODEL,max_tokens:AI_MAX_TOKENS,system,messages})
+  });
+  if(!resp.ok){
+    const err=await resp.json().catch(()=>({}));
+    throw new Error(err.error?.message||`HTTP ${resp.status}`);
+  }
+  const data=await resp.json();
+  return data.content[0].text;
+}
+
+/* Render del contenido del panel IA */
+function renderAIContent(){
+  const wrap=document.getElementById('ai-content');
+  if(!wrap)return;
+  if(!_aiKey()){
+    wrap.innerHTML=`<div class="ai-nokey">
+      <strong>🤖 Configura tu API Key de Claude</strong>
+      Para activar el asistente IA ve a <b>Ajustes → Inteligencia Artificial</b><br>
+      e ingresa tu clave de Anthropic.
+      <br><button class="ai-nokey-btn" onclick="showScr('settings')">Ir a Ajustes →</button>
+    </div>`;
+    return;
+  }
+  if(_aiHistory.length===0)_aiHistory=[{role:'assistant',content:'¡Hola! Soy el asistente IA de Pacífico TP 🚛\n\nPuedes preguntarme sobre tus datos. Ejemplos:\n• "¿Cuántas entregas hizo BRUNNEN esta semana?"\n• "¿Cuál es la ruta más operada?"\n• "Detecta anomalías en los datos"\n• "¿Qué predices para el próximo mes?"'}];
+  wrap.innerHTML=`
+    <div class="ai-actions">
+      <button class="ai-action-btn" id="ai-btn-anomalias" onclick="runAutoAnalysis('anomalias')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Detectar anomalías
+      </button>
+      <button class="ai-action-btn" id="ai-btn-prediccion" onclick="runAutoAnalysis('prediccion')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Predecir demanda
+      </button>
+    </div>
+    <div id="ai-analysis-zone" style="display:none" class="ai-analysis-zone"></div>
+    <div class="ai-chat-msgs" id="ai-chat-msgs">${_renderAIHistory()}</div>
+    <div class="ai-chat-bar">
+      <textarea class="ai-chat-inp" id="ai-chat-inp" placeholder="Pregunta sobre tus datos de transporte…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,72)+'px'"></textarea>
+      <button class="ai-send" id="ai-send-btn" onclick="sendAIMessage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>`;
+  _scrollAIChat();
+}
+
+function _renderAIHistory(){
+  return _aiHistory.map(m=>`<div class="ai-bubble ${m.role==='user'?'user':'bot'}">${esc(m.content)}</div>`).join('');
+}
+
+function _scrollAIChat(){
+  setTimeout(()=>{const el=document.getElementById('ai-chat-msgs');if(el)el.scrollTop=el.scrollHeight;},50);
+}
+
+async function sendAIMessage(){
+  const inp=document.getElementById('ai-chat-inp');
+  const btn=document.getElementById('ai-send-btn');
+  if(!inp||!btn)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';inp.style.height='auto';
+  btn.disabled=true;
+
+  _aiHistory.push({role:'user',content:text});
+  const msgs=document.getElementById('ai-chat-msgs');
+  if(msgs){
+    msgs.innerHTML=_renderAIHistory();
+    msgs.innerHTML+=`<div class="ai-bubble bot typing">✦ Analizando…</div>`;
+    _scrollAIChat();
+  }
+
+  try{
+    const apiMsgs=_aiHistory.filter(m=>m.role!=='assistant'||_aiHistory.indexOf(m)>0)
+      .map(m=>({role:m.role,content:m.content}));
+    const reply=await _callClaude(apiMsgs);
+    _aiHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    const msg=e.message==='NO_KEY'?'Configura tu API Key en Ajustes → IA.':('Error: '+e.message);
+    _aiHistory.push({role:'assistant',content:'⚠ '+msg});
+  }
+  if(msgs){msgs.innerHTML=_renderAIHistory();_scrollAIChat();}
+  btn.disabled=false;
+}
+
+async function runAutoAnalysis(tipo){
+  const btn=document.getElementById('ai-btn-'+tipo);
+  const zone=document.getElementById('ai-analysis-zone');
+  if(!zone)return;
+  if(btn)btn.classList.add('loading');
+  zone.style.display='flex';
+
+  const prompts={
+    anomalias:`Analiza los datos de transporte y detecta ANOMALÍAS o patrones inusuales. Incluye: tasas de cancelación altas, concentración excesiva en un transportista, variaciones bruscas en el volumen mensual, rutas con alta tasa de problemas. Sé específico con nombres y números. Máximo 200 palabras.`,
+    prediccion:`Basándote en la tendencia mensual histórica, haz una PREDICCIÓN DE DEMANDA para el próximo mes. Incluye: estimación del número de viajes, transportistas que probablemente liderarán, rutas con mayor actividad esperada. Fundamenta la predicción en los datos. Máximo 200 palabras.`
+  };
+  const labels={
+    anomalias:{icon:'⚠️',title:'Anomalías detectadas'},
+    prediccion:{icon:'📈',title:'Predicción de demanda'}
+  };
+
+  const existing=zone.querySelector(`[data-tipo="${tipo}"]`);
+  if(existing)existing.innerHTML=`<div class="ai-result-label">${labels[tipo].icon} ${labels[tipo].title}</div><div style="color:var(--text2);font-style:italic">Analizando…</div>`;
+  else{
+    const card=document.createElement('div');
+    card.className='ai-result-card';
+    card.dataset.tipo=tipo;
+    card.innerHTML=`<div class="ai-result-label">${labels[tipo].icon} ${labels[tipo].title}</div><div style="color:var(--text2);font-style:italic">Analizando…</div>`;
+    zone.appendChild(card);
+  }
+
+  try{
+    const reply=await _callClaude([{role:'user',content:prompts[tipo]}]);
+    const card=zone.querySelector(`[data-tipo="${tipo}"]`);
+    if(card)card.innerHTML=`<div class="ai-result-label">${labels[tipo].icon} ${labels[tipo].title}</div>${esc(reply)}`;
+  }catch(e){
+    const card=zone.querySelector(`[data-tipo="${tipo}"]`);
+    const msg=e.message==='NO_KEY'?'Configura tu API Key en Ajustes → IA.':e.message;
+    if(card)card.innerHTML=`<div class="ai-result-label">⚠ Error</div>${esc(msg)}`;
+  }
+  if(btn)btn.classList.remove('loading');
+}
+
+/* Hook en renderDashboard para inicializar el panel IA */
+const _origRenderDashboard=renderDashboard;
+renderDashboard=function(){
+  _origRenderDashboard.apply(this,arguments);
+  setTimeout(()=>{renderAIContent();_showAISettings();},0);
+};
 </script>
 
 <!-- ════════════ USER MODAL ════════════ -->
