@@ -2952,7 +2952,16 @@ async function editRec(id){
     if(r.horaTermino) calcTurno('Termino');
     renderIG();
     setEl('iStatus', formImgs.length ? `${formImgs.length} foto${formImgs.length!==1?'s':''} (${formImgs.filter(f=>f.isOld).length} existente${formImgs.filter(f=>f.isOld).length!==1?'s':''})` : '');
-    clearSig(); initSigPad(); captureGPS();
+    clearSig(); initSigPad();
+    if(r.signatureData && _sigPad){
+      _sigPad.fromDataURL(r.signatureData).then(()=>{
+        document.getElementById('signature-pad-wrap')?.classList.add('sig-done');
+        document.getElementById('dot-firma')?.classList.add('has');
+        const st=document.getElementById('sig-status');
+        if(st)st.textContent='✓ Firma capturada';
+      }).catch(()=>{});
+    }
+    captureGPS();
   }, 50);
   showScr('form');
 }
