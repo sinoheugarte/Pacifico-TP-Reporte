@@ -635,8 +635,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .srl{color:#e2e8f0}[data-theme="dark"] .srs,[data-theme="dark"] .srv{color:#94a3b8}
 [data-theme="dark"] #ai-key-inp{background:#1e293b !important;color:#e2e8f0 !important}
 [data-theme="dark"] .ssect{color:#94a3b8}
-[data-theme="dark"] .btn-usr-save,[data-theme="dark"] .btn-cfg{background:linear-gradient(135deg,#059669,#0d9488);box-shadow:0 4px 14px rgba(5,150,105,.4)}
+[data-theme="dark"] .btn-usr-save,[data-theme="dark"] .btn-cfg,[data-theme="dark"] .btn-p{background:linear-gradient(135deg,#059669,#0d9488);box-shadow:0 4px 14px rgba(5,150,105,.4)}
 [data-theme="dark"] #ai-key-save-btn{background:linear-gradient(135deg,#059669,#0d9488) !important;box-shadow:0 4px 14px rgba(5,150,105,.4) !important}
+[data-theme="dark"] .btn-s,[data-theme="dark"] .btn-usr-cancel{background:var(--red-light) !important;color:var(--red) !important;border-color:var(--red) !important}
 [data-theme="dark"] .fhdr,[data-theme="dark"] .fsec,[data-theme="dark"] .isec{background:var(--bg)}
 [data-theme="dark"] #scr-dashboard>div>div[style*="background:#fff"]{background:#1e293b !important;border-color:#334155 !important}
 [data-theme="dark"] #signature-pad-wrap{background:#fff !important;border-color:#334155 !important}
@@ -7466,7 +7467,7 @@ function renderUsersScreen(){
   tbody.innerHTML=_sysUsers.map((u,i)=>`<tr>
     <td>${esc(u.nombre)}</td>
     <td>${esc(u.apellidos)}</td>
-    <td style="font-size:11px;word-break:break-all">${esc(u.email)}</td>
+    <td style="word-break:break-all">${esc(u.email)}</td>
     <td>${esc(u.dni)}</td>
     <td>${esc(u.empresa)}</td>
     <td><span class="rol-badge ${esc(u.rol||'conductor')}">${esc(u.rol||'conductor')}</span></td>
