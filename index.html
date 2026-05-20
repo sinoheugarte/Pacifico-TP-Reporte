@@ -584,7 +584,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .srl{color:#e2e8f0}[data-theme="dark"] .srs,[data-theme="dark"] .srv{color:#94a3b8}
 [data-theme="dark"] .fhdr,[data-theme="dark"] .fsec,[data-theme="dark"] .isec{background:var(--bg)}
 [data-theme="dark"] #scr-dashboard>div>div[style*="background:#fff"]{background:#1e293b !important;border-color:#334155 !important}
-[data-theme="dark"] #signature-pad-wrap{background:#1e293b !important;border-color:#334155 !important}
+[data-theme="dark"] #signature-pad-wrap{background:#fff !important;border-color:#334155 !important}
 [data-theme="dark"] #sig-hint{color:#475569}
 [data-theme="dark"] .sc .v{color:#e2e8f0}
 [data-theme="dark"] .sc.green .v{color:var(--green)}
@@ -6661,8 +6661,7 @@ function initSigPad(){
   canvas.width=(canvas.offsetWidth||300)*ratio;
   canvas.height=150*ratio;
   canvas.getContext('2d').scale(ratio,ratio);
-  const isDark=document.documentElement.dataset.theme==='dark';
-  _sigPad=new SignaturePad(canvas,{penColor:isDark?'#ffffff':'#0f2340',minWidth:1.5,maxWidth:3.5,backgroundColor:'rgba(255,255,255,0)'});
+  _sigPad=new SignaturePad(canvas,{penColor:'#1d4ed8',minWidth:1.5,maxWidth:3.5,backgroundColor:'#ffffff'});
   _sigPad.addEventListener('beginStroke',()=>{
     document.getElementById('signature-pad-wrap')?.classList.add('sig-done');
     document.getElementById('dot-firma')?.classList.add('has');
@@ -6940,22 +6939,29 @@ function stopLocationTracking(){
   _trackInterval=null;
 }
 
+async function _ubicacionesReadPath(){
+  if(cfg.dbStorage==='od'){
+    return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+  }
+  const driveId=await ensureSPDrive();
+  return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}`;
+}
 async function _publishPosition(){
   if(!navigator.geolocation||!token||!user)return;
   navigator.geolocation.getCurrentPosition(async pos=>{
     try{
-      const driveId=await ensureSPDrive();
+      const basePath=await _ubicacionesReadPath();
       // Leer objeto actual
       let locs={};
       try{
-        const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}?$select=@microsoft.graph.downloadUrl`);
+        const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
         const r=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
         if(r.ok)locs=await r.json();
       }catch{}
       // Actualizar entrada del usuario actual
       const meUser=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
       locs[user.email]={
-        nombre:user.name||user.email,
+        nombre:(meUser?(meUser.nombre||'')+(meUser.apellidos?' '+meUser.apellidos:''):'')||user.name||user.email,
         email:user.email,
         empresa:meUser?.empresa||'',
         lat:pos.coords.latitude,
@@ -6966,7 +6972,7 @@ async function _publishPosition(){
         ts:new Date().toISOString(),
         rol:userRole||'conductor',
       };
-      await gPut(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}:/content`,JSON.stringify(locs),'application/json');
+      await gPut(`${basePath}:/content`,JSON.stringify(locs),'application/json');
       if(_liveMap&&document.getElementById('scr-mapa')?.classList.contains('on'))loadLiveLocations();
     }catch(e){console.log('_publishPosition:',e.message?.slice(0,60));}
   },{maximumAge:5000,timeout:12000,enableHighAccuracy:true});
@@ -6981,6 +6987,7 @@ async function initLiveMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'© OpenStreetMap',maxZoom:19
   }).addTo(_liveMap);
+  _updateMapFilterOptions({});
   loadLiveLocations();
   clearInterval(_mapRefInterval);
   _mapRefInterval=setInterval(loadLiveLocations,30000);
@@ -6989,8 +6996,8 @@ async function initLiveMap(){
 async function loadLiveLocations(){
   if(!token||!_liveMap)return;
   try{
-    const driveId=await ensureSPDrive();
-    const item=await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/ubicaciones.json')}?$select=@microsoft.graph.downloadUrl`);
+    const basePath=await _ubicacionesReadPath();
+    const item=await gGet(`${basePath}?$select=@microsoft.graph.downloadUrl`);
     const res=await fetch(item['@microsoft.graph.downloadUrl']+'&t='+Date.now());
     if(!res.ok)return;
     const locs=await res.json();
@@ -7048,9 +7055,13 @@ function _updateMapFilterOptions(locs){
   const selE=document.getElementById('mf-empresa');
   if(!selU||!selE)return;
   const curU=selU.value, curE=selE.value;
-  const usuarios=Object.values(locs);
-  const empresas=[...new Set(usuarios.map(u=>u.empresa||'').filter(Boolean))].sort();
-  selU.innerHTML='<option value="">Todos</option>'+usuarios.map(u=>`<option value="${esc(u.email)}">${esc(u.nombre||u.email)}</option>`).join('');
+  // Usar _sysUsers como fuente principal; label = nombre + apellidos
+  const registrados=(_sysUsers&&_sysUsers.length>0)?_sysUsers:[];
+  const empresas=[...new Set(registrados.map(u=>u.empresa||'').filter(Boolean))].sort();
+  selU.innerHTML='<option value="">Todos</option>'+registrados.map(u=>{
+    const label=((u.nombre||'')+(u.apellidos?' '+u.apellidos:'')).trim()||u.email||'';
+    return `<option value="${esc(u.email)}">${esc(label)}</option>`;
+  }).join('');
   selE.innerHTML='<option value="">Todas</option>'+empresas.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
   selU.value=curU; selE.value=curE;
 }
