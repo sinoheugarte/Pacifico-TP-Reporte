@@ -942,7 +942,7 @@ body.has-pending .pending-dot{display:inline-block}
     </svg>
   </div>
   <div class="hdr-info">
-    <div class="hdr-t" id="hdrT">Reporte de Transporte</div>
+    <div class="hdr-t" id="hdrT">Registro de Transporte</div>
     <div class="hdr-s" id="hdrS">Pacífico Transportation SAC</div>
   </div>
   <div class="sdot off" id="sdot" title="Estado SharePoint"></div>
@@ -2422,7 +2422,7 @@ function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_K
 function showScr(name){
   closeEM(); document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('scr-'+name).classList.add('on'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   const bb=document.getElementById('backBtn'), fab=document.getElementById('fab'), exp=document.getElementById('expBtn'), nav=document.getElementById('nav');
-  setEl('hdrT',{list:'Reporte de Transporte',form:editingId?'Editar Reporte':'Nuevo Reporte',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Registros',users:'Gestión de Usuarios',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
+  setEl('hdrT',{list:'Registro de Transporte',form:editingId?'Editar Registro':'Nuevo Registro',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Reportes',users:'Gestión de Usuarios',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
   if(name==='list'){bb.style.display='none';fab.style.display='flex';exp.style.display='flex';nav.style.display='flex';document.getElementById('nb-list').classList.add('on');renderList();}
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
