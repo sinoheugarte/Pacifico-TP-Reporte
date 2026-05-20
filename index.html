@@ -2810,7 +2810,7 @@ function showDet(id){
       <div class="di"><div class="l">Precisión</div><div class="v">±${r.gpsAcc}m</div></div>
       <div class="di"><div class="l">Capturado</div><div class="v" style="font-size:12px">${new Date(r.gpsAt).toLocaleString('es-PE')}</div></div>
       <div class="di w"><div class="l">Mapa</div><div class="v"><a href="https://maps.google.com/?q=${r.gpsLat},${r.gpsLon}" target="_blank" style="color:var(--ms);font-weight:600;text-decoration:none">📍 Ver en Google Maps ↗</a></div></div>
-      ${r.imageGps?.length>1?`<div class="di w"><div class="l">GPS por foto (${r.imageGps.length})</div><div class="v" style="font-size:11px;line-height:1.8">${r.imageGps.map(g=>`<span style="display:block">📷 ${esc(g.name||'foto '+g.idx)}: ${g.lat.toFixed(5)},${g.lon.toFixed(5)} ±${g.acc}m</span>`).join('')}</div></div>`:''}
+      ${r.imageGps?.length>1?`<div class="di w"><div class="l">GPS por foto (${r.imageGps.length})</div><div class="v" style="font-size:11px;line-height:1.8">${r.imageGps.map(g=>`<span style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span>📷 ${esc(g.name||'foto '+g.idx)}: ${g.lat.toFixed(5)},${g.lon.toFixed(5)} ±${g.acc}m</span><a href="https://maps.google.com/?q=${g.lat},${g.lon}" target="_blank" style="color:#1d4ed8;text-decoration:none;font-size:10px;font-weight:600;white-space:nowrap;margin-left:8px">🗺️ Ver</a></span>`).join('')}</div></div>`:''}
     </div></div>`:''}
     ${r.signatureData?`<div class="dsec"><div class="dst">Firma del Receptor</div>
       <img src="${r.signatureData}" style="max-width:100%;border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-top:8px;display:block">
