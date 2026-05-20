@@ -645,6 +645,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] #scr-dashboard .dash-exec-title{color:#e2e8f0 !important}
 /* Columna Orden de tabla Reportes */
 [data-theme="dark"] .rtbl td.td-orden{color:#93c5fd}
+/* Columna fecha/hora */
+[data-theme="dark"] .rtbl td.td-date{color:#cbd5e1}
+/* Badges de status en tabla */
+[data-theme="dark"] .rtbl .b-en-ruta{background:#1e3a5f;color:#93c5fd}
+[data-theme="dark"] .rtbl .b-pendiente{background:#451a03;color:#fcd34d}
+[data-theme="dark"] .rtbl .b-completado{background:#022c22;color:#6ee7b7}
+[data-theme="dark"] .rtbl .b-cancelado{background:#3b0a0a;color:#fca5a5}
+[data-theme="dark"] .rtbl .b-default{background:#1e293b;color:#94a3b8}
+/* Botones de columnas visibles */
+[data-theme="dark"] .rtbl-col-btn{background:#1e293b;color:#94a3b8;border-color:#334155}
+[data-theme="dark"] .rtbl-col-btn.on{background:#1e3a5f;color:#93c5fd;border-color:#1d4ed8}
 [data-theme="dark"] .sc.green .v{color:var(--green)}
 [data-theme="dark"] .sc.amber .v{color:#fbbf24}
 [data-theme="dark"] .sc.blue .v{color:#60a5fa}
@@ -3940,34 +3951,44 @@ function renderDashboard(){
   setEl('heroCompPct',pctComp+'%');
   setEl('heroCompSub',`${comp} de ${total} reportes completados`);
 
+  const _dk = document.documentElement.dataset.theme === 'dark';
+  const _kpiBg    = _dk ? '#1e293b' : null;
+  const _kpiBd    = _dk ? '#334155' : '#e2e8f0';
+  const _kpiLbl   = _dk ? '#94a3b8' : '#64748b';
+  const _kpiMap   = (bg,fg) => `background:${_kpiBg||bg};border:1px solid ${_kpiBd};border-radius:10px;padding:12px;text-align:center;border-top:3px solid ${fg}`;
+
   // KPI row 1
   setEl('dashKpis', [
-    ['Total',       total,      '#EFF6FF','#1D4ED8'],
-    ['Completados', comp,       '#F0FDF4','#15803D'],
-    ['En Ruta',     enRuta,     '#DBEAFE','#1E40AF'],
-  ].map(([l,v,bg,fg])=>`<div style="background:${bg};border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;border-top:3px solid ${fg}"><div style="font-size:22px;font-weight:700;color:${fg}">${v}</div><div style="font-size:10px;color:#64748b;margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</div></div>`).join(''));
+    ['Total',       total,      '#EFF6FF','#3B82F6'],
+    ['Completados', comp,       '#F0FDF4','#22C55E'],
+    ['En Ruta',     enRuta,     '#DBEAFE','#60A5FA'],
+  ].map(([l,v,bg,fg])=>`<div style="${_kpiMap(bg,fg)}"><div style="font-size:22px;font-weight:700;color:${fg}">${v}</div><div style="font-size:10px;color:${_kpiLbl};margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</div></div>`).join(''));
   // KPI row 2
   setEl('dashKpis2', [
-    ['Pendientes', pend,       '#FFFBEB','#92400E'],
-    ['Cancelados', cancel,     '#FFF5F5','#991B1B'],
-    ['Viajes',     totalViajes,'#F0F9FF','#0369A1'],
-  ].map(([l,v,bg,fg])=>`<div style="background:${bg};border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;border-top:3px solid ${fg}"><div style="font-size:22px;font-weight:700;color:${fg}">${v}</div><div style="font-size:10px;color:#64748b;margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</div></div>`).join(''));
+    ['Pendientes', pend,       '#FFFBEB','#F59E0B'],
+    ['Cancelados', cancel,     '#FFF5F5','#EF4444'],
+    ['Viajes',     totalViajes,'#F0F9FF','#38BDF8'],
+  ].map(([l,v,bg,fg])=>`<div style="${_kpiMap(bg,fg)}"><div style="font-size:22px;font-weight:700;color:${fg}">${v}</div><div style="font-size:10px;color:${_kpiLbl};margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${l}</div></div>`).join(''));
 
-  // Chart defaults
+  // Chart defaults adaptados al tema
+  const _gc  = _dk ? '#94a3b8' : '#64748b';
+  const _ggc = _dk ? 'rgba(255,255,255,.07)' : '#f1f5f9';
   Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.color = _gc;
   Chart.defaults.plugins.legend.labels.padding = 16;
 
   // ── STATUS PIE ──
+  const _pieBorder = _dk ? '#1e293b' : '#fff';
   chartInstances.status = new Chart(document.getElementById('chartStatus'),{
     type:'doughnut',
     data:{
       labels:['Completado','En Ruta','Pendiente','Cancelado'],
       datasets:[{data:[comp,enRuta,pend,cancel],
         backgroundColor:['#22C55E','#3B82F6','#F59E0B','#EF4444'],
-        borderWidth:2,borderColor:'#fff',hoverOffset:8}]
+        borderWidth:2,borderColor:_pieBorder,hoverOffset:8}]
     },
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:_gc}},
         tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} (${total?Math.round(ctx.parsed/total*100):0}%)`}}}}
   });
 
@@ -3975,9 +3996,9 @@ function renderDashboard(){
   chartInstances.motivos = new Chart(document.getElementById('chartMotivos'),{
     type:'pie',
     data:{labels:['Entrega Mercadería','Retorno Mercadería'],
-      datasets:[{data:[entrega,retorno],backgroundColor:['#0EA5E9','#F97316'],borderWidth:2,borderColor:'#fff'}]},
+      datasets:[{data:[entrega,retorno],backgroundColor:['#0EA5E9','#F97316'],borderWidth:2,borderColor:_pieBorder}]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:_gc}}}}
   });
 
   // ── TRANSPORTISTAS BAR ──
@@ -3991,8 +4012,8 @@ function renderDashboard(){
         backgroundColor:'#3B82F6',borderRadius:5,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
       plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}}},
-              y:{grid:{display:false},ticks:{font:{size:10}}}}}
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+              y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
   });
 
   // ── UNIDADES BAR ──
@@ -4007,8 +4028,8 @@ function renderDashboard(){
         borderRadius:5,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:10},maxRotation:30}},
-              y:{grid:{color:'#f1f5f9'},ticks:{font:{size:10},stepSize:1}}}}
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},maxRotation:30,color:_gc}},
+              y:{grid:{color:_ggc},ticks:{font:{size:10},stepSize:1,color:_gc}}}}
   });
 
   // ── TENDENCIA MENSUAL LINE ──
@@ -4020,17 +4041,19 @@ function renderDashboard(){
     byMonth[mk]=(byMonth[mk]||0)+1;
   });
   const monthEntries=Object.entries(byMonth).sort();
+  const _lineColor = _dk ? '#38BDF8' : '#0F2340';
+  const _lineFill  = _dk ? 'rgba(56,189,248,.12)' : 'rgba(15,35,64,.08)';
   chartInstances.mensual = new Chart(document.getElementById('chartMensual'),{
     type:'line',
     data:{labels:monthEntries.map(([k])=>k),
       datasets:[{label:'Reportes',data:monthEntries.map(([,v])=>v),
-        borderColor:'#0F2340',backgroundColor:'rgba(15,35,64,.08)',
+        borderColor:_lineColor,backgroundColor:_lineFill,
         borderWidth:2.5,pointBackgroundColor:'#F59E0B',pointRadius:5,
         fill:true,tension:.35}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}}},
-              y:{grid:{color:'#f1f5f9'},ticks:{font:{size:10},stepSize:1}}}}
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+              y:{grid:{color:_ggc},ticks:{font:{size:10},stepSize:1,color:_gc}}}}
   });
 
   // ── RUTAS ──
@@ -4044,8 +4067,8 @@ function renderDashboard(){
         backgroundColor:'#F59E0B',borderRadius:5,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
       plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:'#f1f5f9'},ticks:{font:{size:10}}},
-              y:{grid:{display:false},ticks:{font:{size:10}}}}}
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+              y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
   });
 
   // ── CARGA BAR ──
@@ -4056,7 +4079,7 @@ function renderDashboard(){
         backgroundColor:['#22C55E','#3B82F6','#A78BFA'],borderRadius:6,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:'#f1f5f9'}}}}
+      scales:{x:{grid:{display:false},ticks:{color:_gc}},y:{grid:{color:_ggc},ticks:{color:_gc}}}}
   });
 
   // ── TABLE: ÓRDENES CON MÚLTIPLES VIAJES ──
