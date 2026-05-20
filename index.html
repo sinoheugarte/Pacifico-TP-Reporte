@@ -7334,21 +7334,21 @@ function setPermPill(btn,rol,action,val){
   const optClass={todos:'sel-todos',suyos:'sel-suyos',no:'sel-no',true:'sel-todos',false:'sel-no'};
   const rawVal=val==='true'?true:val==='false'?false:val;
   btn.classList.add(optClass[String(rawVal)]||'sel-todos');
-  // Actualizar modelo
-  loadRolePerms();
+  // Actualizar modelo en memoria (sin recargar desde localStorage)
+  if(!_rolePerms)loadRolePerms();
   _rolePerms[rol][action]=rawVal;
 }
 
 function savePermsAction(){
-  loadRolePerms();
+  // Guardar el estado actual en memoria (sin recargar desde localStorage)
+  if(!_rolePerms)loadRolePerms();
   localStorage.setItem('ptp_role_perms',JSON.stringify(_rolePerms));
   toast('✓ Permisos guardados');
-  // Aplicar al rol actual del usuario logueado
   applyRoleRestrictions();
 }
 
 function applyRoleRestrictions(){
-  loadRolePerms();
+  if(!_rolePerms)loadRolePerms();
   const rol=userRole||'conductor';
   const p=_rolePerms[rol]||DEFAULT_PERMS[rol];
   // FAB (crear)
