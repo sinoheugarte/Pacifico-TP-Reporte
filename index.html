@@ -300,11 +300,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 /* image section */
 .isec{padding:14px 18px 0}
 .igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.iw{position:relative;aspect-ratio:1}
-.ith{width:100%;height:100%;border-radius:10px;object-fit:cover;
+.iw{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column}
+.iw-img-wrap{position:relative;aspect-ratio:1;flex-shrink:0}
+.ith{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;
   border:1.5px solid var(--border);cursor:pointer;display:block;transition:opacity .12s}
 .ith:active{opacity:.75}
-.idel{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;
+.iw-meta{padding:5px 7px;font-size:10px;line-height:1.4;border-top:1px solid var(--border)}
+.iw-meta-name{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iw-meta-gps{color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.iw-meta-link{color:#1d4ed8;font-weight:700;text-decoration:none;white-space:nowrap}
+.idel{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
   background:var(--red);color:#fff;border:2px solid #fff;font-size:12px;
   cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:2}
 .iadd-row{display:flex;gap:8px;margin-top:10px}
@@ -347,9 +352,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   border-radius:var(--rs);padding:12px;text-align:center}
 .nbox .n{font-size:24px;font-weight:700;color:var(--navy);font-family:'DM Mono',monospace}
 .nbox .l{font-size:10px;color:var(--text2);margin-top:2px}
-.dimgs{display:flex;flex-wrap:wrap;gap:8px}
-.dimg{width:calc(33.33% - 6px);aspect-ratio:1;border-radius:8px;object-fit:cover;
-  border:1px solid var(--border);cursor:pointer}
+.dimgs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dimg-card{border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column}
+.dimg{width:100%;aspect-ratio:1;object-fit:cover;display:block;cursor:pointer}
+.dimg-meta{padding:5px 7px;font-size:10px;line-height:1.4;border-top:1px solid var(--border)}
+.dimg-meta-name{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dimg-meta-gps{color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.dimg-meta-link{color:#1d4ed8;font-weight:700;text-decoration:none;white-space:nowrap;font-size:10px}
 .dact{padding:16px 18px;display:flex;gap:10px}
 .btn-del{background:var(--red-light);color:var(--red);border:none;border-radius:var(--rs);
   padding:12px 16px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
@@ -2687,15 +2696,20 @@ function updateDocIndicators(){
 }
 function renderIG(){
   document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>{
-    const nl=f.name.toLowerCase();
-    const docLabel=nl.startsWith('guiaremitente')||nl.startsWith('guia_remitente')?'Guía Rem.':
-                   nl.startsWith('guiatransportista')||nl.startsWith('guia_transportista')?'Guía Trans.':
-                   nl.startsWith('hojaingreso')||nl.startsWith('hoja_ingreso')||nl.startsWith('hoja')?'Hoja Ingreso':'';
-    const gpsTag=f.gps?`<div style="position:absolute;top:3px;left:3px;background:rgba(5,150,105,.85);color:#fff;font-size:8px;padding:2px 5px;border-radius:10px;font-weight:600">📍${f.gps.lat.toFixed(3)},${f.gps.lon.toFixed(3)}</div>`:'';
-    // openGalForm usa el array formImgs directamente — evita embeber todos los dataUrls en el HTML
-    return`<div class="iw"><img class="ith" src="${f.dataUrl}" onclick="openGalForm(${i})"><button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
-     ${docLabel?`<div style="position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.6);color:#fff;font-size:8px;padding:2px;text-align:center;border-radius:0 0 10px 10px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${docLabel}</div>`:''}
-     ${gpsTag}
+    const gpsLine=f.gps
+      ?`<div class="iw-meta-gps">📍 ${f.gps.lat.toFixed(5)}, ${f.gps.lon.toFixed(5)} ±${f.gps.acc}m
+          <a href="https://maps.google.com/?q=${f.gps.lat},${f.gps.lon}" target="_blank" class="iw-meta-link" onclick="event.stopPropagation()">🗺️ Ver</a>
+        </div>`
+      :'<div class="iw-meta-gps" style="color:#94a3b8">Sin GPS</div>';
+    return`<div class="iw">
+      <div class="iw-img-wrap">
+        <img class="ith" src="${f.dataUrl}" onclick="openGalForm(${i})">
+        <button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
+      </div>
+      <div class="iw-meta">
+        <div class="iw-meta-name" title="${esc(f.name)}">${esc(f.name)}</div>
+        ${gpsLine}
+      </div>
     </div>`;
   }).join('');
   updateDocIndicators();
@@ -2897,7 +2911,21 @@ function showDet(id){
   detImgs=r.images||[];
   const sc=['pendiente','en-ruta','completado','cancelado'].includes(r.status)?r.status:'def';
   const pc=r.images?.length||r.photoCount||0;
-  const imgs=(r.images||[]).map((s,i)=>`<img class="dimg" src="${s}" onclick="openGal(detImgs,${i})">`).join('');
+  const imgs=(r.images||[]).map((s,i)=>{
+    const gps=r.imageGps?.find(g=>g.idx===i)||r.imageGps?.[i];
+    const name=r.photoNames?.[i]||gps?.name||`foto_${i+1}`;
+    const gpsLine=gps
+      ?`<div class="dimg-meta-gps">📍 ${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)} ±${gps.acc}m
+          <a href="https://maps.google.com/?q=${gps.lat},${gps.lon}" target="_blank" class="dimg-meta-link">🗺️ Ver mapa</a>
+        </div>`
+      :'';
+    return`<div class="dimg-card"><img class="dimg" src="${s}" onclick="openGal(detImgs,${i})">
+      <div class="dimg-meta">
+        <div class="dimg-meta-name" title="${esc(name)}">${esc(name)}</div>
+        ${gpsLine}
+      </div>
+    </div>`;
+  }).join('');
   document.getElementById('detC').innerHTML=`
     <div class="dhero">
       <div class="dord">ORD: ${r.orden||'—'} · Viaje: ${r.viaje||'—'} · DAM: ${r.dam||'—'}</div>
@@ -2941,7 +2969,6 @@ function showDet(id){
       <div class="di"><div class="l">Precisión</div><div class="v">±${r.gpsAcc}m</div></div>
       <div class="di"><div class="l">Capturado</div><div class="v" style="font-size:12px">${new Date(r.gpsAt).toLocaleString('es-PE')}</div></div>
       <div class="di w"><div class="l">Mapa</div><div class="v"><a href="https://maps.google.com/?q=${r.gpsLat},${r.gpsLon}" target="_blank" style="color:var(--ms);font-weight:600;text-decoration:none">📍 Ver en Google Maps ↗</a></div></div>
-      ${r.imageGps?.length>1?`<div class="di w"><div class="l">GPS por foto (${r.imageGps.length})</div><div class="v" style="font-size:11px;line-height:1.8">${r.imageGps.map(g=>`<span style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span>📷 ${esc(g.name||'foto '+g.idx)}: ${g.lat.toFixed(5)},${g.lon.toFixed(5)} ±${g.acc}m</span><a href="https://maps.google.com/?q=${g.lat},${g.lon}" target="_blank" style="color:#1d4ed8;text-decoration:none;font-size:10px;font-weight:600;white-space:nowrap;margin-left:8px">🗺️ Ver</a></span>`).join('')}</div></div>`:''}
     </div></div>`:''}
     ${r.signatureData?`<div class="dsec"><div class="dst">Firma del Receptor</div>
       <img src="${r.signatureData}" style="max-width:100%;border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-top:8px;display:block">
