@@ -633,9 +633,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .ssec{border-color:#334155}
 [data-theme="dark"] .srow{border-color:#334155}
 [data-theme="dark"] .srl{color:#e2e8f0}[data-theme="dark"] .srs,[data-theme="dark"] .srv{color:#94a3b8}
-[data-theme="dark"] #ai-provider-btns button{background:#1e293b !important;color:#e2e8f0 !important;border-color:#334155 !important}
 [data-theme="dark"] #ai-key-inp{background:#1e293b !important;color:#e2e8f0 !important}
 [data-theme="dark"] .ssect{color:#94a3b8}
+[data-theme="dark"] .btn-usr-save,[data-theme="dark"] .btn-cfg{background:linear-gradient(135deg,#059669,#0d9488);box-shadow:0 4px 14px rgba(5,150,105,.4)}
+[data-theme="dark"] #ai-key-save-btn{background:linear-gradient(135deg,#059669,#0d9488) !important;box-shadow:0 4px 14px rgba(5,150,105,.4) !important}
 [data-theme="dark"] .fhdr,[data-theme="dark"] .fsec,[data-theme="dark"] .isec{background:var(--bg)}
 [data-theme="dark"] #scr-dashboard>div>div[style*="background:#fff"]{background:#1e293b !important;border-color:#334155 !important}
 [data-theme="dark"] #signature-pad-wrap{background:#fff !important;border-color:#334155 !important}
@@ -1638,7 +1639,7 @@ body.has-pending .pending-dot{display:inline-block}
           style="flex:1;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);background:#fff;outline:none;transition:border-color .15s"
           oninput="this.style.borderColor='var(--navy)'"
           value="">
-        <button onclick="saveAIKey()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">Guardar</button>
+        <button id="ai-key-save-btn" onclick="saveAIKey()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">Guardar</button>
       </div>
       <div id="ai-key-status" style="font-size:11px;color:var(--green);display:none">✓ Clave guardada</div>
     </div>
@@ -7299,6 +7300,7 @@ function toggleDarkMode(on){
   document.documentElement.dataset.theme=on?'dark':'';
   localStorage.setItem('ptp_dark',on?'1':'0');
   toast(on?'🌙 Modo oscuro activado':'☀ Modo claro activado');
+  _refreshAIProviderUI();
 }
 function initDarkMode(){
   const saved=localStorage.getItem('ptp_dark');
