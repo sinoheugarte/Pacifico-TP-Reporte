@@ -1,0 +1,32 @@
+name: Auto-merge branch → main
+
+on:
+  push:
+    branches:
+      - "claude/spanish-greeting-49mWq"
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fusionar branch en main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge --strategy-option=theirs origin/claude/spanish-greeting-49mWq \
+            -m "Auto-merge: claude/spanish-greeting-49mWq → main"
+          git push origin main
