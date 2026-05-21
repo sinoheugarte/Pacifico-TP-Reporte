@@ -7694,7 +7694,7 @@ async function startLocationTracking(){
       },
       err=>{
         let txt='';
-        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — activa el GPS en ajustes';
+        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — ve a Ajustes del teléfono → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir';
         else if(err.code===2) txt='📡 Sin señal GPS — asegúrate de tener cobertura';
         else if(err.code===3) txt='⏱ Tiempo de espera GPS agotado — reintentando…';
         else                  txt='❓ Error GPS: '+err.message;
