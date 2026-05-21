@@ -7683,23 +7683,37 @@ async function startLocationTracking(){
 
   // watchPosition: GPS continuo, callback en cada cambio de posición
   if(navigator.geolocation){
+    const _onWatchPos=pos=>{
+      _lastPos=pos;
+      if(document.hidden)return;
+      if(_pubThrottle)return;
+      _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
+      _doPublish(pos).catch(()=>{});
+    };
+    const _onWatchErr=(err,highAccuracy)=>{
+      if(err.code===1){
+        // Permiso denegado — único error que requiere acción del usuario
+        _setMapGpsStatus('⛔ Permiso de ubicación denegado — ve a Ajustes → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir','red');
+        return;
+      }
+      if(highAccuracy){
+        // Alta precisión falló — reiniciar silenciosamente con baja precisión (red/WiFi)
+        if(_watchId!=null){navigator.geolocation.clearWatch(_watchId);_watchId=null;}
+        _watchId=navigator.geolocation.watchPosition(
+          _onWatchPos,
+          e=>_onWatchErr(e,false),
+          {enableHighAccuracy:false,maximumAge:30000,timeout:Infinity}
+        );
+        // No mostrar error si ya tenemos posición
+        if(!_lastPos) _setMapGpsStatus('📡 GPS de alta precisión no disponible — usando ubicación por red','warn');
+      } else {
+        // Baja precisión también falló
+        if(!_lastPos) _setMapGpsStatus('📡 Sin señal GPS — asegúrate de estar al aire libre','warn');
+      }
+    };
     _watchId=navigator.geolocation.watchPosition(
-      pos=>{
-        _lastPos=pos;
-        if(document.hidden)return; // app en background — no publicar en intervalo
-        // Throttle: publicar máx. 1 vez cada 15 segundos
-        if(_pubThrottle)return;
-        _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
-        _doPublish(pos).catch(()=>{});
-      },
-      err=>{
-        let txt='';
-        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — ve a Ajustes del teléfono → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir';
-        else if(err.code===2) txt='📡 Sin señal GPS — asegúrate de tener cobertura';
-        else if(err.code===3) txt='⏱ Buscando señal GPS… (puede tardar hasta 60s en Android)';
-        else                  txt='❓ Error GPS: '+err.message;
-        _setMapGpsStatus(txt, err.code===1?'red':'warn');
-      },
+      _onWatchPos,
+      err=>_onWatchErr(err,true),
       {enableHighAccuracy:true,maximumAge:10000,timeout:Infinity}
     );
     // Primera publicación inmediata — intentar con baja precisión primero (más rápido en Android)
