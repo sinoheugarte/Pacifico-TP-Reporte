@@ -793,8 +793,9 @@ body.has-pending .pending-dot{display:inline-block}
 [data-theme="dark"] .btn-usr-del{background:#3b0a0a;color:#f87171}
 .btn-usr-edit:hover,.btn-usr-del:hover{opacity:.75}
 .users-empty{text-align:center;color:var(--text2);padding:48px 20px;font-size:13px}
-.admin-logout-wrap{padding:10px 16px 12px;display:flex;justify-content:flex-end}
-.admin-logout-btn{font-size:11px;color:var(--text2);background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.admin-logout-wrap{padding:16px;display:flex;justify-content:center}
+.admin-logout-btn{font-size:14px;font-weight:700;color:#fff;background:#dc2626;border:none;border-radius:10px;padding:13px 28px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;max-width:320px;letter-spacing:.01em;transition:opacity .15s}
+.admin-logout-btn:active{opacity:.8}
 
 /* ── USER MODAL ────────────────────────────────────────── */
 #user-modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
@@ -2013,7 +2014,7 @@ body.has-pending .pending-dot{display:inline-block}
   <!-- Tab: Permisos -->
   <div id="utab-content-perms" style="display:none">
     <div class="perms-wrap" id="perms-wrap"></div>
-    <div style="padding:12px 16px">
+    <div style="padding:12px 16px;display:flex;justify-content:center">
       <button class="btn-usr-save" style="width:100%;max-width:320px" onclick="savePermsAction()">Guardar permisos</button>
     </div>
   </div>
