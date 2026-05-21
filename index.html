@@ -2554,6 +2554,7 @@ async function setupOneDrive(){
     loadUserRole().catch(()=>{});
     loadPermsFromSP().catch(()=>{});
     startLocationTracking().catch(()=>{});
+    _syncAndroidBridge().catch(()=>{});
   }catch(e){
     console.error('Setup:', e); setSdot('err'); toast('⚠ Error conectando: '+e.message?.slice(0,80));
   }
@@ -7665,6 +7666,27 @@ function _onVisibilityChange(){
     if(_lastPos) _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(_lastPos.coords.accuracy)}m`,'green');
     else _setMapGpsStatus('📡 Buscando señal GPS…','warn');
   }
+}
+
+// Pasar token + datos de usuario al LocationService nativo (solo en APK Android)
+async function _syncAndroidBridge(){
+  if(!window.AndroidBridge||!window.AndroidBridge.isAndroidApp())return;
+  if(!token||!user)return;
+  try{
+    const basePath=await _ubicacionesReadPath();
+    // basePath: "drives/{id}/root:/Pacifico Reportes TP/ubicaciones.json"
+    const me=_sysUsers.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
+    const nombre=(me?(me.nombre||'')+(me.apellidos?' '+me.apellidos:''):'')||user.name||user.email;
+    const empresa=me?.empresa||'';
+    window.AndroidBridge.setUserData(
+      token,
+      user.email,
+      nombre,
+      empresa,
+      userRole||'conductor',
+      basePath
+    );
+  }catch(e){console.log('AndroidBridge sync:',e.message);}
 }
 
 async function startLocationTracking(){
