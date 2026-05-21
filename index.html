@@ -7694,21 +7694,28 @@ async function startLocationTracking(){
       },
       err=>{
         let txt='';
-        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — activa el GPS en ajustes';
+        if(err.code===1)      txt='⛔ Permiso de ubicación denegado — ve a Ajustes del teléfono → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir';
         else if(err.code===2) txt='📡 Sin señal GPS — asegúrate de tener cobertura';
-        else if(err.code===3) txt='⏱ Tiempo de espera GPS agotado — reintentando…';
+        else if(err.code===3) txt='⏱ Buscando señal GPS… (puede tardar hasta 60s en Android)';
         else                  txt='❓ Error GPS: '+err.message;
         _setMapGpsStatus(txt, err.code===1?'red':'warn');
       },
-      {enableHighAccuracy:true,maximumAge:5000,timeout:15000}
+      {enableHighAccuracy:true,maximumAge:10000,timeout:Infinity}
     );
-    // Primera publicación inmediata
+    // Primera publicación inmediata — intentar con baja precisión primero (más rápido en Android)
     setTimeout(()=>{
       if(_lastPos)_doPublish(_lastPos).catch(()=>{});
       else navigator.geolocation.getCurrentPosition(
         pos=>{_lastPos=pos;_doPublish(pos).catch(()=>{});},
-        ()=>{},
-        {enableHighAccuracy:true,timeout:12000}
+        ()=>{
+          // Si falla alta precisión, intentar con baja (red/wifi) como fallback
+          navigator.geolocation.getCurrentPosition(
+            pos=>{_lastPos=pos;_doPublish(pos).catch(()=>{});},
+            ()=>{},
+            {enableHighAccuracy:false,timeout:10000,maximumAge:30000}
+          );
+        },
+        {enableHighAccuracy:true,timeout:20000,maximumAge:10000}
       );
     },1500);
   }
