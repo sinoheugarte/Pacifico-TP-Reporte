@@ -7458,6 +7458,8 @@ async function adminSignIn(){
 
 function enterAdminMode(){
   _adminMode=true;
+  localStorage.setItem('ptp_admin_active','1');
+  document.getElementById('authWall').classList.remove('on');
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='';
   const nbM=document.getElementById('nb-mapa');
@@ -7467,6 +7469,7 @@ function enterAdminMode(){
 
 function adminSignOut(){
   _adminMode=false;
+  localStorage.removeItem('ptp_admin_active');
   stopUsersAutoRefresh();
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='none';
@@ -8274,7 +8277,12 @@ loadCfg(); initDarkMode(); showSkeletons(); showScr('list');
 loadRolePerms(); applyRoleRestrictions();
 (function(){ var d=new Date(); var s=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-'+(String(d.getDate()).padStart(2,'0')); document.getElementById('srch-desde').value=s; })();
 loadCacheRecordsAsync().then(()=>{ renderList(); updatePendingIndicator(); }).catch(()=>{ loadCacheRecords(); renderList(); });
-_handleRedirectCallback().then(handled=>{ if(!handled) tryAutoLogin().catch(()=>{}); }).catch(()=>{ tryAutoLogin().catch(()=>{}); });
+_handleRedirectCallback().then(handled=>{
+  if(!handled){
+    if(localStorage.getItem('ptp_admin_active')==='1'){ enterAdminMode(); }
+    else { tryAutoLogin().catch(()=>{}); }
+  }
+}).catch(()=>{ tryAutoLogin().catch(()=>{}); });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!navigator.onLine) document.body.classList.add('is-offline');
 
