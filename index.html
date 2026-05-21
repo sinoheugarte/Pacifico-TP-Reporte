@@ -1676,6 +1676,13 @@ body.has-pending .pending-dot{display:inline-block}
       <div id="ai-key-status" style="font-size:11px;color:var(--green);display:none">✓ Clave guardada</div>
     </div>
   </div>
+  <div class="ssec admin-gate" id="settings-admin-gate">
+    <div class="admin-gate-title">🔐 Modo Administrador</div>
+    <input class="admin-inp" type="text" id="adminUser2" placeholder="Usuario administrador" autocomplete="username">
+    <input class="admin-inp" type="password" id="adminPass2" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminSignIn2()">
+    <button class="btn-admin" onclick="adminSignIn2()">Acceder al Panel Admin</button>
+    <div class="admin-err" id="adminErr2"></div>
+  </div>
   <div style="padding:16px 18px">
     <button class="btn-logout" onclick="signOut()">Cerrar sesión de Microsoft</button>
   </div>
@@ -7456,8 +7463,31 @@ async function adminSignIn(){
   }
 }
 
+async function adminSignIn2(){
+  const u=(document.getElementById('adminUser2').value||'').trim().toUpperCase();
+  const p=document.getElementById('adminPass2').value||'';
+  const errEl=document.getElementById('adminErr2');
+  if(!u||!p){errEl.textContent='Ingresa usuario y contraseña.';return;}
+  let stored=null;
+  try{stored=JSON.parse(localStorage.getItem('ptp_admin_creds'));}catch{}
+  if(!stored){
+    stored={user:ADMIN_DEFAULT_USER,hash:await _sha256(ADMIN_DEFAULT_PASS)};
+    localStorage.setItem('ptp_admin_creds',JSON.stringify(stored));
+  }
+  const inputHash=await _sha256(p);
+  if(u===stored.user&&inputHash===stored.hash){
+    errEl.textContent='';
+    document.getElementById('adminUser2').value='';
+    document.getElementById('adminPass2').value='';
+    enterAdminMode();
+  }else{
+    errEl.textContent='Usuario o contraseña incorrectos.';
+  }
+}
+
 function enterAdminMode(){
   _adminMode=true;
+  document.getElementById('authWall').classList.remove('on');
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='';
   const nbM=document.getElementById('nb-mapa');
