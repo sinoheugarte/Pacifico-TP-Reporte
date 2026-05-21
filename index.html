@@ -7458,7 +7458,6 @@ async function adminSignIn(){
 
 function enterAdminMode(){
   _adminMode=true;
-  document.getElementById('authWall').classList.remove('on');
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='';
   const nbM=document.getElementById('nb-mapa');
