@@ -7658,12 +7658,10 @@ async function _releaseWakeLock(){
 /* ── VISIBILITYCHANGE: detectar cuando el usuario minimiza ── */
 function _onVisibilityChange(){
   if(document.hidden){
-    // App en segundo plano: publicar última posición conocida y avisar
     if(_lastPos) _doPublish(_lastPos).catch(()=>{});
     _setMapGpsStatus('⏸ App en segundo plano — rastreo pausado. Vuelve a la app para continuar.','warn');
   }else{
-    // App vuelve al frente: reactivar Wake Lock y limpiar aviso
-    _requestWakeLock();
+    // No reactivar Wake Lock aquí — el GPS nativo Android maneja background
     if(_lastPos) _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(_lastPos.coords.accuracy)}m`,'green');
     else _setMapGpsStatus('📡 Buscando señal GPS…','warn');
   }
@@ -7674,9 +7672,6 @@ async function startLocationTracking(){
   // Detener tracking anterior
   if(_watchId!=null){navigator.geolocation.clearWatch(_watchId);_watchId=null;}
   clearInterval(_trackInterval);
-
-  // Solicitar Wake Lock para mantener pantalla encendida
-  await _requestWakeLock();
 
   // Escuchar cambios de visibilidad
   document.removeEventListener('visibilitychange',_onVisibilityChange);
@@ -7693,13 +7688,25 @@ async function startLocationTracking(){
       _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
       _doPublish(pos).catch(()=>{});
     };
+    let _permRetryTimer=null;
     const _startHighAccWatch=()=>{
       if(_watchId!=null)return;
       _watchId=navigator.geolocation.watchPosition(
-        _pubPos,
+        pos=>{
+          if(_permRetryTimer){clearTimeout(_permRetryTimer);_permRetryTimer=null;}
+          _pubPos(pos);
+        },
         err=>{
-          if(err.code===1)
-            _setMapGpsStatus('⛔ Permiso de ubicación denegado — ve a Ajustes → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir','red');
+          if(err.code===1){
+            // Permiso denegado en Chrome — puede ser timing con DelegationService
+            // Reintentar automáticamente cada 20s hasta obtener permiso
+            _setMapGpsStatus('📡 Esperando permiso de ubicación… (otórgalo en Ajustes si no aparece el diálogo)','warn');
+            if(_watchId!=null){navigator.geolocation.clearWatch(_watchId);_watchId=null;}
+            _permRetryTimer=setTimeout(()=>{
+              _permRetryTimer=null;
+              _startHighAccWatch();
+            },20000);
+          }
           // Para error 2/3: ignorar si ya tenemos posición — el watch sigue corriendo
         },
         {enableHighAccuracy:true,maximumAge:10000,timeout:Infinity}
@@ -7709,10 +7716,9 @@ async function startLocationTracking(){
     navigator.geolocation.getCurrentPosition(
       pos=>{
         _pubPos(pos);
-        _startHighAccWatch(); // Paso 2: arrancar watch de alta precisión sobre la posición inicial
+        _startHighAccWatch();
       },
       ()=>{
-        // Si falla hasta la baja precisión, arrancar watch igualmente y mostrar aviso
         _setMapGpsStatus('📡 Buscando señal GPS…','warn');
         _startHighAccWatch();
       },
