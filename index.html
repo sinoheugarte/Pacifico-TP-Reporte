@@ -7665,6 +7665,7 @@ function _onVisibilityChange(){
     // App vuelve al frente: reactivar Wake Lock y limpiar aviso
     _requestWakeLock();
     if(_lastPos) _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(_lastPos.coords.accuracy)}m`,'green');
+    else _setMapGpsStatus('📡 Buscando señal GPS…','warn');
   }
 }
 
