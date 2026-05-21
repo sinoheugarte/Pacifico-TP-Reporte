@@ -2189,19 +2189,26 @@ async function signIn(){
   try{
     const {verifier, challenge} = await pkceChallenge();
     const state = b64url(crypto.getRandomValues(new Uint8Array(16)));
-    sessionStorage.setItem(PKCE_KEY, JSON.stringify({verifier, state}));
 
     const authUrl = new URL(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/authorize`);
-    authUrl.searchParams.set('client_id',       cfg.cid);
-    authUrl.searchParams.set('response_type',   'code');
-    authUrl.searchParams.set('redirect_uri',    cfg.redir);
-    authUrl.searchParams.set('scope',           GRAPH_SCOPES.join(' ') + ' offline_access');
-    authUrl.searchParams.set('code_challenge',  challenge);
+    authUrl.searchParams.set('client_id',             cfg.cid);
+    authUrl.searchParams.set('response_type',         'code');
+    authUrl.searchParams.set('redirect_uri',          cfg.redir);
+    authUrl.searchParams.set('scope',                 GRAPH_SCOPES.join(' ') + ' offline_access');
+    authUrl.searchParams.set('code_challenge',        challenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
-    authUrl.searchParams.set('state',           state);
-    authUrl.searchParams.set('response_mode',   'query');
-    authUrl.searchParams.set('prompt',          'select_account');
+    authUrl.searchParams.set('state',                 state);
+    authUrl.searchParams.set('response_mode',         'query');
+    authUrl.searchParams.set('prompt',                'select_account');
 
+    // En Android WebView usar redirect (no popup) — window.open no funciona entre WebViews
+    if(window.AndroidBridge && window.AndroidBridge.isAndroidApp()){
+      localStorage.setItem(PKCE_KEY+'_redirect', JSON.stringify({verifier, state}));
+      window.location.href = authUrl.toString();
+      return;
+    }
+
+    sessionStorage.setItem(PKCE_KEY, JSON.stringify({verifier, state}));
     const W=500, H=600;
     const left=Math.floor((screen.width-W)/2);
     const top =Math.floor((screen.height-H)/2);
@@ -2213,7 +2220,7 @@ async function signIn(){
         try{
           if(popup.closed){ clearInterval(timer); reject(new Error('user_cancelled')); return; }
           const href = popup.location.href;
-          if(!href.startsWith(cfg.redir)) return; 
+          if(!href.startsWith(cfg.redir)) return;
           popup.close(); clearInterval(timer);
 
           const url   = new URL(href);
@@ -2225,7 +2232,7 @@ async function signIn(){
           if(retState !== saved.state){ reject(new Error('State mismatch')); return; }
           sessionStorage.removeItem(PKCE_KEY);
 
-          const tokenResp = await fetch(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/token`, { 
+          const tokenResp = await fetch(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/token`, {
             method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
             body: new URLSearchParams({ client_id: cfg.cid, grant_type: 'authorization_code', code, redirect_uri: cfg.redir, code_verifier: saved.verifier, scope: GRAPH_SCOPES.join(' ') + ' offline_access' })
           });
@@ -2247,11 +2254,9 @@ async function signIn(){
     user = {name:me.displayName, email:me.mail||me.userPrincipalName};
     document.getElementById('authWall').classList.remove('on');
     setSdot('busy');
-    
-    loadCacheRecords(); 
-    renderList(); 
-    renderUserCard(); 
-    
+    loadCacheRecords();
+    renderList();
+    renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
@@ -2264,6 +2269,43 @@ async function signIn(){
     console.error('signIn error:',e);
   }
   finally{ setBtnMS(false); }
+}
+
+// Procesar callback de redirect OAuth (solo Android WebView)
+async function _handleRedirectCallback(){
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('code');
+  const retState = url.searchParams.get('state');
+  if(!code) return false;
+  const saved = JSON.parse(localStorage.getItem(PKCE_KEY+'_redirect')||'{}');
+  if(!saved.verifier || retState !== saved.state) return false;
+  localStorage.removeItem(PKCE_KEY+'_redirect');
+  // Limpiar URL sin recargar
+  window.history.replaceState({}, '', window.location.pathname);
+  try{
+    const tokenResp = await fetch(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/token`, {
+      method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({ client_id: cfg.cid, grant_type: 'authorization_code', code, redirect_uri: cfg.redir, code_verifier: saved.verifier, scope: GRAPH_SCOPES.join(' ') + ' offline_access' })
+    });
+    const tokenData = await tokenResp.json();
+    if(tokenData.error) throw new Error(tokenData.error_description||tokenData.error);
+    const expiry = Date.now() + (tokenData.expires_in||3600)*1000;
+    localStorage.setItem(TOKEN_KEY, JSON.stringify({ access_token: tokenData.access_token, refresh_token: tokenData.refresh_token, expiry }));
+    token = tokenData.access_token;
+    const me = await gGet('me?$select=displayName,mail,userPrincipalName');
+    user = {name:me.displayName, email:me.mail||me.userPrincipalName};
+    document.getElementById('authWall').classList.remove('on');
+    setSdot('busy');
+    loadCacheRecords(); renderList(); renderUserCard();
+    await setupOneDrive();
+    await loadRecordsFromOD();
+    showScr('list');
+    checkLiveHash();
+    return true;
+  }catch(e){
+    console.error('redirect callback error:',e);
+    return false;
+  }
 }
 
 async function freshToken(){
@@ -8232,7 +8274,7 @@ loadCfg(); initDarkMode(); showSkeletons(); showScr('list');
 loadRolePerms(); applyRoleRestrictions();
 (function(){ var d=new Date(); var s=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-'+(String(d.getDate()).padStart(2,'0')); document.getElementById('srch-desde').value=s; })();
 loadCacheRecordsAsync().then(()=>{ renderList(); updatePendingIndicator(); }).catch(()=>{ loadCacheRecords(); renderList(); });
-tryAutoLogin().catch(()=>{});
+_handleRedirectCallback().then(handled=>{ if(!handled) tryAutoLogin().catch(()=>{}); }).catch(()=>{ tryAutoLogin().catch(()=>{}); });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!navigator.onLine) document.body.classList.add('is-offline');
 
