@@ -7681,48 +7681,46 @@ async function startLocationTracking(){
   document.removeEventListener('visibilitychange',_onVisibilityChange);
   document.addEventListener('visibilitychange',_onVisibilityChange);
 
-  // watchPosition: GPS continuo — un solo watch, sin reinicios que corten el tracking
+  // Estrategia GPS para Android/TWA:
+  // 1. Obtener posición inicial rápida con baja precisión (red/WiFi — funciona siempre)
+  // 2. Luego arrancar watch de alta precisión para actualizaciones continuas
   if(navigator.geolocation){
-    _watchId=navigator.geolocation.watchPosition(
+    const _pubPos=pos=>{
+      _lastPos=pos;
+      _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(pos.coords.accuracy)}m`,'green');
+      if(document.hidden||_pubThrottle)return;
+      _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
+      _doPublish(pos).catch(()=>{});
+    };
+    const _startHighAccWatch=()=>{
+      if(_watchId!=null)return;
+      _watchId=navigator.geolocation.watchPosition(
+        _pubPos,
+        err=>{
+          if(err.code===1)
+            _setMapGpsStatus('⛔ Permiso de ubicación denegado — ve a Ajustes → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir','red');
+          // Para error 2/3: ignorar si ya tenemos posición — el watch sigue corriendo
+        },
+        {enableHighAccuracy:true,maximumAge:10000,timeout:Infinity}
+      );
+    };
+    // Paso 1: posición rápida por red/WiFi (sin esperar GPS de hardware)
+    navigator.geolocation.getCurrentPosition(
       pos=>{
-        _lastPos=pos;
-        _setMapGpsStatus(`📍 Rastreo activo · ±${Math.round(pos.coords.accuracy)}m`,'green');
-        if(document.hidden)return;
-        if(_pubThrottle)return;
-        _pubThrottle=setTimeout(()=>{_pubThrottle=null;},15000);
-        _doPublish(pos).catch(()=>{});
+        _pubPos(pos);
+        _startHighAccWatch(); // Paso 2: arrancar watch de alta precisión sobre la posición inicial
       },
-      err=>{
-        if(err.code===1){
-          _setMapGpsStatus('⛔ Permiso de ubicación denegado — ve a Ajustes → Aplicaciones → Pacífico TP → Permisos → Ubicación → Permitir','red');
-        } else if(!_lastPos){
-          // Solo mostrar advertencia si todavía no tenemos ninguna posición
-          _setMapGpsStatus('📡 Buscando señal GPS…','warn');
-        }
-        // Si ya tenemos _lastPos, ignorar el error — el watch sigue activo y seguirá intentando
+      ()=>{
+        // Si falla hasta la baja precisión, arrancar watch igualmente y mostrar aviso
+        _setMapGpsStatus('📡 Buscando señal GPS…','warn');
+        _startHighAccWatch();
       },
-      {enableHighAccuracy:true,maximumAge:10000,timeout:Infinity}
+      {enableHighAccuracy:false,timeout:8000,maximumAge:60000}
     );
-    // Re-publicar la última posición conocida cada 45s aunque no haya nuevo fix GPS
-    // Esto evita que el usuario aparezca como inactivo si el GPS tarda en responder
+    // Re-publicar última posición cada 45s para no aparecer inactivo
     _trackInterval=setInterval(()=>{
       if(_lastPos&&!document.hidden)_doPublish(_lastPos).catch(()=>{});
     },45000);
-    // Primera publicación — usar baja precisión (más rápida) si alta tarda
-    setTimeout(()=>{
-      if(_lastPos){_doPublish(_lastPos).catch(()=>{});return;}
-      navigator.geolocation.getCurrentPosition(
-        pos=>{_lastPos=pos;_doPublish(pos).catch(()=>{});},
-        ()=>{
-          navigator.geolocation.getCurrentPosition(
-            pos=>{_lastPos=pos;_doPublish(pos).catch(()=>{});},
-            ()=>{},
-            {enableHighAccuracy:false,timeout:10000,maximumAge:30000}
-          );
-        },
-        {enableHighAccuracy:true,timeout:20000,maximumAge:10000}
-      );
-    },1500);
   }
 }
 
