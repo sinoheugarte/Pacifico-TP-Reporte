@@ -3215,6 +3215,22 @@ function newRecord(){
 function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
 function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'';}
 
+// Recibe imágenes inyectadas directamente desde Android (sin pasar por content URI)
+window.addAndroidImage=function(dataUrl,filename){
+  (async()=>{
+    try{
+      const resized=await resizeDataUrl(dataUrl,2560,2560,0.88);
+      const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<30000)
+        ?{lat:_currentGPS.lat,lon:_currentGPS.lon,acc:_currentGPS.acc,at:new Date().toISOString()}
+        :null;
+      formImgs.push({dataUrl:resized,blob:null,name:filename||'foto.jpg',isOld:false,gps});
+    }catch(e){
+      formImgs.push({dataUrl:dataUrl,blob:null,name:filename||'foto.jpg',isOld:false,gps:null});
+    }
+    renderIG();
+    setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:'');
+  })();
+};
 function addImgs(inp){
   const files=Array.from(inp.files);
   inp.value='';
@@ -3299,6 +3315,9 @@ async function saveRecord(){
   if(dup){toast('⚠ Ya existe un registro con esta misma Orden, Motivo, Viaje y Fecha');return;}
 
   const btn=document.getElementById('btnSave');btn.disabled=true;
+  // Ceder un frame al browser para pintar el estado deshabilitado del botón
+  // antes de ejecutar el trabajo pesado (formImgs.map, etc.)
+  await new Promise(r=>requestAnimationFrame(r));
   const id=editingId||genId();
   
   const existingRec  = editingId ? records.find(r=>r.id===editingId) : null;
@@ -3809,11 +3828,27 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
 
 function openGal(imgs,idx){
   const arr=Array.isArray(imgs)?imgs:[];if(!arr.length)return; galImgs=arr;galIdx=idx||0;
+  // Marcar desde qué pantalla se abrió la galería para restaurarla al cerrar
+  var form=document.getElementById('scr-form');
+  var det=document.getElementById('scr-detail');
+  if(form&&form.classList.contains('on'))form.dataset.galFrom='1';
+  else if(det&&det.classList.contains('on'))det.dataset.galFrom='1';
   document.getElementById('gal').classList.add('on');document.body.style.overflow='hidden'; renderGal();
   const m=document.getElementById('gmain'); m.ontouchstart=e=>{touchX=e.touches[0].clientX}; m.ontouchend=e=>{const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>50)gnav(dx<0?1:-1)};
   document.onkeydown=e=>{if(!document.getElementById('gal').classList.contains('on'))return;if(e.key==='ArrowRight')gnav(1);if(e.key==='ArrowLeft')gnav(-1);if(e.key==='Escape')closeGal();};
 }
-function closeGal(){document.getElementById('gal').classList.remove('on');document.body.style.overflow='';}
+function closeGal(){
+  document.getElementById('gal').classList.remove('on');
+  document.body.style.overflow='';
+  // Restaurar pantalla activa (form o detail) al cerrar la galería
+  var scr=document.querySelector('.scr.on');
+  if(!scr){
+    var form=document.getElementById('scr-form');
+    var det=document.getElementById('scr-detail');
+    if(form&&form.dataset.galFrom==='1'){form.classList.add('on');delete form.dataset.galFrom;}
+    else if(det&&det.dataset.galFrom==='1'){det.classList.add('on');delete det.dataset.galFrom;}
+  }
+}
 function gnav(d){const n=galIdx+d;if(n<0||n>=galImgs.length)return;const i=document.getElementById('gimg');i.classList.add('fd');setTimeout(()=>{galIdx=n;renderGal();i.classList.remove('fd');},120);}
 function renderGal(){
   const s=galImgs[galIdx],t=galImgs.length; document.getElementById('gimg').src=s;setEl('gctr',`${galIdx+1} / ${t}`);
