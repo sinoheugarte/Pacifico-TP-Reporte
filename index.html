@@ -2774,11 +2774,17 @@ async function uploadExcel(){
   let wb=XLSX.read(b64ToArr(TMPL_B64),{type:'array'});
   const ws=wb.Sheets['REPORTE']||wb.Sheets[wb.SheetNames[0]];
 
-  /* Step 2: Clear all old data rows */
-  const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:X6');
+  /* Step 2: Clear all old data rows (A–Z) */
+  const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:Z6');
   for(let R=DATA_START;R<=Math.max(oldRange.e.r,DATA_START+500);R++){
-    for(let C=0;C<=24;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
+    for(let C=0;C<=25;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
   }
+
+  /* Step 2b: Write column headers dynamically (keeps template in sync) */
+  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  HDR_LABELS.forEach((label,i)=>{
+    ws[XLSX.utils.encode_cell({r:HDR_ROW,c:i+1})]={t:'s',v:label};
+  });
 
   /* Step 3: Write ALL records */
   for(let ri=0;ri<records.length;ri++){
@@ -2799,7 +2805,7 @@ async function uploadExcel(){
 
   /* Step 4: Update range + table ref */
   const lastRow=Math.max(DATA_START+records.length, HDR_ROW+2);
-  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:24}});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:25}});
   if(!ws['!rows']) ws['!rows']=[];
   ws['!rows'][HDR_ROW]={hpt:31};
 
