@@ -3336,10 +3336,25 @@ async function saveRecord(){
     createdBy: existingRec?.createdBy || user?.email || '',
     updatedBy: user?.email || '',
   };
-  // GPS — capturar posición AHORA (al guardar), no cuando se abrió el formulario
+  // GPS — usar posición cacheada si tiene menos de 30 s para no bloquear el guardado;
+  // si no hay una reciente, intentar captura rápida (2 s máx) sin detener la UI
   const el=document.getElementById('gps-status');
-  if(el){el.className='gps-pill wait';el.innerHTML='📡 Obteniendo ubicación…';}
-  const saveGPS = await captureGPSNow();
+  const gpsAge = _currentGPS ? (Date.now()-new Date(_currentGPS.at).getTime()) : Infinity;
+  let saveGPS = null;
+  if(gpsAge < 30000){
+    saveGPS = _currentGPS;
+  } else {
+    if(el){el.className='gps-pill wait';el.innerHTML='📡 Obteniendo ubicación…';}
+    saveGPS = await new Promise(resolve=>{
+      if(!navigator.geolocation){resolve(null);return;}
+      const t=setTimeout(()=>resolve(null),2000);
+      navigator.geolocation.getCurrentPosition(
+        pos=>{clearTimeout(t);resolve({lat:pos.coords.latitude,lon:pos.coords.longitude,acc:Math.round(pos.coords.accuracy),at:new Date().toISOString()});},
+        ()=>{clearTimeout(t);resolve(null);},
+        {maximumAge:0,timeout:2000,enableHighAccuracy:true}
+      );
+    });
+  }
   if(saveGPS){
     _currentGPS=saveGPS;
     if(el){el.className='gps-pill';el.innerHTML=`📍 ${saveGPS.lat.toFixed(5)}, ${saveGPS.lon.toFixed(5)} ±${saveGPS.acc}m`;}
