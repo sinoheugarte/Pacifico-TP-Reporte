@@ -3840,8 +3840,21 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
     if(k==='fechaInicio'||k==='fechaTermino') v = formatDateToDDMMYYYY(v);
     return `"${v.toString().replace(/"/g,'""')}"`;
   }).join(','));
-  const blob=new Blob(['\uFEFF'+[KEYS.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`reporte_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('✓ CSV descargado');
+  const csv='\uFEFF'+[KEYS.join(','),...rows].join('\n');
+  const fname=`reporte_${new Date().toISOString().slice(0,10)}.csv`;
+  if(window.AndroidBridge){
+    const reader=new FileReader();
+    reader.onloadend=()=>{
+      const b64=reader.result.split(',')[1];
+      AndroidBridge.downloadBase64(b64,fname,'text/csv');
+    };
+    reader.readAsDataURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  }else{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+    a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('✓ CSV descargado');
+  }
 }
 
 function openGal(imgs,idx){
