@@ -4671,8 +4671,26 @@ window.addEventListener('message',function(e){
   }
   if(e.data.type==='DOWNLOAD_BLOB'){
     var dl=document.getElementById('dl-btn');
-    dl.href=e.data.url;
-    dl.download=e.data.filename||'Live_Pacifico.html';
+    if(e.data.url==='__android__'){
+      // Android: el blob vive en window.opener, descargarlo desde allí
+      var _fn=e.data.filename||'Live_Pacifico.html';
+      dl.onclick=function(ev){
+        ev.preventDefault();
+        try{
+          var op=window.opener||window.parent;
+          if(op&&op.AndroidBridge&&op._androidLiveB64){
+            op.AndroidBridge.downloadBase64(op._androidLiveB64,_fn,'text/html');
+            dl.textContent='✓ Descargando...';
+            dl.onclick=null;
+          }
+        }catch(e2){console.log('live dl err',e2);}
+      };
+      dl.href='#';
+      dl.removeAttribute('download');
+    }else{
+      dl.href=e.data.url;
+      dl.download=e.data.filename||'Live_Pacifico.html';
+    }
     dl.style.display='';
   }
 });
@@ -6568,10 +6586,22 @@ window.addEventListener('resize',function(){
       setTimeout(()=>URL.revokeObjectURL(_liveBlobUrl),120000);
       // HTML autocontenido para descarga (audio via URLs absolutas, sin window.opener)
       const _saHtml=_makeStandaloneHtml(html);
-      const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
       const _dlName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
-      win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
-      setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
+      if(window.AndroidBridge){
+        // En Android los blob URLs no cruzan contextos WebView.
+        // Guardamos el base64 en la ventana principal y el popup lo descarga via window.opener.
+        var _rdl=new FileReader();
+        _rdl.onloadend=function(){
+          window._androidLiveB64=_rdl.result.split(',')[1];
+          window._androidLiveName=_dlName;
+          win.postMessage({type:'DOWNLOAD_BLOB',url:'__android__',filename:_dlName},'*');
+        };
+        _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
+      }else{
+        const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
+        win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
+        setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
+      }
     }
     // Generar enlace compartible con los datos de registros codificados en el URL
     try{
