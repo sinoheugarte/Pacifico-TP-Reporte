@@ -3220,7 +3220,7 @@ window.addAndroidImage=function(dataUrl,filename){
   (async()=>{
     try{
       const resized=await resizeDataUrl(dataUrl,2560,2560,0.88);
-      const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<300000)
+      const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<30000)
         ?{lat:_currentGPS.lat,lon:_currentGPS.lon,acc:_currentGPS.acc,at:new Date().toISOString()}
         :null;
       formImgs.push({dataUrl:resized,blob:null,name:filename||'foto.jpg',isOld:false,gps});
@@ -3244,7 +3244,7 @@ function addImgs(inp){
             // Redimensionar a máx 1920×1920 — foto de cámara sin resize puede ser >40 MB en RAM
             const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
             // GPS: usar posición cacheada si tiene menos de 30 s; no lanzar petición nueva por foto
-            const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<300000)
+            const gps=(_currentGPS&&(Date.now()-new Date(_currentGPS.at).getTime())<30000)
               ?{lat:_currentGPS.lat,lon:_currentGPS.lon,acc:_currentGPS.acc,at:new Date().toISOString()}
               :null;
             formImgs.push({dataUrl:resized,blob:file,name:file.name,isOld:false,gps});
@@ -3364,11 +3364,7 @@ async function saveRecord(){
   else if(_currentGPS){rec.gpsLat=_currentGPS.lat;rec.gpsLon=_currentGPS.lon;rec.gpsAcc=_currentGPS.acc;rec.gpsAt=_currentGPS.at;}
   else if(firstPhotoGps){rec.gpsLat=firstPhotoGps.lat;rec.gpsLon=firstPhotoGps.lon;rec.gpsAcc=firstPhotoGps.acc;rec.gpsAt=firstPhotoGps.at;}
   else if(existingRec?.gpsLat){rec.gpsLat=existingRec.gpsLat;rec.gpsLon=existingRec.gpsLon;rec.gpsAcc=existingRec.gpsAcc;rec.gpsAt=existingRec.gpsAt;}
-  // Aplicar GPS del registro a fotos que no tuvieron GPS individual al ser adjuntadas
-  const fallbackGps = saveGPS||_currentGPS||firstPhotoGps||
-    (existingRec?.gpsLat?{lat:existingRec.gpsLat,lon:existingRec.gpsLon,acc:existingRec.gpsAcc,at:existingRec.gpsAt}:null);
-  if(fallbackGps) formImgs.forEach(f=>{if(!f.gps)f.gps=fallbackGps;});
-  // Array con GPS por foto
+  // Array con GPS por foto (solo las que tienen)
   const photoGpsArr = formImgs.filter(f=>f.gps).map((f,i)=>({idx:formImgs.indexOf(f),name:f.name,...f.gps}));
   if(photoGpsArr.length) rec.imageGps = photoGpsArr;
   else if(existingRec?.imageGps) rec.imageGps = existingRec.imageGps;
