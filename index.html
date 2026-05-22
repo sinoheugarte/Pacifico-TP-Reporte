@@ -1488,7 +1488,19 @@ body.has-pending .pending-dot{display:inline-block}
           <option value="TRANSBASSO">TRANSBASSO</option>
         </select>
       </div>
-      <div class="f"><label>RUTA</label><input type="text" id="f-ruta" placeholder="Callao → Villa El Salvador"></div>
+      <div class="f"><label>ORIGEN</label>
+        <select id="f-origen" onchange="updateRuta()">
+          <option value="">— Seleccionar Distrito —</option>
+          <option>Bellavista</option><option>Callao (Cercado)</option><option>Carmen de la Legua-Reynoso</option><option>La Perla</option><option>La Punta</option><option>Mi Perú</option><option>Ventanilla</option><option>Ancón</option><option>Ate</option><option>Barranco</option><option>Breña</option><option>Carabayllo</option><option>Chaclacayo</option><option>Chorrillos</option><option>Cieneguilla</option><option>Comas</option><option>El Agustino</option><option>Independencia</option><option>Jesús María</option><option>La Molina</option><option>La Victoria</option><option>Lima (Cercado)</option><option>Lince</option><option>Los Olivos</option><option>Lurigancho-Chosica</option><option>Lurín</option><option>Magdalena del Mar</option><option>Miraflores</option><option>Pachacámac</option><option>Pucusana</option><option>Pueblo Libre</option><option>Puente Piedra</option><option>Punta Hermosa</option><option>Punta Negra</option><option>Rímac</option><option>San Bartolo</option><option>San Borja</option><option>San Isidro</option><option>San Juan de Lurigancho</option><option>San Juan de Miraflores</option><option>San Luis</option><option>San Martín de Porres</option><option>San Miguel</option><option>Santa Anita</option><option>Santa María del Mar</option>
+        </select>
+      </div>
+      <div class="f"><label>DESTINO</label>
+        <select id="f-destino" onchange="updateRuta()">
+          <option value="">— Seleccionar Distrito —</option>
+          <option>Bellavista</option><option>Callao (Cercado)</option><option>Carmen de la Legua-Reynoso</option><option>La Perla</option><option>La Punta</option><option>Mi Perú</option><option>Ventanilla</option><option>Ancón</option><option>Ate</option><option>Barranco</option><option>Breña</option><option>Carabayllo</option><option>Chaclacayo</option><option>Chorrillos</option><option>Cieneguilla</option><option>Comas</option><option>El Agustino</option><option>Independencia</option><option>Jesús María</option><option>La Molina</option><option>La Victoria</option><option>Lima (Cercado)</option><option>Lince</option><option>Los Olivos</option><option>Lurigancho-Chosica</option><option>Lurín</option><option>Magdalena del Mar</option><option>Miraflores</option><option>Pachacámac</option><option>Pucusana</option><option>Pueblo Libre</option><option>Puente Piedra</option><option>Punta Hermosa</option><option>Punta Negra</option><option>Rímac</option><option>San Bartolo</option><option>San Borja</option><option>San Isidro</option><option>San Juan de Lurigancho</option><option>San Juan de Miraflores</option><option>San Luis</option><option>San Martín de Porres</option><option>San Miguel</option><option>Santa Anita</option><option>Santa María del Mar</option>
+        </select>
+      </div>
+      <div class="f"><label>RUTA</label><input type="text" id="f-ruta" readonly style="background:var(--bg2,#f3f4f6);color:var(--fg2,#6b7280);cursor:default" placeholder="Se completa automáticamente"></div>
       <div class="f"><label>MOTIVO DE TRASLADO</label>
         <select id="f-motivo">
           <option value="">— Seleccionar —</option>
@@ -2106,7 +2118,7 @@ const CACHE_KEY = 'ptp_cache';
    Ejemplo: https://contoso.sharepoint.com/sites/Transportes            */
 const DEFAULT_SP_SITE = 'https://quimpaccorp.sharepoint.com/sites/PacificoTP';
 
-const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','viaje',
+const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','viaje',
                'guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
 
 let token=null, user=null;
@@ -2740,19 +2752,21 @@ async function uploadExcel(){
     {k:'dam'},                     // I
     {k:'tipoUnidad'},              // J
     {k:'transportista'},           // K
-    {k:'ruta'},                    // L
-    {k:'motivo'},                  // M
-    {k:'viaje',        num:true},  // N = N° VIAJE
-    {k:'guiaRemitente'},           // O
-    {k:'guiaTransportista'},       // P
-    {k:'hojaIngreso'},             // Q
-    {k:'paletas',      num:true},  // R
-    {k:'cajas',        num:true},  // S
-    {k:'sobres',       num:true},  // T
-    {k:'status'},                  // U
-    {k:'observaciones'},           // V
-    {k:'_photoCount',  num:true},  // W = N° FOTOS
-    {k:'_folder'},                 // X = CARPETA FOTOS
+    {k:'origen'},                  // L
+    {k:'destino'},                 // M
+    {k:'ruta'},                    // N
+    {k:'motivo'},                  // O
+    {k:'viaje',        num:true},  // P
+    {k:'guiaRemitente'},           // Q
+    {k:'guiaTransportista'},       // R
+    {k:'hojaIngreso'},             // S
+    {k:'paletas',      num:true},  // T
+    {k:'cajas',        num:true},  // U
+    {k:'sobres',       num:true},  // V
+    {k:'status'},                  // W
+    {k:'observaciones'},           // X
+    {k:'_photoCount',  num:true},  // Y = N° FOTOS
+    {k:'_folder'},                 // Z = CARPETA FOTOS
   ];
   const HDR_ROW=4, DATA_START=5;
 
@@ -3201,6 +3215,11 @@ function getTurnoFromTime(timeStr) {
   return '';
 }
 
+function updateRuta(){
+  const o=document.getElementById('f-origen'),d=document.getElementById('f-destino'),r=document.getElementById('f-ruta');
+  if(!o||!d||!r)return;
+  r.value=(o.value&&d.value)?o.value+' - '+d.value:'';
+}
 function calcTurno(type) {
   const t = document.getElementById('f-hora' + type).value;
   document.getElementById('f-turno' + type).value = getTurnoFromTime(t);
@@ -3619,6 +3638,7 @@ async function editRec(id){
   })) || [];
   setTimeout(() => {
     FKEYS.forEach(k => { const e = document.getElementById('f-'+k); if(e) e.value = r[k] || ''; });
+    updateRuta();
     if(r.horaInicio)  calcTurno('Inicio');
     if(r.horaTermino) calcTurno('Termino');
     renderIG();
@@ -3793,7 +3813,7 @@ function closeEM(){document.getElementById('emenu').style.display='none';documen
 function expXLSX(){
   closeEM();
   if(!records.length){toast('No hay registros');return;}
-  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   const MAP=[
     {k:'fechaInicio',      fmt:true},
     {k:'fechaTermino',     fmt:true},
@@ -3805,6 +3825,8 @@ function expXLSX(){
     {k:'dam'},
     {k:'tipoUnidad'},
     {k:'transportista'},
+    {k:'origen'},
+    {k:'destino'},
     {k:'ruta'},
     {k:'motivo'},
     {k:'viaje',            num:true},
@@ -3838,7 +3860,7 @@ function expXLSX(){
   toast('✓ Excel descargado con todos los registros');
 }
 function expCSV(){closeEM();if(!records.length){toast('No hay registros');return;}
-  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const rows=records.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
     if(k==='fechaInicio'||k==='fechaTermino') v = formatDateToDDMMYYYY(v);
@@ -3864,7 +3886,7 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
 function expSQL(){
   closeEM();
   if(!records.length){toast('No hay registros');return;}
-  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   function esc(v){
     if(v===null||v===undefined||v==='') return 'NULL';
     return "'"+String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
@@ -3885,6 +3907,8 @@ function expSQL(){
     '  `dam` VARCHAR(100),',
     '  `tipoUnidad` VARCHAR(100),',
     '  `transportista` VARCHAR(255),',
+    '  `origen` VARCHAR(100),',
+    '  `destino` VARCHAR(100),',
     '  `ruta` VARCHAR(255),',
     '  `motivo` VARCHAR(255),',
     '  `guiaRemitente` VARCHAR(100),',
