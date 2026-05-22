@@ -3091,6 +3091,9 @@ function closeQR(){
   if(_qrRAF){cancelAnimationFrame(_qrRAF);_qrRAF=null;}
   if(_qrStream){_qrStream.getTracks().forEach(t=>t.stop());_qrStream=null;}
   document.getElementById('qr-modal').classList.remove('on');
+  // Asegurar que la pantalla de edición sigue activa al cerrar el QR
+  var form=document.getElementById('scr-form');
+  if(form&&!form.classList.contains('on'))form.classList.add('on');
 }
 
 function _onQRDetected(url){
