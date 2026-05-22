@@ -413,19 +413,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   flex-direction:column;align-items:center;justify-content:center;gap:22px;
   color:#fff;padding:24px;text-align:center;overflow:hidden}
 #tovOv.on{display:flex}
-.tov-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
+.tov-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;will-change:opacity;
   animation:tovTw var(--t) ease-in-out infinite alternate;opacity:.15}
 @keyframes tovTw{to{opacity:.95}}
 #tovOv h2{font-size:1.25rem;font-weight:700;line-height:1.4;z-index:1}
 #tovOv .tov-st{font-size:.85rem;opacity:.55;min-height:1.2em;transition:opacity .3s;z-index:1}
 .tov-scene{width:min(90vw,440px);border-radius:14px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);z-index:1}
 .tov-sky{height:68px;background:linear-gradient(180deg,#060f1f 0%,#102444 100%);position:relative;overflow:hidden}
-.tov-cloud{position:absolute;font-size:1.4rem;opacity:.4;animation:tovCld var(--cd,18s) linear infinite}
-@keyframes tovCld{from{left:110%}to{left:-20%}}
+.tov-cloud{position:absolute;font-size:1.4rem;opacity:.4;animation:tovCld var(--cd,18s) linear infinite;will-change:transform;left:0}
+@keyframes tovCld{from{transform:translateX(110vw)}to{transform:translateX(-20vw)}}
 .tov-road{height:68px;background:#232333;position:relative;overflow:hidden}
 .tov-dash{position:absolute;top:50%;width:300%;height:4px;
   background:repeating-linear-gradient(90deg,#fff 0,#fff 28px,transparent 28px,transparent 60px);
-  transform:translateY(-50%);animation:tovRd .55s linear infinite}
+  transform:translateY(-50%);animation:tovRd .55s linear infinite;will-change:transform}
 @keyframes tovRd{to{transform:translateX(-60px) translateY(-50%)}}
 .tov-road.stop .tov-dash{animation-play-state:paused}
 .tov-truck{position:absolute;bottom:11px;font-size:3rem;line-height:1;left:6%;
@@ -3844,7 +3844,7 @@ function showTruckOv(title,msgs){
   // Populate stars
   var sky=ov.querySelector('.tov-sky');
   ov.querySelectorAll('.tov-star').forEach(function(s){s.remove();});
-  for(var i=0;i<40;i++){var s=document.createElement('div');s.className='tov-star';
+  for(var i=0;i<18;i++){var s=document.createElement('div');s.className='tov-star';
     s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--t:'+(1.2+Math.random()*3.5)+'s;animation-delay:'+(-Math.random()*4)+'s';
     ov.appendChild(s);}
   ov.classList.add('on');
