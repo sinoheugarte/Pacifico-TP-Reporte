@@ -1396,6 +1396,10 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="eico" style="background:#dbeafe"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <div>CSV (.csv)<div class="emb-sub">Compatible universal</div></div>
   </button>
+  <button class="emb" onclick="expSQL()">
+    <div class="eico" style="background:#fef3c7"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+    <div>MySQL (.sql)<div class="emb-sub">Importar en MySQL Server</div></div>
+  </button>
 </div>
 <div id="emOv" style="display:none;position:fixed;inset:0;z-index:199" onclick="closeEM()"></div>
 
@@ -3854,6 +3858,70 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
     a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
     a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);
     toast('✓ CSV descargado');
+  }
+}
+
+function expSQL(){
+  closeEM();
+  if(!records.length){toast('No hay registros');return;}
+  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  function esc(v){
+    if(v===null||v===undefined||v==='') return 'NULL';
+    return "'"+String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
+  }
+  const lines=[
+    '-- Exportación MySQL - Pacifico TP Reporte',
+    '-- Generado: '+new Date().toISOString(),
+    '',
+    'CREATE TABLE IF NOT EXISTS `transportes` (',
+    '  `id` VARCHAR(64) NOT NULL PRIMARY KEY,',
+    '  `fechaInicio` DATE,',
+    '  `fechaTermino` DATE,',
+    '  `horaInicio` VARCHAR(10),',
+    '  `horaTermino` VARCHAR(10),',
+    '  `turnoInicio` VARCHAR(50),',
+    '  `turnoTermino` VARCHAR(50),',
+    '  `orden` VARCHAR(100),',
+    '  `dam` VARCHAR(100),',
+    '  `tipoUnidad` VARCHAR(100),',
+    '  `transportista` VARCHAR(255),',
+    '  `ruta` VARCHAR(255),',
+    '  `motivo` VARCHAR(255),',
+    '  `guiaRemitente` VARCHAR(100),',
+    '  `guiaTransportista` VARCHAR(100),',
+    '  `hojaIngreso` VARCHAR(100),',
+    '  `paletas` INT,',
+    '  `cajas` INT,',
+    '  `sobres` INT,',
+    '  `status` VARCHAR(50),',
+    '  `observaciones` TEXT',
+    ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;',
+    ''
+  ];
+  records.forEach(r=>{
+    const vals=KEYS.map(k=>{
+      const v=r[k]!==undefined?r[k]:'';
+      if((k==='paletas'||k==='cajas'||k==='sobres')&&v!==''){
+        const n=parseInt(v,10);return isNaN(n)?'NULL':String(n);
+      }
+      return esc(v||'');
+    });
+    lines.push('INSERT INTO `transportes` (`'+KEYS.join('`,`')+'`) VALUES ('+vals.join(',')+');');
+  });
+  const sql=lines.join('\n');
+  const fname='reporte_'+new Date().toISOString().slice(0,10)+'.sql';
+  if(window.AndroidBridge){
+    const reader=new FileReader();
+    reader.onloadend=()=>{
+      const b64=reader.result.split(',')[1];
+      AndroidBridge.downloadBase64(b64,fname,'application/sql');
+    };
+    reader.readAsDataURL(new Blob([sql],{type:'application/sql;charset=utf-8;'}));
+  }else{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([sql],{type:'application/sql;charset=utf-8;'}));
+    a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('✓ SQL descargado');
   }
 }
 
