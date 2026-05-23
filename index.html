@@ -1344,14 +1344,6 @@ body.has-pending .pending-dot{display:inline-block}
       </div>
     </div>
   </div>
-  <!-- Solo Administradores -->
-  <div class="a-card admin-gate">
-    <div class="admin-gate-title">🔐 Solo Administradores</div>
-    <input class="admin-inp" type="text" id="adminUser" placeholder="Usuario administrador" autocomplete="username">
-    <input class="admin-inp" type="password" id="adminPass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminSignIn()">
-    <button class="btn-admin" onclick="adminSignIn()">Acceder al Panel Admin</button>
-    <div class="admin-err" id="adminErr"></div>
-  </div>
   <div style="height:32px"></div>
 </div>
 
@@ -2336,7 +2328,7 @@ async function signIn(){
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
 
   } catch(e){
@@ -2378,7 +2370,7 @@ async function _handleRedirectCallback(){
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   }catch(e){
@@ -2417,14 +2409,14 @@ async function tryAutoLogin(){
     user = {name:me.displayName, email:me.mail||me.userPrincipalName};
     document.getElementById('authWall').classList.remove('on');
     setSdot('busy');
-    loadCacheRecords(); 
-    renderList(); 
+    loadCacheRecords();
+    renderList();
     renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   } catch(e){
@@ -4180,16 +4172,23 @@ function closeExportFilter(){
   document.getElementById('efmOv').classList.remove('on');
 }
 window.addEventListener('popstate',function(){
-  // Si el modal está abierto, el retroceder lo cierra (igual que botón X)
+  if(!user) return; // no autenticado: permitir comportamiento nativo
+  // Caso A: modal de filtros abierto → cerrarlo (equivale a botón X)
   if(_efmIsOpen){
     _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
-    // Empujamos un nuevo estado para que el usuario quede en la app
-    if(user) history.pushState({_appRoot:true},'');
+    history.pushState({_appRoot:true},''); // queda en dashboard
     return;
   }
-  // Retroceder estando autenticado fuera del modal → bloquear salida al login
-  if(user){history.pushState({_appRoot:true},'')}
+  // Caso B: navegar por pantallas (dashboard→registros→registros…)
+  var cur=document.querySelector('.scr.on')?.id;
+  if(cur==='scr-dashboard'){
+    showScr('list'); // dashboard → registros
+  } else if(cur!=='scr-list'){
+    showScr('list'); // cualquier otra pestaña/pantalla → registros
+  }
+  // siempre re-empuja para no salir de la app
+  history.pushState({_appRoot:true},'');
 });
 function _efmUniq(key,recs){
   var src=recs||records;
@@ -7877,7 +7876,12 @@ async function loadUserRole(){
     if(!res.ok)return;
     const users=await res.json();
     const found=users.find(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
-    if(found?.rol){userRole=found.rol.toLowerCase();renderUserCard();applyRoleRestrictions();}
+    if(found?.rol){
+      userRole=found.rol.toLowerCase();
+      if(userRole==='admin'&&!_adminMode) enterAdminMode();
+      renderUserCard();
+      applyRoleRestrictions();
+    }
   }catch(e){console.log('usuarios.json:',e.message?.slice(0,60));}
 }
 
@@ -7937,7 +7941,7 @@ function enterAdminMode(){
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='';
   loadTransportista();
-  loadSysUsers().then(()=>showScr('users')).catch(()=>showScr('users'));
+  loadSysUsers().catch(()=>{});
 }
 
 function adminSignOut(){
@@ -8042,7 +8046,7 @@ function stopUsersAutoRefresh(){
 function renderUsersScreen(){
   const lbl=document.getElementById('users-admin-label');
   if(lbl){
-    try{const c=JSON.parse(localStorage.getItem('ptp_admin_creds')||'{}');lbl.textContent='Sesión: '+(c.user||ADMIN_DEFAULT_USER);}catch{}
+    if(lbl) lbl.textContent='Admin: '+(user?.name||user?.email||'Administrador');
   }
   const tbody=document.getElementById('users-tbody');
   const empty=document.getElementById('users-empty');
