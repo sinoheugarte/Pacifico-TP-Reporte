@@ -6118,22 +6118,12 @@ async function generatePPTX(){
 ════════════════════════════════════════════════════════ */
 async function generateRevealPresentation(){
   if(!records.length){toast('No hay registros');return;}
-  const _isAndroid=!!window.AndroidBridge;
-  let win=null;
-  if(_isAndroid){
-    /* Android TWA: window.open no funciona en WebView — usar overlay igual que PDF/PPT */
-    showTruckOv('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']);
-    showUp('Generando presentación Live…','Preparando datos',5);
-    await new Promise(r=>setTimeout(r,80));
-    if(_tovCancelled)return;
-  }else{
-    /* Abre la ventana ANTES de cualquier await para que Chrome no la bloquee.
-       En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
-    win=window.open('','_blank');
-    if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
-    win.document.open();win.document.write(_truckHtml('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']));win.document.close();
-  }
-  const _liveMinEnd=Date.now()+4000;
+  /* Abre la ventana ANTES de cualquier await para que Chrome no la bloquee.
+     En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
+  const win=window.open('','_blank');
+  if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
+  win.document.open();win.document.write(_truckHtml('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']));win.document.close();
+  const _liveMinEnd=Date.now()+4000; // mínimo 4s de animación del camión
   toast('Generando presentación…');
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
@@ -6967,29 +6957,25 @@ window.addEventListener('resize',function(){
 <\/script>
 </body></html>`;
 
-  const _saHtml=_makeStandaloneHtml(html);
-  const _dlName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
-
-  if(_isAndroid){
-    /* Android: descargar directamente via AndroidBridge y cerrar overlay */
-    hideTruckOv();
-    const _rdl=new FileReader();
-    _rdl.onloadend=function(){
-      window.AndroidBridge.downloadBase64(_rdl.result.split(',')[1],_dlName,'text/html');
-      toast('✓ Presentación Live lista — ábrela desde Descargas');
-    };
-    _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
-  }else{
-    /* Browser: enviar mensajes a la ventana popup */
+  /* win ya fue abierto al inicio de la función, antes de cualquier await */
+  {
+    /* Start heartbeat here — we have the user gesture from the Live button tap.
+       The audio object lives in the main window; the presentation controls it
+       via window.opener._presHbAudio so no gesture is needed in the new tab. */
     try{
       if(window._presHbAudio){window._presHbAudio.pause();window._presHbAudio=null;}
       var _hb=new Audio('heartbeat.mp3');
-      _hb.loop=true;_hb.volume=0;
+      _hb.loop=true;
+      _hb.volume=0;
       _hb.play().catch(function(){});
       window._presHbAudio=_hb;
+
       if(window._presBgAudio){window._presBgAudio.pause();window._presBgAudio=null;}
       var _bg=new Audio('026_ON THE RADIOER.mp3');
-      _bg.loop=false;_bg.volume=0;
+      _bg.loop=false;
+      _bg.volume=0;
+      // play() desbloquea el contexto de audio en móvil; pausar y resetear de inmediato
+      // para que la canción empiece desde el principio cuando el usuario llegue a slide 2
       var _bgp=_bg.play();
       if(_bgp)_bgp.then(function(){_bg.pause();_bg.currentTime=0;}).catch(function(){});
       window._presBgAudio=_bg;
@@ -7000,10 +6986,26 @@ window.addEventListener('resize',function(){
       const _liveBlobUrl=URL.createObjectURL(new Blob([html],{type:'text/html'}));
       win.postMessage({type:'DONE',title:'🖥️ Presentación Lista',msg:'La presentación está lista para iniciar',url:_liveBlobUrl,btn:'▶ ABRIR LIVE'},'*');
       setTimeout(()=>URL.revokeObjectURL(_liveBlobUrl),120000);
-      const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
-      win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
-      setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
+      // HTML autocontenido para descarga (audio via URLs absolutas, sin window.opener)
+      const _saHtml=_makeStandaloneHtml(html);
+      const _dlName=`Live_Pacifico_${new Date().toISOString().slice(0,10)}.html`;
+      if(window.AndroidBridge){
+        // En Android los blob URLs no cruzan contextos WebView.
+        // Guardamos el base64 en la ventana principal y el popup lo descarga via window.opener.
+        var _rdl=new FileReader();
+        _rdl.onloadend=function(){
+          window._androidLiveB64=_rdl.result.split(',')[1];
+          window._androidLiveName=_dlName;
+          win.postMessage({type:'DOWNLOAD_BLOB',url:'__android__',filename:_dlName},'*');
+        };
+        _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
+      }else{
+        const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
+        win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
+        setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
+      }
     }
+    // Generar enlace compartible con los datos de registros codificados en el URL
     try{
       const shareData=JSON.stringify(records.map(({images,...r})=>r));
       let b64;
