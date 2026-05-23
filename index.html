@@ -1469,23 +1469,22 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="fsec">
     <div class="slbl">Transporte</div>
     <div class="fg">
+      <div class="f"><label>TRANSPORTISTA</label>
+        <select id="f-transportista" onchange="onTransportistaChange()">
+          <option value="">— Seleccionar Empresa —</option>
+        </select>
+      </div>
+      <div class="f"><label>PLACA</label>
+        <select id="f-placa" onchange="onPlacaChange()">
+          <option value="">— Seleccionar Placa —</option>
+        </select>
+      </div>
       <div class="f"><label>TIPO DE UNIDAD</label>
         <select id="f-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>FURGÓN</option><option>TRAILER</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>PLATAFORMA</option><option>FURGONETA</option><option>OTRO</option></select>
       </div>
-      <div class="f"><label>TRANSPORTISTA</label>
-        <select id="f-transportista">
-          <option value="">— Seleccionar Empresa —</option>
-          <option value="BRUNNEN">BRUNNEN</option>
-          <option value="CISA">CISA</option>
-          <option value="EMERSON">EMERSON</option>
-          <option value="JANO CARGO">JANO CARGO</option>
-          <option value="JCH">JCH</option>
-          <option value="LINCARSA">LINCARSA</option>
-          <option value="NET'S">NET'S</option>
-          <option value="OCB">OCB</option>
-          <option value="RAMPAL">RAMPAL</option>
-          <option value="TRANSADUANAS">TRANSADUANAS</option>
-          <option value="TRANSBASSO">TRANSBASSO</option>
+      <div class="f"><label>CONDUCTOR</label>
+        <select id="f-conductor">
+          <option value="">— Seleccionar Conductor —</option>
         </select>
       </div>
       <div class="f"><label>ORIGEN</label>
@@ -2010,6 +2009,10 @@ body.has-pending .pending-dot{display:inline-block}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Permisos
     </button>
+    <button class="utab" id="utab-transportista" onclick="switchUsersTab('transportista')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Transportista
+    </button>
   </div>
   <!-- Tab: Usuarios -->
   <div id="utab-content-users">
@@ -2032,6 +2035,35 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="perms-wrap" id="perms-wrap"></div>
     <div style="padding:12px 16px;display:flex;justify-content:center">
       <button class="btn-usr-save" style="width:100%;max-width:320px" onclick="savePermsAction()">Guardar permisos</button>
+    </div>
+  </div>
+  <!-- Tab: Transportista -->
+  <div id="utab-content-transportista" style="display:none">
+    <div class="utab-bar" style="padding:10px 12px 0;border-bottom:none;margin-bottom:0">
+      <button class="utab on" id="trtab-empresa" onclick="switchTranspSubTab('empresa')">Empresa</button>
+      <button class="utab" id="trtab-vehiculos" onclick="switchTranspSubTab('vehiculos')">Vehículos</button>
+    </div>
+    <!-- Sub-tab Empresa -->
+    <div id="trtab-content-empresa">
+      <div class="users-hdr" style="padding:10px 16px 6px">
+        <div style="font-size:12px;color:var(--text2)">Empresas transportistas registradas</div>
+        <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openEmpresaModal()">+ Añadir</button></div>
+      </div>
+      <div class="users-tbl-wrap">
+        <table class="users-tbl"><thead><tr><th>Razón Social</th><th>RUC</th><th>Dirección</th><th>Cód. MTC</th><th></th></tr></thead><tbody id="empresa-tbody"></tbody></table>
+        <div id="empresa-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay empresas registradas. Pulsa <strong>+ Añadir</strong>.</div>
+      </div>
+    </div>
+    <!-- Sub-tab Vehículos -->
+    <div id="trtab-content-vehiculos" style="display:none">
+      <div class="users-hdr" style="padding:10px 16px 6px">
+        <div style="font-size:12px;color:var(--text2)">Vehículos registrados</div>
+        <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openVehiculoModal()">+ Añadir</button></div>
+      </div>
+      <div class="users-tbl-wrap">
+        <table class="users-tbl"><thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Empresa</th><th></th></tr></thead><tbody id="vehiculo-tbody"></tbody></table>
+        <div id="vehiculo-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay vehículos registrados. Pulsa <strong>+ Añadir</strong>.</div>
+      </div>
     </div>
   </div>
   <div class="admin-logout-wrap">
@@ -2118,7 +2150,7 @@ const CACHE_KEY = 'ptp_cache';
    Ejemplo: https://contoso.sharepoint.com/sites/Transportes            */
 const DEFAULT_SP_SITE = 'https://quimpaccorp.sharepoint.com/sites/PacificoTP';
 
-const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','viaje',
+const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','transportista','placa','tipoUnidad','conductor','origen','destino','ruta','motivo','viaje',
                'guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
 
 let token=null, user=null;
@@ -3234,6 +3266,7 @@ function calcTurno(type) {
 function newRecord(){
   editingId=null;formImgs=[];deletedImgs=[];_currentGPS=null;
   FKEYS.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
+  populateTransportistaSelect();onTransportistaChange();;
   const _t=new Date();
   const _hoy=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
@@ -3643,7 +3676,11 @@ async function editRec(id){
     isOld: true
   })) || [];
   setTimeout(() => {
+    populateTransportistaSelect();
     FKEYS.forEach(k => { const e = document.getElementById('f-'+k); if(e) e.value = r[k] || ''; });
+    onTransportistaChange();
+    if(r.placa){const ep=document.getElementById('f-placa');if(ep)ep.value=r.placa||'';}
+    if(r.conductor){const ec=document.getElementById('f-conductor');if(ec)ec.value=r.conductor||'';}
     updateRuta();
     if(r.horaInicio)  calcTurno('Inicio');
     if(r.horaTermino) calcTurno('Termino');
@@ -7660,6 +7697,7 @@ function enterAdminMode(){
   if(nb)nb.style.display='';
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='';
+  loadTransportista();
   loadSysUsers().then(()=>showScr('users')).catch(()=>showScr('users'));
 }
 
@@ -8429,12 +8467,14 @@ function applyRoleRestrictions(){
 function switchUsersTab(tab){
   document.getElementById('utab-content-users').style.display=tab==='users'?'':'none';
   document.getElementById('utab-content-perms').style.display=tab==='perms'?'':'none';
+  document.getElementById('utab-content-transportista').style.display=tab==='transportista'?'':'none';
   document.getElementById('utab-users').classList.toggle('on',tab==='users');
   document.getElementById('utab-perms').classList.toggle('on',tab==='perms');
-  // Ajustar botones de cabecera
+  document.getElementById('utab-transportista').classList.toggle('on',tab==='transportista');
   const actions=document.getElementById('users-hdr-actions');
   if(actions)actions.style.display=tab==='users'?'flex':'none';
   if(tab==='perms')renderPermsPanel();
+  if(tab==='transportista'){switchTranspSubTab('empresa');}
 }
 
 /* ════════════════════════════════════════════════════════
@@ -8769,6 +8809,204 @@ async function runAutoAnalysis(tipo){
   if(btn)btn.classList.remove('loading');
 }
 
+/* ════════════════════════════════════════════════════════
+   MÓDULO TRANSPORTISTA — Empresas y Vehículos
+════════════════════════════════════════════════════════ */
+let _transportistaDB={empresas:[],vehiculos:[]};
+
+function loadTransportista(){
+  try{const s=localStorage.getItem('ptp_transportista');if(s)_transportistaDB=JSON.parse(s);}catch{}
+  _loadTransportistaSP().catch(()=>{});
+  populateTransportistaSelect();
+}
+
+async function _transportistaPath(){
+  try{const driveId=await ensureSPDrive();return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/transportista.json')}`;}
+  catch(e){return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/transportista.json')}`;}
+}
+
+async function _loadTransportistaSP(){
+  if(!token)return;
+  try{
+    const bp=await _transportistaPath();
+    const item=await gGet(`${bp}?$select=@microsoft.graph.downloadUrl`);
+    const dl=item['@microsoft.graph.downloadUrl'];
+    const res=await fetch(dl+'&t='+Date.now());
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data&&typeof data==='object'){
+      _transportistaDB={empresas:Array.isArray(data.empresas)?data.empresas:[],vehiculos:Array.isArray(data.vehiculos)?data.vehiculos:[]};
+      localStorage.setItem('ptp_transportista',JSON.stringify(_transportistaDB));
+      populateTransportistaSelect();
+    }
+  }catch(e){console.log('_loadTransportistaSP:',e.message?.slice(0,60));}
+}
+
+async function _saveTransportistaSP(){
+  localStorage.setItem('ptp_transportista',JSON.stringify(_transportistaDB));
+  if(!token)return;
+  try{
+    const bp=await _transportistaPath();
+    await gPut(`${bp}:/content`,JSON.stringify(_transportistaDB,null,2),'application/json');
+  }catch(e){console.warn('_saveTransportistaSP:',e.message?.slice(0,60));}
+}
+
+/* ── Sub-tabs ── */
+function switchTranspSubTab(tab){
+  document.getElementById('trtab-content-empresa').style.display=tab==='empresa'?'':'none';
+  document.getElementById('trtab-content-vehiculos').style.display=tab==='vehiculos'?'':'none';
+  document.getElementById('trtab-empresa').classList.toggle('on',tab==='empresa');
+  document.getElementById('trtab-vehiculos').classList.toggle('on',tab==='vehiculos');
+  if(tab==='empresa')renderEmpresaList();
+  if(tab==='vehiculos')renderVehiculoList();
+}
+
+/* ── Empresa CRUD ── */
+function openEmpresaModal(id){
+  document.getElementById('empresa-modal-title').textContent=id?'Editar Empresa':'Nueva Empresa';
+  document.getElementById('em-id').value=id||'';
+  const e=id?_transportistaDB.empresas.find(x=>x.id===id):null;
+  document.getElementById('em-razonSocial').value=e?.razonSocial||'';
+  document.getElementById('em-ruc').value=e?.ruc||'';
+  document.getElementById('em-direccion').value=e?.direccion||'';
+  document.getElementById('em-codigoMTC').value=e?.codigoMTC||'';
+  document.getElementById('empresa-modal-ov').style.display='flex';
+}
+function closeEmpresaModal(){document.getElementById('empresa-modal-ov').style.display='none';}
+
+async function saveEmpresa(){
+  const razonSocial=document.getElementById('em-razonSocial').value.trim().toUpperCase();
+  const ruc=document.getElementById('em-ruc').value.trim();
+  const direccion=document.getElementById('em-direccion').value.trim();
+  const codigoMTC=document.getElementById('em-codigoMTC').value.trim();
+  if(!razonSocial){toast('⚠ La razón social es obligatoria');return;}
+  if(!ruc){toast('⚠ El RUC es obligatorio');return;}
+  const id=document.getElementById('em-id').value||(crypto.randomUUID?.())||('e'+Date.now());
+  const idx=_transportistaDB.empresas.findIndex(x=>x.id===id);
+  const obj={id,razonSocial,ruc,direccion,codigoMTC};
+  if(idx>=0)_transportistaDB.empresas[idx]=obj;else _transportistaDB.empresas.push(obj);
+  await _saveTransportistaSP();
+  closeEmpresaModal();renderEmpresaList();populateTransportistaSelect();
+  toast('✓ Empresa guardada');
+}
+
+async function deleteEmpresa(id){
+  if(!confirm('¿Eliminar esta empresa?'))return;
+  _transportistaDB.empresas=_transportistaDB.empresas.filter(x=>x.id!==id);
+  await _saveTransportistaSP();
+  renderEmpresaList();populateTransportistaSelect();
+  toast('Empresa eliminada');
+}
+
+function renderEmpresaList(){
+  const tbody=document.getElementById('empresa-tbody');
+  const empty=document.getElementById('empresa-empty');
+  if(!tbody)return;
+  if(!_transportistaDB.empresas.length){tbody.innerHTML='';if(empty)empty.style.display='';return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=_transportistaDB.empresas.map(e=>`<tr>
+    <td><strong>${esc(e.razonSocial)}</strong></td>
+    <td>${esc(e.ruc)}</td>
+    <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.direccion||'—')}</td>
+    <td>${esc(e.codigoMTC||'—')}</td>
+    <td><button class="btn-usr-edit" onclick="openEmpresaModal('${e.id}')">Editar</button><button class="btn-usr-del" onclick="deleteEmpresa('${e.id}')">Eliminar</button></td>
+  </tr>`).join('');
+}
+
+/* ── Vehiculo CRUD ── */
+function openVehiculoModal(id){
+  document.getElementById('vehiculo-modal-title').textContent=id?'Editar Vehículo':'Nuevo Vehículo';
+  document.getElementById('vm-id').value=id||'';
+  const v=id?_transportistaDB.vehiculos.find(x=>x.id===id):null;
+  document.getElementById('vm-placa').value=v?.placa||'';
+  document.getElementById('vm-tipoUnidad').value=v?.tipoUnidad||'';
+  document.getElementById('vm-marca').value=v?.marca||'';
+  document.getElementById('vm-modelo').value=v?.modelo||'';
+  document.getElementById('vm-codigoMTC').value=v?.codigoMTC||'';
+  const esel=document.getElementById('vm-empresa');
+  esel.innerHTML='<option value="">— Seleccionar Empresa —</option>'+
+    _transportistaDB.empresas.map(e=>`<option value="${esc(e.razonSocial)}"${v?.empresa===e.razonSocial?' selected':''}>${esc(e.razonSocial)}</option>`).join('');
+  document.getElementById('vehiculo-modal-ov').style.display='flex';
+}
+function closeVehiculoModal(){document.getElementById('vehiculo-modal-ov').style.display='none';}
+
+async function saveVehiculo(){
+  const placa=document.getElementById('vm-placa').value.trim().toUpperCase();
+  const tipoUnidad=document.getElementById('vm-tipoUnidad').value;
+  const marca=document.getElementById('vm-marca').value.trim().toUpperCase();
+  const modelo=document.getElementById('vm-modelo').value.trim().toUpperCase();
+  const codigoMTC=document.getElementById('vm-codigoMTC').value.trim();
+  const empresa=document.getElementById('vm-empresa').value;
+  if(!placa){toast('⚠ La placa es obligatoria');return;}
+  if(!/^[A-Z0-9]{3}-[0-9]{3}$/.test(placa)){toast('⚠ Formato de placa inválido — ejemplo: A2R-725');return;}
+  if(!empresa){toast('⚠ Selecciona una empresa');return;}
+  const id=document.getElementById('vm-id').value||(crypto.randomUUID?.())||('v'+Date.now());
+  const idx=_transportistaDB.vehiculos.findIndex(x=>x.id===id);
+  const obj={id,placa,tipoUnidad,marca,modelo,codigoMTC,empresa};
+  if(idx>=0)_transportistaDB.vehiculos[idx]=obj;else _transportistaDB.vehiculos.push(obj);
+  await _saveTransportistaSP();
+  closeVehiculoModal();renderVehiculoList();
+  toast('✓ Vehículo guardado');
+}
+
+async function deleteVehiculo(id){
+  if(!confirm('¿Eliminar este vehículo?'))return;
+  _transportistaDB.vehiculos=_transportistaDB.vehiculos.filter(x=>x.id!==id);
+  await _saveTransportistaSP();
+  renderVehiculoList();toast('Vehículo eliminado');
+}
+
+function renderVehiculoList(){
+  const tbody=document.getElementById('vehiculo-tbody');
+  const empty=document.getElementById('vehiculo-empty');
+  if(!tbody)return;
+  if(!_transportistaDB.vehiculos.length){tbody.innerHTML='';if(empty)empty.style.display='';return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=_transportistaDB.vehiculos.map(v=>`<tr>
+    <td><strong>${esc(v.placa)}</strong></td>
+    <td>${esc(v.tipoUnidad||'—')}</td>
+    <td>${esc(v.marca||'—')}</td>
+    <td>${esc(v.modelo||'—')}</td>
+    <td>${esc(v.empresa||'—')}</td>
+    <td><button class="btn-usr-edit" onclick="openVehiculoModal('${v.id}')">Editar</button><button class="btn-usr-del" onclick="deleteVehiculo('${v.id}')">Eliminar</button></td>
+  </tr>`).join('');
+}
+
+/* ── Cascade filtering en formulario ── */
+function populateTransportistaSelect(){
+  const sel=document.getElementById('f-transportista');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar Empresa —</option>'+
+    _transportistaDB.empresas.map(e=>`<option value="${esc(e.razonSocial)}">${esc(e.razonSocial)}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+
+function onTransportistaChange(){
+  const transp=(document.getElementById('f-transportista')?.value||'').trim();
+  // Filtrar PLACA
+  const placaSel=document.getElementById('f-placa');
+  if(placaSel){
+    const vehs=transp?_transportistaDB.vehiculos.filter(v=>v.empresa===transp):_transportistaDB.vehiculos;
+    placaSel.innerHTML='<option value="">— Seleccionar Placa —</option>'+
+      vehs.map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}${v.tipoUnidad?' · '+v.tipoUnidad:''}</option>`).join('');
+  }
+  // Filtrar CONDUCTOR
+  const condSel=document.getElementById('f-conductor');
+  if(condSel){
+    const conds=_sysUsers.filter(u=>(u.rol||'').toLowerCase()==='conductor'&&(!transp||u.empresa===transp));
+    condSel.innerHTML='<option value="">— Seleccionar Conductor —</option>'+
+      conds.map(u=>{const lbl=[u.nombre,u.apellidos].filter(Boolean).join(' ').toUpperCase();return `<option value="${esc(lbl)}">${esc(lbl)}</option>`;}).join('');
+  }
+}
+
+function onPlacaChange(){
+  const placa=document.getElementById('f-placa')?.value;
+  if(!placa)return;
+  const v=_transportistaDB.vehiculos.find(x=>x.placa===placa);
+  if(v?.tipoUnidad){const tu=document.getElementById('f-tipoUnidad');if(tu)tu.value=v.tipoUnidad;}
+}
+
 /* Hook en renderDashboard para inicializar el panel IA */
 const _origRenderDashboard=renderDashboard;
 renderDashboard=function(){
@@ -8798,6 +9036,42 @@ renderDashboard=function(){
     <div class="user-modal-btns">
       <button class="btn-usr-cancel" onclick="closeUserModal()">Cancelar</button>
       <button class="btn-usr-save" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ EMPRESA MODAL ════════════ -->
+<div id="empresa-modal-ov" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeEmpresaModal()">
+  <div class="user-modal">
+    <div class="user-modal-title" id="empresa-modal-title">Nueva Empresa</div>
+    <input type="hidden" id="em-id">
+    <div class="f-row"><label>Razón Social *</label><input type="text" id="em-razonSocial" placeholder="Razón social de la empresa"></div>
+    <div class="f-row"><label>RUC *</label><input type="text" id="em-ruc" placeholder="20XXXXXXXXX" maxlength="11"></div>
+    <div class="f-row"><label>Dirección</label><input type="text" id="em-direccion" placeholder="Av. ..."></div>
+    <div class="f-row"><label>Código MTC <span style="font-weight:400">(opcional)</span></label><input type="text" id="em-codigoMTC" placeholder="M-123"></div>
+    <div class="user-modal-btns">
+      <button class="btn-usr-cancel" onclick="closeEmpresaModal()">Cancelar</button>
+      <button class="btn-usr-save" onclick="saveEmpresa()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ VEHICULO MODAL ════════════ -->
+<div id="vehiculo-modal-ov" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeVehiculoModal()">
+  <div class="user-modal">
+    <div class="user-modal-title" id="vehiculo-modal-title">Nuevo Vehículo</div>
+    <input type="hidden" id="vm-id">
+    <div class="f-row"><label>Placa * <span style="font-size:10px;font-weight:400">(ej: A2R-725)</span></label><input type="text" id="vm-placa" placeholder="ABC-123" maxlength="7" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="f-row"><label>Tipo de Unidad *</label>
+      <select id="vm-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>FURGÓN</option><option>TRAILER</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>PLATAFORMA</option><option>FURGONETA</option><option>OTRO</option></select>
+    </div>
+    <div class="f-row"><label>Marca</label><input type="text" id="vm-marca" placeholder="VOLVO"></div>
+    <div class="f-row"><label>Modelo</label><input type="text" id="vm-modelo" placeholder="FH16"></div>
+    <div class="f-row"><label>Código MTC</label><input type="text" id="vm-codigoMTC" placeholder="V-456"></div>
+    <div class="f-row"><label>Empresa *</label><select id="vm-empresa"><option value="">— Seleccionar Empresa —</option></select></div>
+    <div class="user-modal-btns">
+      <button class="btn-usr-cancel" onclick="closeVehiculoModal()">Cancelar</button>
+      <button class="btn-usr-save" onclick="saveVehiculo()">Guardar</button>
     </div>
   </div>
 </div>
