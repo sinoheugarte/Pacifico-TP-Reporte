@@ -1454,6 +1454,13 @@ body.has-pending .pending-dot{display:inline-block}
       </div>
       <div class="fr">
         <div class="f"><label>N° ORDEN</label><input type="text" id="f-orden" placeholder="ORD-001"></div>
+        <div class="f"><label>CLIENTE</label>
+          <select id="f-cliente">
+            <option value="">— Seleccionar Cliente —</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
         <div class="f"><label>DAM</label><input type="text" id="f-dam" placeholder="DAM"></div>
       </div>
     </div>
@@ -1695,7 +1702,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="sbar" style="padding-bottom:8px">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="sbar-inp" id="dash-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor…" oninput="renderDashboard()">
+      <input class="sbar-inp" id="dash-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor, cliente…" oninput="renderDashboard()">
     </div>
     <div class="sbar-dates">
       <div class="sbar-date-grp">
@@ -1804,6 +1811,12 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartConductores"></canvas></div>
     </div>
 
+    <!-- Clientes bar -->
+    <div class="dash-card">
+      <div class="dash-card-title">Top Clientes</div>
+      <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartClientes"></canvas></div>
+    </div>
+
     <!-- ÓRDENES CON MÚLTIPLES VIAJES -->
     <div class="dash-card">
       <div class="dash-card-title">Órdenes con Múltiples Viajes</div>
@@ -1843,7 +1856,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="sbar" style="padding-bottom:8px">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="sbar-inp" id="rec-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor…" oninput="renderRecordsTable()">
+      <input class="sbar-inp" id="rec-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor, cliente…" oninput="renderRecordsTable()">
     </div>
     <div class="sbar-dates">
       <div class="sbar-date-grp">
@@ -2006,7 +2019,8 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="users-hdr-sub" id="users-admin-label"></div>
     </div>
     <div class="users-hdr-actions" id="users-hdr-actions">
-      <button class="btn-usr-add" onclick="openUserModal()">+ Añadir</button>
+      <button class="btn-usr-add" id="btn-add-user" onclick="openUserModal()">+ Añadir</button>
+      <button class="btn-usr-add" id="btn-add-cliente" style="display:none" onclick="openClienteModal()">+ Añadir</button>
     </div>
   </div>
   <!-- Tabs -->
@@ -2014,6 +2028,10 @@ body.has-pending .pending-dot{display:inline-block}
     <button class="utab on" id="utab-users" onclick="switchUsersTab('users')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
       Usuarios
+    </button>
+    <button class="utab" id="utab-clientes" onclick="switchUsersTab('clientes')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Clientes
     </button>
     <button class="utab" id="utab-perms" onclick="switchUsersTab('perms')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -2033,6 +2051,22 @@ body.has-pending .pending-dot{display:inline-block}
       </table>
       <div class="users-empty" id="users-empty" style="display:none">
         No hay usuarios registrados. Pulsa <strong>+ Añadir</strong> para comenzar.
+      </div>
+    </div>
+  </div>
+  <!-- Tab: Clientes -->
+  <div id="utab-content-clientes" style="display:none">
+    <div class="users-tbl-wrap">
+      <table class="users-tbl">
+        <thead>
+          <tr>
+            <th>Razón Social</th><th>RUC</th><th>Dirección</th><th>Contacto</th><th>Teléfono</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="clientes-tbody"></tbody>
+      </table>
+      <div class="users-empty" id="clientes-empty" style="display:none">
+        No hay clientes registrados. Pulsa <strong>+ Añadir</strong> para comenzar.
       </div>
     </div>
   </div>
@@ -2168,12 +2202,13 @@ const CACHE_KEY = 'ptp_cache';
    Ejemplo: https://contoso.sharepoint.com/sites/Transportes            */
 const DEFAULT_SP_SITE = 'https://quimpaccorp.sharepoint.com/sites/PacificoTP';
 
-const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','transportista','placa','tipoUnidad','conductor','origen','destino','ruta','motivo','viaje',
+const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','transportista','placa','tipoUnidad','conductor','origen','destino','ruta','motivo','viaje',
                'guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
 
 let token=null, user=null;
 let spDriveId=null;
 let records=[], editingId=null, activeFilter='todos', dashFilter='todos', recFilter='todos';
+let _clientes=[];
 let formImgs=[], deletedImgs=[]; 
 let recImgs={}, detImgs=[], galImgs=[], galIdx=0, touchX=0;
 let lastSync=null, cfg={cid:'',tid:'common'};
@@ -3083,7 +3118,8 @@ function _matchesSearch(r, q){
       || (r.ruta||'').toLowerCase().includes(ql)
       || (r.transportista||'').toLowerCase().includes(ql)
       || (r.placa||'').toLowerCase().includes(ql)
-      || (r.conductor||'').toLowerCase().includes(ql);
+      || (r.conductor||'').toLowerCase().includes(ql)
+      || (r.cliente||'').toLowerCase().includes(ql);
 }
 
 function clearDateFilter(){
@@ -3146,6 +3182,7 @@ function renderList(){
       <div class="rc-main">${r.ruta||'Sin ruta'}</div>
       <div class="rc-sub">${r.transportista||'—'}${r.tipoUnidad?' · '+r.tipoUnidad:''}</div>
       ${(r.placa||r.conductor)?`<div class="rc-sub" style="font-size:11px;opacity:.8">${r.placa||''}${r.placa&&r.conductor?' · ':''}${r.conductor||''}</div>`:''}
+      ${r.cliente?`<div class="rc-sub" style="font-size:11px;opacity:.75">👤 ${r.cliente}</div>`:''}
       ${chips?`<div class="rc-chips">${chips}</div>`:''}
       <div class="rc-foot"><span class="badge ${sc}">${r.status||'—'}</span><div class="thumbs">${ths}${more}</div></div>
     </div>`;
@@ -3310,6 +3347,8 @@ function newRecord(){
   editingId=null;formImgs=[];deletedImgs=[];_currentGPS=null;
   FKEYS.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
   populateTransportistaSelect();onTransportistaChange();;
+  if(!_clientes.length)loadClientesFromSP().catch(()=>{});
+  populateClienteSelect();
   const _t=new Date();
   const _hoy=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
@@ -3720,6 +3759,7 @@ async function editRec(id){
   })) || [];
   setTimeout(() => {
     populateTransportistaSelect();
+    populateClienteSelect();
     FKEYS.forEach(k => { const e = document.getElementById('f-'+k); if(e) e.value = r[k] || ''; });
     onTransportistaChange();
     if(r.placa){const ep=document.getElementById('f-placa');if(ep)ep.value=r.placa||'';}
@@ -4148,7 +4188,8 @@ var _EFM_FIELDS=[
   {id:'placa',label:'🚗 Placa',key:'placa'},
   {id:'conductor',label:'🧑‍✈️ Conductor',key:'conductor'},
   {id:'status',label:'🏷️ Status',key:'status'},
-  {id:'ruta',label:'🗺️ Ruta',key:'ruta'}
+  {id:'ruta',label:'🗺️ Ruta',key:'ruta'},
+  {id:'cliente',label:'🏢 Cliente',key:'cliente',getVals:function(){return (_clientes||[]).map(function(c){return c.razonSocial||'';}).filter(Boolean).sort();}}
 ];
 var _EFM_STATUS_LABELS={pendiente:'Pendiente','en-ruta':'En Ruta',completado:'Completado',cancelado:'Cancelado'};
 var _EFM_TYPE_LABELS={pdf:'Generar PDF',ppt:'Generar PPT',live:'Generar LIVE'};
@@ -4723,6 +4764,23 @@ function renderDashboard(){
               y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
   });
 
+  // ── CLIENTES BAR ──
+  const clienteMap={};
+  fil.forEach(r=>{if(r.cliente) clienteMap[r.cliente]=(clienteMap[r.cliente]||0)+1;});
+  const clienteEntries=Object.entries(clienteMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(document.getElementById('chartClientes')){
+    chartInstances.clientes = new Chart(document.getElementById('chartClientes'),{
+      type:'bar',
+      data:{labels:clienteEntries.map(([k])=>k),
+        datasets:[{label:'Viajes',data:clienteEntries.map(([,v])=>v),
+          backgroundColor:'#F97316',borderRadius:5,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+                y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
+    });
+  }
+
   // ── TABLE: ÓRDENES CON MÚLTIPLES VIAJES ──
   const ovMap={};
   fil.forEach(r=>{
@@ -4750,7 +4808,7 @@ function renderDashboard(){
   // ── TABLE: ÚLTIMOS 5 REGISTROS ──
   const last5=fil.slice().sort((a,b)=>(b.updatedAt||b.fechaInicio||'').localeCompare(a.updatedAt||a.fechaInicio||'')).slice(0,5);
   if(last5.length>0){
-    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Transportista</th><th ${thS}>Placa</th><th ${thS}>Conductor</th><th ${thS}>Status</th></tr>`;
+    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Cliente</th><th ${thS}>Transportista</th><th ${thS}>Placa</th><th ${thS}>Conductor</th><th ${thS}>Status</th></tr>`;
     const sBadge=(s)=>{
       const colors=_dk
         ?{completado:'#6ee7b7',pendiente:'#fcd34d','en-ruta':'#93c5fd',cancelado:'#fca5a5'}
@@ -4761,7 +4819,7 @@ function renderDashboard(){
       return `<span style="background:${bgs[s]||(_dk?'#1e293b':'#f1f5f9')};color:${colors[s]||(_dk?'#94a3b8':'#64748b')};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase">${s||'—'}</span>`;
     };
     last5.forEach((r,i)=>{
-      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${(r.transportista||'—').substring(0,16)}</td><td ${tdS(i)}>${r.placa||'—'}</td><td ${tdS(i)}>${(r.conductor||'—').substring(0,14)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
+      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${(r.cliente||'—').substring(0,16)}</td><td ${tdS(i)}>${(r.transportista||'—').substring(0,16)}</td><td ${tdS(i)}>${r.placa||'—'}</td><td ${tdS(i)}>${(r.conductor||'—').substring(0,14)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
     });
     h+='</table>';
     setEl('tblUltimos',h);
@@ -7369,6 +7427,7 @@ var _rtCols=[
   {k:'turnoInicio',       label:'Turno Ini.',      fmt:r=>r.turnoInicio||'—',                            cls:''},
   {k:'turnoTermino',      label:'Turno Tér.',      fmt:r=>r.turnoTermino||'—',                           cls:''},
   {k:'orden',             label:'Orden',           fmt:r=>r.orden||'—',                                  cls:'td-orden'},
+  {k:'cliente',           label:'Cliente',          fmt:r=>r.cliente||'—',                                cls:'td-trunc'},
   {k:'dam',               label:'DAM',             fmt:r=>r.dam||'—',                                    cls:'td-trunc'},
   {k:'tipoUnidad',        label:'Tipo Unidad',     fmt:r=>r.tipoUnidad||'—',                             cls:'td-trunc'},
   {k:'transportista',     label:'Transportista',   fmt:r=>r.transportista||'—',                          cls:'td-trunc'},
@@ -7959,6 +8018,7 @@ function enterAdminMode(){
   if(nbM)nbM.style.display='';
   loadTransportista();
   loadSysUsers().catch(()=>{});
+  loadClientesFromSP().catch(()=>{});
 }
 
 function adminSignOut(){
@@ -7984,6 +8044,116 @@ async function _usuariosPath(){
     console.log('_usuariosPath SP fallback:',e.message?.slice(0,60));
     return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/usuarios.json')}`;
   }
+}
+
+/* ════════════════════════════════════════════════════════
+   CLIENTES — CRUD
+════════════════════════════════════════════════════════ */
+async function _clientesPath(){
+  try{
+    const driveId=await ensureSPDrive();
+    return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/clientes.json')}`;
+  }catch(e){
+    return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/clientes.json')}`;
+  }
+}
+
+async function loadClientesFromSP(){
+  try{const s=localStorage.getItem('ptp_clientes');if(s){_clientes=JSON.parse(s)||[];}}catch{}
+  if(!token)return;
+  try{
+    const bp=await _clientesPath();
+    const item=await gGet(`${bp}?$select=@microsoft.graph.downloadUrl`);
+    const dl=item['@microsoft.graph.downloadUrl'];
+    const res=await fetch(dl+'&t='+Date.now());
+    if(!res.ok)return;
+    const data=await res.json();
+    if(Array.isArray(data)){
+      _clientes=data;
+      localStorage.setItem('ptp_clientes',JSON.stringify(_clientes));
+      populateClienteSelect();
+    }
+  }catch(e){console.log('loadClientesFromSP:',e.message?.slice(0,60));}
+}
+
+async function saveClientesToSP(){
+  localStorage.setItem('ptp_clientes',JSON.stringify(_clientes));
+  if(!token){
+    toast('⚠ Guardado solo localmente — inicia sesión con Microsoft para sincronizar');
+    return;
+  }
+  try{
+    const bp=await _clientesPath();
+    await gPut(`${bp}:/content`,JSON.stringify(_clientes,null,2),'application/json');
+  }catch(e){
+    console.warn('saveClientesToSP:',e.message?.slice(0,60));
+    toast('⚠ No se pudo guardar en la nube: '+(e.message?.slice(0,60)||'error'));
+  }
+}
+
+function openClienteModal(id){
+  const m=document.getElementById('cliente-modal-ov');
+  if(!m)return;
+  document.getElementById('cliente-modal-title').textContent=id?'Editar Cliente':'Nuevo Cliente';
+  document.getElementById('cm-id').value=id||'';
+  const c=id?_clientes.find(x=>x.id===id):null;
+  document.getElementById('cm-razonSocial').value=c?.razonSocial||'';
+  document.getElementById('cm-ruc').value=c?.ruc||'';
+  document.getElementById('cm-direccion').value=c?.direccion||'';
+  document.getElementById('cm-contacto').value=c?.contacto||'';
+  document.getElementById('cm-telefono').value=c?.telefono||'';
+  m.style.display='flex';
+}
+function closeClienteModal(){const m=document.getElementById('cliente-modal-ov');if(m)m.style.display='none';}
+
+async function saveClienteModal(){
+  const razonSocial=document.getElementById('cm-razonSocial').value.trim().toUpperCase();
+  const ruc=document.getElementById('cm-ruc').value.trim();
+  const direccion=document.getElementById('cm-direccion').value.trim();
+  const contacto=document.getElementById('cm-contacto').value.trim();
+  const telefono=document.getElementById('cm-telefono').value.trim();
+  if(!razonSocial){toast('⚠ La razón social es obligatoria');return;}
+  const id=document.getElementById('cm-id').value||(crypto.randomUUID?.())||('c'+Date.now());
+  const idx=_clientes.findIndex(x=>x.id===id);
+  const obj={id,razonSocial,ruc,direccion,contacto,telefono};
+  if(idx>=0)_clientes[idx]=obj;else _clientes.push(obj);
+  await saveClientesToSP();
+  closeClienteModal();renderClientesTable();populateClienteSelect();
+  toast('✓ Cliente guardado');
+}
+
+async function deleteCliente(id){
+  if(!confirm('¿Eliminar este cliente?'))return;
+  _clientes=_clientes.filter(x=>x.id!==id);
+  await saveClientesToSP();
+  renderClientesTable();populateClienteSelect();
+  toast('Cliente eliminado');
+}
+
+function renderClientesTable(){
+  const tbody=document.getElementById('clientes-tbody');
+  const empty=document.getElementById('clientes-empty');
+  if(!tbody)return;
+  if(!_clientes.length){tbody.innerHTML='';if(empty)empty.style.display='';return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=[..._clientes].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es')).map(c=>`<tr>
+    <td><strong>${esc(c.razonSocial)}</strong></td>
+    <td>${esc(c.ruc||'—')}</td>
+    <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.direccion||'—')}</td>
+    <td>${esc(c.contacto||'—')}</td>
+    <td>${esc(c.telefono||'—')}</td>
+    <td><button class="btn-usr-edit" onclick="openClienteModal('${c.id}')">Editar</button><button class="btn-usr-del" onclick="deleteCliente('${c.id}')">Eliminar</button></td>
+  </tr>`).join('');
+}
+
+function populateClienteSelect(){
+  const sel=document.getElementById('f-cliente');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar Cliente —</option>'+
+    [..._clientes].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es'))
+      .map(c=>`<option value="${esc(c.razonSocial)}">${esc(c.razonSocial)}</option>`).join('');
+  if(cur)sel.value=cur;
 }
 
 async function _permsPath(){
@@ -8771,12 +8941,19 @@ function applyRoleRestrictions(){
 
 function switchUsersTab(tab){
   document.getElementById('utab-content-users').style.display=tab==='users'?'':'none';
+  document.getElementById('utab-content-clientes').style.display=tab==='clientes'?'':'none';
   document.getElementById('utab-content-perms').style.display=tab==='perms'?'':'none';
   document.getElementById('utab-users').classList.toggle('on',tab==='users');
+  document.getElementById('utab-clientes').classList.toggle('on',tab==='clientes');
   document.getElementById('utab-perms').classList.toggle('on',tab==='perms');
   const actions=document.getElementById('users-hdr-actions');
-  if(actions)actions.style.display=tab==='users'?'flex':'none';
+  if(actions)actions.style.display=(tab==='users'||tab==='clientes')?'flex':'none';
+  const btnUser=document.getElementById('btn-add-user');
+  const btnCliente=document.getElementById('btn-add-cliente');
+  if(btnUser)btnUser.style.display=tab==='users'?'':'none';
+  if(btnCliente)btnCliente.style.display=tab==='clientes'?'':'none';
   if(tab==='perms')renderPermsPanel();
+  if(tab==='clientes'){renderClientesTable();if(!_clientes.length)loadClientesFromSP().then(()=>renderClientesTable()).catch(()=>{});}
 }
 
 /* ════════════════════════════════════════════════════════
@@ -9351,6 +9528,23 @@ renderDashboard=function(){
     <div class="user-modal-btns">
       <button class="btn-usr-cancel" onclick="closeUserModal()">Cancelar</button>
       <button class="btn-usr-save" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ CLIENTE MODAL ════════════ -->
+<div id="cliente-modal-ov" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeClienteModal()">
+  <div class="user-modal">
+    <div class="user-modal-title" id="cliente-modal-title">Nuevo Cliente</div>
+    <input type="hidden" id="cm-id">
+    <div class="f-row"><label>Razón Social *</label><input type="text" id="cm-razonSocial" placeholder="Razón social del cliente"></div>
+    <div class="f-row"><label>RUC</label><input type="text" id="cm-ruc" placeholder="20XXXXXXXXX" maxlength="11"></div>
+    <div class="f-row"><label>Dirección</label><input type="text" id="cm-direccion" placeholder="Av. ..."></div>
+    <div class="f-row"><label>Contacto</label><input type="text" id="cm-contacto" placeholder="Nombre del contacto"></div>
+    <div class="f-row"><label>Teléfono</label><input type="text" id="cm-telefono" placeholder="9XXXXXXXX"></div>
+    <div class="user-modal-btns">
+      <button class="btn-usr-cancel" onclick="closeClienteModal()">Cancelar</button>
+      <button class="btn-usr-save" onclick="saveClienteModal()">Guardar</button>
     </div>
   </div>
 </div>
