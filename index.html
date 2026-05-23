@@ -2810,21 +2810,23 @@ async function uploadExcel(){
     {k:'dam'},                     // I
     {k:'tipoUnidad'},              // J
     {k:'transportista'},           // K
-    {k:'origen'},                  // L
-    {k:'destino'},                 // M
-    {k:'ruta'},                    // N
-    {k:'motivo'},                  // O
-    {k:'viaje',        num:true},  // P
-    {k:'guiaRemitente'},           // Q
-    {k:'guiaTransportista'},       // R
-    {k:'hojaIngreso'},             // S
-    {k:'paletas',      num:true},  // T
-    {k:'cajas',        num:true},  // U
-    {k:'sobres',       num:true},  // V
-    {k:'status'},                  // W
-    {k:'observaciones'},           // X
-    {k:'_photoCount',  num:true},  // Y = N° FOTOS
-    {k:'_folder'},                 // Z = CARPETA FOTOS
+    {k:'placa'},                   // L
+    {k:'conductor'},               // M
+    {k:'origen'},                  // N
+    {k:'destino'},                 // O
+    {k:'ruta'},                    // P
+    {k:'motivo'},                  // Q
+    {k:'viaje',        num:true},  // R
+    {k:'guiaRemitente'},           // S
+    {k:'guiaTransportista'},       // T
+    {k:'hojaIngreso'},             // U
+    {k:'paletas',      num:true},  // V
+    {k:'cajas',        num:true},  // W
+    {k:'sobres',       num:true},  // X
+    {k:'status'},                  // Y
+    {k:'observaciones'},           // Z
+    {k:'_photoCount',  num:true},  // AA = N° FOTOS
+    {k:'_folder'},                 // AB = CARPETA FOTOS
   ];
   const HDR_ROW=4, DATA_START=5;
 
@@ -2835,11 +2837,11 @@ async function uploadExcel(){
   /* Step 2: Clear all old data rows (A–Z) */
   const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:Z6');
   for(let R=DATA_START;R<=Math.max(oldRange.e.r,DATA_START+500);R++){
-    for(let C=0;C<=25;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
+    for(let C=0;C<=27;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
   }
 
   /* Step 2b: Write column headers dynamically (keeps template in sync) */
-  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   HDR_LABELS.forEach((label,i)=>{
     ws[XLSX.utils.encode_cell({r:HDR_ROW,c:i+1})]={t:'s',v:label};
   });
@@ -2863,7 +2865,7 @@ async function uploadExcel(){
 
   /* Step 4: Update range + table ref */
   const lastRow=Math.max(DATA_START+records.length, HDR_ROW+2);
-  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:25}});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:27}});
   if(!ws['!rows']) ws['!rows']=[];
   ws['!rows'][HDR_ROW]={hpt:31};
 
@@ -3886,7 +3888,7 @@ function closeEM(){document.getElementById('emenu').style.display='none';documen
 function expXLSX(){
   closeEM();
   if(!records.length){toast('No hay registros');return;}
-  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   const MAP=[
     {k:'fechaInicio',      fmt:true},
     {k:'fechaTermino',     fmt:true},
@@ -3898,6 +3900,8 @@ function expXLSX(){
     {k:'dam'},
     {k:'tipoUnidad'},
     {k:'transportista'},
+    {k:'placa'},
+    {k:'conductor'},
     {k:'origen'},
     {k:'destino'},
     {k:'ruta'},
@@ -3933,7 +3937,7 @@ function expXLSX(){
   toast('✓ Excel descargado con todos los registros');
 }
 function expCSV(){closeEM();if(!records.length){toast('No hay registros');return;}
-  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const rows=records.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
     if(k==='fechaInicio'||k==='fechaTermino') v = formatDateToDDMMYYYY(v);
@@ -3959,7 +3963,7 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
 function expSQL(){
   closeEM();
   if(!records.length){toast('No hay registros');return;}
-  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   function esc(v){
     if(v===null||v===undefined||v==='') return 'NULL';
     return "'"+String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
