@@ -4172,24 +4172,41 @@ function closeExportFilter(){
   document.getElementById('efmOv').classList.remove('on');
 }
 window.addEventListener('popstate',function(){
-  if(!user) return; // no autenticado: permitir comportamiento nativo
-  // Caso A: modal de filtros abierto → cerrarlo (equivale a botón X)
+  if(!user) return;
   if(_efmIsOpen){
     _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
-    history.pushState({_appRoot:true},''); // queda en dashboard
+    history.pushState({_appRoot:true},'');
     return;
   }
-  // Caso B: navegar por pantallas (dashboard→registros→registros…)
   var cur=document.querySelector('.scr.on')?.id;
-  if(cur==='scr-dashboard'){
-    showScr('list'); // dashboard → registros
-  } else if(cur!=='scr-list'){
-    showScr('list'); // cualquier otra pestaña/pantalla → registros
-  }
-  // siempre re-empuja para no salir de la app
+  if(cur==='scr-dashboard') showScr('list');
+  else if(cur!=='scr-list') showScr('list');
   history.pushState({_appRoot:true},'');
 });
+
+/* ── Handler nativo Android: la APK llama esta función en onBackPressed() ──
+   Retorna 'handled' → Android NO cierra la app.
+   Retorna 'exit'    → Android puede cerrar normalmente. */
+window.androidBackPressed=function(){
+  // Modal de filtros abierto → cerrarlo (igual que botón X)
+  if(_efmIsOpen){
+    _efmIsOpen=false;
+    document.getElementById('efmOv').classList.remove('on');
+    return 'handled';
+  }
+  // Usuario autenticado → navegar dentro de la app, nunca salir al login
+  if(user){
+    var cur=document.querySelector('.scr.on')?.id;
+    if(cur==='scr-dashboard'){
+      showScr('list'); // dashboard → registros
+    }
+    // en registros u otra pestaña: quedarse aquí
+    return 'handled';
+  }
+  // No autenticado: dejar que Android cierre normalmente
+  return 'exit';
+};
 function _efmUniq(key,recs){
   var src=recs||records;
   var seen=new Set();
