@@ -4198,10 +4198,10 @@ window.androidBackPressed=function(){
   // Usuario autenticado → navegar dentro de la app, nunca salir al login
   if(user){
     var cur=document.querySelector('.scr.on')?.id;
-    if(cur==='scr-dashboard'){
-      showScr('list'); // dashboard → registros
+    if(cur!=='scr-list'){
+      showScr('list'); // cualquier pantalla → registros
     }
-    // en registros u otra pestaña: quedarse aquí
+    // ya en registros: quedarse aquí
     return 'handled';
   }
   // No autenticado: dejar que Android cierre normalmente
