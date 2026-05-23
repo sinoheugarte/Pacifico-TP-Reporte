@@ -9168,7 +9168,7 @@ function onTransportistaChange(){
     const vehs=transp?_transportistaDB.vehiculos.filter(v=>v.empresa===transp):_transportistaDB.vehiculos;
     placaSel.innerHTML='<option value="">— Seleccionar Placa —</option>'+
       [...vehs].sort((a,b)=>(a.placa||'').localeCompare(b.placa||'','es'))
-        .map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}${v.tipoUnidad?' · '+v.tipoUnidad:''}</option>`).join('');
+        .map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}</option>`).join('');
   }
   // Filtrar CONDUCTOR
   const condSel=document.getElementById('f-conductor');
