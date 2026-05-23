@@ -4158,6 +4158,7 @@ var _EFM_FIELDS=[
 var _EFM_STATUS_LABELS={pendiente:'Pendiente','en-ruta':'En Ruta',completado:'Completado',cancelado:'Cancelado'};
 var _EFM_TYPE_LABELS={pdf:'Generar PDF',ppt:'Generar PPT',live:'Generar LIVE'};
 
+var _efmIsOpen=false;
 function showExportFilter(type){
   _efm.type=type;
   _efm.state={};
@@ -4168,15 +4169,18 @@ function showExportFilter(type){
   _efmBuild();
   _efmUpdateCount();
   document.getElementById('efm-gen-btn').textContent=_EFM_TYPE_LABELS[type]||'Generar';
+  _efmIsOpen=true;
   history.pushState({_efmOpen:true},'');
   document.getElementById('efmOv').classList.add('on');
 }
 function closeExportFilter(){
+  _efmIsOpen=false;
   document.getElementById('efmOv').classList.remove('on');
   if(history.state?._efmOpen) history.back();
 }
 window.addEventListener('popstate',function(){
-  if(document.getElementById('efmOv')?.classList.contains('on')){
+  if(_efmIsOpen){
+    _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
     return;
   }
