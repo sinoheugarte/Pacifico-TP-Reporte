@@ -3102,7 +3102,7 @@ function _conductorFullName(){
 function _visibleRecords(){
   if((userRole||'conductor')!=='conductor')return records;
   const myName=_conductorFullName();
-  if(!myName)return records;
+  if(!myName)return [];
   return records.filter(r=>(r.conductor||'').toUpperCase().trim()===myName);
 }
 function renderList(){
@@ -8707,11 +8707,6 @@ function _lockFormForConductor(){
   form.querySelectorAll('input:not(#camIn):not(#filIn):not(#docIn),select,textarea').forEach(el=>{
     if(!ALLOWED.has(el.id))el.disabled=true;
   });
-  // Bloquear firma digital
-  const sigWrap=document.getElementById('signature-pad-wrap');
-  if(sigWrap){sigWrap.style.pointerEvents='none';sigWrap.style.opacity='.45';}
-  const sigBtns=sigWrap?.nextElementSibling?.querySelectorAll('button');
-  if(sigBtns)sigBtns.forEach(b=>b.disabled=true);
 }
 function _unlockForm(){
   const form=document.getElementById('scr-form');
