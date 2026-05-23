@@ -6145,6 +6145,12 @@ async function generateRevealPresentation(){
   // Unidades
   const um={};records.forEach(r=>{if(r.tipoUnidad)um[r.tipoUnidad]=(um[r.tipoUnidad]||0)+1;});
   const topUnidades=Object.entries(um).sort((a,b)=>b[1]-a[1]);
+  // Placas
+  const pm={};records.forEach(r=>{if(r.placa)pm[r.placa]=(pm[r.placa]||0)+1;});
+  const topPlacas=Object.entries(pm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  // Conductores
+  const cm={};records.forEach(r=>{if(r.conductor)cm[r.conductor]=(cm[r.conductor]||0)+1;});
+  const topConds=Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,8);
   // Mensual
   const mm={};records.forEach(r=>{
     if(!r.fechaInicio)return;const p=r.fechaInicio.split('-');
@@ -6164,6 +6170,10 @@ async function generateRevealPresentation(){
   const rutaData=JSON.stringify(topRutas.map(([,v])=>v));
   const uniLabels=JSON.stringify(topUnidades.map(([k])=>k));
   const uniData=JSON.stringify(topUnidades.map(([,v])=>v));
+  const placaLabels=JSON.stringify(topPlacas.map(([k])=>k));
+  const placaData=JSON.stringify(topPlacas.map(([,v])=>v));
+  const condLabels=JSON.stringify(topConds.map(([k])=>k.length>26?k.slice(0,24)+'…':k));
+  const condData=JSON.stringify(topConds.map(([,v])=>v));
   const mensLabels=JSON.stringify(mensual.map(([k])=>k));
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
@@ -6442,7 +6452,19 @@ async function generateRevealPresentation(){
   <div class="chart-container" style="height:500px"><canvas id="revChartUnidad"></canvas></div>
 </section>
 
-<!-- SLIDE 8: TENDENCIA -->
+<!-- SLIDE 8: TOP PLACAS -->
+<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <h2 style="font-size:1.3em">Top <span class="gold">Placas</span></h2>
+  <div class="chart-container" style="height:500px"><canvas id="revChartPlacas"></canvas></div>
+</section>
+
+<!-- SLIDE 9: TOP CONDUCTORES -->
+<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <h2 style="font-size:1.3em">Top <span class="gold">Conductores</span></h2>
+  <div class="chart-container" style="height:500px"><canvas id="revChartConds"></canvas></div>
+</section>
+
+<!-- SLIDE 10: TENDENCIA -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Tendencia <span class="gold">Mensual</span></h2>
   <div class="chart-container" style="height:500px"><canvas id="revChartMensual"></canvas></div>
@@ -6763,6 +6785,28 @@ Reveal.on('ready',function(){
       plugins:{legend:{display:false},datalabels:dlBarV},
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:11},maxRotation:25}},
               y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12},stepSize:1}}}}
+  });
+
+  new Chart(document.getElementById('revChartPlacas'),{
+    type:'bar',
+    data:{labels:${placaLabels},datasets:[{label:'Viajes',data:${placaData},
+      backgroundColor:'rgba(14,165,233,.8)',borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      layout:{padding:{right:50}},
+      plugins:{legend:{display:false},datalabels:dlBarH},
+      scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
+              y:{grid:{display:false},ticks:{font:{size:12}}}}}
+  });
+
+  new Chart(document.getElementById('revChartConds'),{
+    type:'bar',
+    data:{labels:${condLabels},datasets:[{label:'Viajes',data:${condData},
+      backgroundColor:'rgba(20,184,166,.8)',borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      layout:{padding:{right:50}},
+      plugins:{legend:{display:false},datalabels:dlBarH},
+      scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
+              y:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
 
   new Chart(document.getElementById('revChartMensual'),{
