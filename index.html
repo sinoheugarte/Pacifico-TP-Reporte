@@ -9020,11 +9020,17 @@ async function _loadTransportistaSP(){
 
 async function _saveTransportistaSP(){
   localStorage.setItem('ptp_transportista',JSON.stringify(_transportistaDB));
-  if(!token)return;
+  if(!token){
+    toast('⚠ Guardado solo localmente — inicia sesión con Microsoft para sincronizar en la nube');
+    return;
+  }
   try{
     const bp=await _transportistaPath();
     await gPut(`${bp}:/content`,JSON.stringify(_transportistaDB,null,2),'application/json');
-  }catch(e){console.warn('_saveTransportistaSP:',e.message?.slice(0,60));}
+  }catch(e){
+    console.warn('_saveTransportistaSP:',e.message?.slice(0,60));
+    toast('⚠ No se pudo guardar en la nube: '+(e.message?.slice(0,60)||'error'));
+  }
 }
 
 /* ── Sub-tabs ── */
