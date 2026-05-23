@@ -7845,6 +7845,20 @@ function renderUsersScreen(){
   </tr>`).join('');
 }
 
+function _populateUmEmpresa(){
+  const sel=document.getElementById('um-empresa');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar Empresa —</option>';
+  (_transportistaDB.empresas||[]).forEach(e=>{
+    const opt=document.createElement('option');
+    opt.value=e.razonSocial||'';
+    opt.textContent=e.razonSocial||'';
+    sel.appendChild(opt);
+  });
+  sel.value=cur;
+}
+
 function openUserModal(idx){
   document.getElementById('user-modal-title').textContent=idx===undefined?'Nuevo Usuario':'Editar Usuario';
   document.getElementById('um-id').value=idx===undefined?'':idx;
@@ -7853,6 +7867,7 @@ function openUserModal(idx){
   document.getElementById('um-apellidos').value=u.apellidos||'';
   document.getElementById('um-email').value=u.email||'';
   document.getElementById('um-dni').value=u.dni||'';
+  _populateUmEmpresa();
   document.getElementById('um-empresa').value=u.empresa||'';
   document.getElementById('um-rol').value=u.rol||'conductor';
   document.getElementById('user-modal-ov').classList.add('on');
@@ -9040,7 +9055,7 @@ renderDashboard=function(){
     <div class="f-row"><label>Apellidos</label><input type="text" id="um-apellidos" placeholder="Apellidos"></div>
     <div class="f-row"><label>Email *</label><input type="email" id="um-email" placeholder="correo@empresa.com"></div>
     <div class="f-row"><label>DNI</label><input type="text" id="um-dni" placeholder="12345678" maxlength="8"></div>
-    <div class="f-row"><label>Empresa</label><input type="text" id="um-empresa" placeholder="Empresa"></div>
+    <div class="f-row"><label>Empresa</label><select id="um-empresa"><option value="">— Seleccionar Empresa —</option></select></div>
     <div class="f-row">
       <label>Rol</label>
       <select id="um-rol">
