@@ -405,8 +405,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 /* ── UPLOAD OVERLAY ───────────────────────────────────── */
 #upOv{display:none;position:fixed;inset:0;background:rgba(15,35,64,.88);z-index:800;
   flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;
-  padding:24px;text-align:center}
-#upOv.on{display:flex}
+  padding:24px;text-align:center;touch-action:none;pointer-events:none}
+#upOv.on{display:flex;pointer-events:all}
 
 /* ── Truck overlay (animación camión en página) ─────── */
 #tovOv{display:none;position:fixed;inset:0;background:#0f2340;z-index:900;
@@ -1593,7 +1593,7 @@ body.has-pending .pending-dot{display:inline-block}
     <input type="file" id="docIn" accept="image/*" onchange="addDocImg(this)">
   </div>
   <div class="faction">
-    <button class="btn-s" onclick="cancelForm()">Cancelar</button>
+    <button class="btn-s" id="btnCancel" onclick="cancelForm()">Cancelar</button>
     <button class="btn-p" id="btnSave" onclick="saveRecord()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Guardar
@@ -2208,6 +2208,7 @@ const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoIni
 let token=null, user=null;
 let spDriveId=null;
 let records=[], editingId=null, activeFilter='todos', dashFilter='todos', recFilter='todos';
+let _saving=false;
 let _clientes=[];
 let formImgs=[], deletedImgs=[]; 
 let recImgs={}, detImgs=[], galImgs=[], galIdx=0, touchX=0;
@@ -3356,7 +3357,7 @@ function newRecord(){
   renderIG();setEl('iStatus','');_unlockForm();showScr('form');
   setTimeout(()=>{ clearSig(); initSigPad(); captureGPS(); },180);
 }
-function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
+function cancelForm(){if(_saving)return;clearSig();_currentGPS=null;showScr('list');}
 function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'';}
 
 // Recibe imágenes inyectadas directamente desde Android (sin pasar por content URI)
@@ -3458,9 +3459,11 @@ async function saveRecord(){
   const dup=records.find(r=>r.id!==(editingId||'')&&(r.folderName||getFolderName(r))===_chkFolder);
   if(dup){toast('⚠ Ya existe un registro con esta misma Orden, Motivo, Viaje y Fecha');return;}
 
+  _saving=true;
   const btn=document.getElementById('btnSave');btn.disabled=true;
-  // Ceder un frame al browser para pintar el estado deshabilitado del botón
-  // antes de ejecutar el trabajo pesado (formImgs.map, etc.)
+  const btnCancel=document.getElementById('btnCancel');if(btnCancel)btnCancel.disabled=true;
+  showUp('Preparando guardado…','Iniciando…',2);
+  // Ceder un frame al browser para pintar el overlay antes del trabajo pesado
   await new Promise(r=>requestAnimationFrame(r));
   const id=editingId||genId();
   
@@ -3489,6 +3492,7 @@ async function saveRecord(){
     saveGPS = _currentGPS;
   } else {
     if(el){el.className='gps-pill wait';el.innerHTML='📡 Obteniendo ubicación…';}
+    showUp('Preparando guardado…','📡 Obteniendo ubicación GPS…',4);
     saveGPS = await new Promise(resolve=>{
       if(!navigator.geolocation){resolve(null);return;}
       const t=setTimeout(()=>resolve(null),2000);
@@ -3590,7 +3594,7 @@ async function saveRecord(){
     }
     else toast('⚠ Error al guardar: '+msg.slice(0,60));
   }
-  finally{ btn.disabled=false; }
+  finally{ _saving=false; btn.disabled=false; if(btnCancel)btnCancel.disabled=false; }
 }
 
 function genId(){
@@ -4230,6 +4234,8 @@ window.addEventListener('popstate',function(){
    Retorna 'handled' → Android NO cierra la app.
    Retorna 'exit'    → Android puede cerrar normalmente. */
 window.androidBackPressed=function(){
+  // Guardado en curso → bloquear navegación
+  if(_saving)return 'handled';
   // Modal de filtros abierto → cerrarlo (igual que botón X)
   if(_efmIsOpen){
     _efmIsOpen=false;
