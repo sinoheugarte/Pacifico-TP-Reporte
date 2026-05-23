@@ -5979,6 +5979,34 @@ async function generatePPTX(){
       s7c.addText(pct2+'%',{x:8.82,y:ry,w:.85,h:.52,fontSize:9,bold:true,color:'14B8A6',align:'center',valign:'middle'});
     });
 
+    // ══ SLIDE 7d — TOP CLIENTES ══
+    setUpStep('Top Clientes'); setUpBar(53);
+    const s7d=pptx.addSlide(); s7d.background={color:BG};
+    addHdr(s7d,'TOP CLIENTES',`${topClientes.length} cliente${topClientes.length!==1?'s':''} atendido${topClientes.length!==1?'s':''}`); addFtr(s7d,++pageN);
+    const cliSlice=topClientes.slice(0,8);
+    if(cliSlice.length>0){
+      s7d.addChart(pptx.ChartType.bar,[{name:'Ops',labels:cliSlice.map(([k])=>k.length>22?k.slice(0,20)+'…':k),values:cliSlice.map(([,v])=>v||0)}],{
+        ...cBase,x:ML,y:CTX_Y,w:5.0,h:CTX_H,
+        barDir:'bar',barGapWidthPct:55,chartColors:['F59E0B'],
+        showLegend:false,showValue:true,
+        dataLabelFontSize:9,dataLabelFontBold:true,dataLabelColor:WHITE,
+      });
+    }
+    s7d.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
+    s7d.addText('#',{x:5.58,y:CTX_Y,w:.38,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7d.addText('CLIENTE',{x:5.98,y:CTX_Y,w:2.18,h:.46,fontSize:7.5,bold:true,color:WHITE,valign:'middle'});
+    s7d.addText('OPS',{x:8.18,y:CTX_Y,w:.62,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7d.addText('%',{x:8.82,y:CTX_Y,w:.85,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    cliSlice.slice(0,7).forEach(([name,cnt],i)=>{
+      const ry=CTX_Y+.48+i*.54, pct2=total?Math.round(cnt/total*100):0;
+      s7d.addShape(pptx.ShapeType.rect,{x:5.55,y:ry,w:4.12,h:.52,fill:{color:i%2===0?WHITE:'F8FAFC'},line:{color:BORDER,width:.25}});
+      s7d.addShape(pptx.ShapeType.roundRect,{x:5.59,y:ry+.13,w:.26,h:.26,fill:{color:i<3?AMBER:BORDER},line:{color:i<3?AMBER:BORDER}});
+      s7d.addText(String(i+1),{x:5.59,y:ry+.13,w:.26,h:.26,fontSize:7,bold:true,color:i<3?NAVY:T2,align:'center',valign:'middle'});
+      s7d.addText(name.length>22?name.slice(0,20)+'…':name,{x:5.88,y:ry,w:2.28,h:.52,fontSize:8,color:T1,valign:'middle'});
+      s7d.addText(String(cnt),{x:8.18,y:ry,w:.62,h:.52,fontSize:9,bold:true,color:T1,align:'center',valign:'middle'});
+      s7d.addText(pct2+'%',{x:8.82,y:ry,w:.85,h:.52,fontSize:9,bold:true,color:AMBER,align:'center',valign:'middle'});
+    });
+
     // ══ SLIDE 8 — RUTAS & UNIDADES (two native charts) ══
     setUpStep('Rutas y Tipos de Unidad'); setUpBar(54);
     const s8=pptx.addSlide(); s8.background={color:BG};
@@ -6284,6 +6312,9 @@ async function generateRevealPresentation(){
   // Conductores
   const cm={};records.forEach(r=>{if(r.conductor)cm[r.conductor]=(cm[r.conductor]||0)+1;});
   const topConds=Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Clientes
+  const clim={};records.forEach(r=>{if(r.cliente)clim[r.cliente]=(clim[r.cliente]||0)+1;});
+  const topClientsR=Object.entries(clim).sort((a,b)=>b[1]-a[1]).slice(0,8);
   // Mensual
   const mm={};records.forEach(r=>{
     if(!r.fechaInicio)return;const p=r.fechaInicio.split('-');
@@ -6311,7 +6342,7 @@ async function generateRevealPresentation(){
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
   const multiVRows=multiV.map(([k,c])=>{const[o,m]=k.split('_');return `<tr><td>${o}</td><td>${m}</td><td><strong>${c}</strong></td></tr>`;}).join('');
-  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,20)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
+  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>${(r.cliente||'—').slice(0,14)}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,18)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
 
   // ── Analysis slide data ──
   const motivoMR={};records.forEach(r=>{const k=(r.motivo||'Sin Motivo').trim();motivoMR[k]=(motivoMR[k]||0)+1;});
@@ -6327,6 +6358,7 @@ async function generateRevealPresentation(){
   const rutasTextR=topRutas[0]?`${topRutas.length} rutas. Corredor principal: "${topRutas[0][0]}" — ${topRutas[0][1]} traslado${topRutas[0][1]!==1?'s':''} (${Math.round(topRutas[0][1]/total*100)}%).${topRutas.length>1?' 2°: "'+topRutas[1][0]+'" ('+topRutas[1][1]+').':''}`:'Sin datos.';
   const cargaTextR=`Total: ${cargoTotalR} u. Paletas: ${paletas} (${cargoTotalR?Math.round(paletas/cargoTotalR*100):0}%) · Cajas: ${cajas} (${cargoTotalR?Math.round(cajas/cargoTotalR*100):0}%) · Sobres: ${sobres} (${cargoTotalR?Math.round(sobres/cargoTotalR*100):0}%).`;
   const motivosTextR=topMotivoR[0]?`${topMotivoR.length} motivo${topMotivoR.length!==1?'s':''} identificados. Predominante: "${topMotivoR[0][0]}" — ${topMotivoR[0][1]} op. (${Math.round(topMotivoR[0][1]/total*100)}%).${topMotivoR.length>1?' 2°: "'+topMotivoR[1][0]+'" ('+Math.round(topMotivoR[1][1]/total*100)+'%).':''}`:'Sin datos.';
+  const clienteTextR=topClientsR[0]?`${topClientsR.length} cliente${topClientsR.length!==1?'s':''} atendidos. Principal: "${topClientsR[0][0]}" — ${topClientsR[0][1]} op. (${Math.round(topClientsR[0][1]/total*100)}%).${topClientsR.length>1?' 2°: "'+topClientsR[1][0]+'" ('+Math.round(topClientsR[1][1]/total*100)+'%).':''}`:'Sin datos.';
 
   // Conclusions
   const concItems=[];
@@ -6338,6 +6370,7 @@ async function generateRevealPresentation(){
   else if(pctCancelR>10) concItems.push({t:`Cancelación del ${pctCancelR}% supera umbral del 10% — revisar causas.`,c:'#ef4444'});
   else concItems.push({t:`Cancelación del ${pctCancelR}%: dentro de parámetros normales.`,c:'#f59e0b'});
   if(topRutas[0]) concItems.push({t:`Corredor principal: "${topRutas[0][0]}" — ${Math.round(topRutas[0][1]/total*100)}% del total.`,c:'#3b82f6'});
+  if(topClientsR[0]){const cc=Math.round(topClientsR[0][1]/total*100);concItems.push({t:cc>50?`Alta concentración en cliente "${topClientsR[0][0]}" (${cc}%) — diversificar cartera.`:`${topClientsR.length} clientes atendidos. Principal: "${topClientsR[0][0]}" (${cc}%).`,c:cc>50?'#f59e0b':'#22c55e'});}
   if(mensual.length>1){const up=mensual[mensual.length-1][1]>mensual[0][1];const eq=mensual[mensual.length-1][1]===mensual[0][1];concItems.push({t:`Tendencia: ${up?'CRECIENTE ▲ — actividad en expansión.':eq?'ESTABLE → — volumen constante.':'DECRECIENTE ▼ — reducción a monitorear.'}`,c:up?'#22c55e':eq?'#3b82f6':'#ef4444'});}
   const concHtml=concItems.slice(0,5).map(({t,c})=>`<div class="concl-item" style="background:${c}14;border:1px solid ${c}44"><div class="concl-dot" style="background:${c}"></div><div class="concl-txt">${t}</div></div>`).join('');
 
@@ -6626,7 +6659,7 @@ async function generateRevealPresentation(){
 <!-- SLIDE 11: ÚLTIMOS REGISTROS -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Últimos <span class="gold">Registros</span></h2>
-  <table class="data-table"><tr><th>Orden</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
+  <table class="data-table"><tr><th>Orden</th><th>Cliente</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
 </section>
 
 <!-- SLIDE: ANÁLISIS OPERACIONAL -->
@@ -6640,6 +6673,7 @@ async function generateRevealPresentation(){
     <div class="analysis-box"><div class="analysis-title">4. Análisis de Rutas</div><div class="analysis-text">${rutasTextR}</div></div>
     <div class="analysis-box"><div class="analysis-title">5. Carga Transportada</div><div class="analysis-text">${cargaTextR}</div></div>
     <div class="analysis-box"><div class="analysis-title">6. Motivos de Traslado</div><div class="analysis-text">${motivosTextR}</div></div>
+    <div class="analysis-box"><div class="analysis-title">7. Clientes</div><div class="analysis-text">${clienteTextR}</div></div>
   </div>
 </section>
 
