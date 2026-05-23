@@ -4448,6 +4448,10 @@ async function refreshRecords(){
       loadUserRole().catch(()=>{});
       if(_adminMode){renderUsersScreen();_updateMapFilterOptions();}
     }).catch(()=>{});
+    // Recargar empresas y vehículos desde la nube
+    _loadTransportistaSP().then(()=>{
+      if(_adminMode){renderEmpresaList();renderVehiculoList();}
+    }).catch(()=>{});
   }finally{
     if(btn){btn.disabled=false;btn.style.animation='';}
   }
@@ -9020,11 +9024,17 @@ async function _loadTransportistaSP(){
 
 async function _saveTransportistaSP(){
   localStorage.setItem('ptp_transportista',JSON.stringify(_transportistaDB));
-  if(!token)return;
+  if(!token){
+    toast('⚠ Guardado solo localmente — inicia sesión con Microsoft para sincronizar en la nube');
+    return;
+  }
   try{
     const bp=await _transportistaPath();
     await gPut(`${bp}:/content`,JSON.stringify(_transportistaDB,null,2),'application/json');
-  }catch(e){console.warn('_saveTransportistaSP:',e.message?.slice(0,60));}
+  }catch(e){
+    console.warn('_saveTransportistaSP:',e.message?.slice(0,60));
+    toast('⚠ No se pudo guardar en la nube: '+(e.message?.slice(0,60)||'error'));
+  }
 }
 
 /* ── Sub-tabs ── */
@@ -9168,7 +9178,7 @@ function onTransportistaChange(){
     const vehs=transp?_transportistaDB.vehiculos.filter(v=>v.empresa===transp):_transportistaDB.vehiculos;
     placaSel.innerHTML='<option value="">— Seleccionar Placa —</option>'+
       [...vehs].sort((a,b)=>(a.placa||'').localeCompare(b.placa||'','es'))
-        .map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}${v.tipoUnidad?' · '+v.tipoUnidad:''}</option>`).join('');
+        .map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}</option>`).join('');
   }
   // Filtrar CONDUCTOR
   const condSel=document.getElementById('f-conductor');
