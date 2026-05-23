@@ -4448,6 +4448,10 @@ async function refreshRecords(){
       loadUserRole().catch(()=>{});
       if(_adminMode){renderUsersScreen();_updateMapFilterOptions();}
     }).catch(()=>{});
+    // Recargar empresas y vehículos desde la nube
+    _loadTransportistaSP().then(()=>{
+      if(_adminMode){renderEmpresaList();renderVehiculoList();}
+    }).catch(()=>{});
   }finally{
     if(btn){btn.disabled=false;btn.style.animation='';}
   }
