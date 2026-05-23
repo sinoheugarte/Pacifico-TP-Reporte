@@ -1480,7 +1480,7 @@ body.has-pending .pending-dot{display:inline-block}
         </select>
       </div>
       <div class="f"><label>TIPO DE UNIDAD</label>
-        <select id="f-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>FURGÓN</option><option>TRAILER</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>PLATAFORMA</option><option>FURGONETA</option><option>OTRO</option></select>
+        <select id="f-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>FURGÓN</option><option>FURGONETA</option><option>OTRO</option><option>PLATAFORMA</option><option>TRAILER</option></select>
       </div>
       <div class="f"><label>CONDUCTOR</label>
         <select id="f-conductor">
@@ -7964,7 +7964,14 @@ function renderUsersScreen(){
     return;
   }
   if(empty)empty.style.display='none';
-  tbody.innerHTML=_sysUsers.map((u,i)=>`<tr>
+  const sorted=[..._sysUsers].sort((a,b)=>{
+    const ka=((a.nombre||'')+' '+(a.apellidos||'')).toLowerCase();
+    const kb=((b.nombre||'')+' '+(b.apellidos||'')).toLowerCase();
+    return ka.localeCompare(kb,'es');
+  });
+  tbody.innerHTML=sorted.map((u,i)=>{
+    const origIdx=_sysUsers.indexOf(u);
+    return `<tr>
     <td>${esc(u.nombre)}</td>
     <td>${esc(u.apellidos)}</td>
     <td style="word-break:break-all">${esc(u.email)}</td>
@@ -7972,10 +7979,11 @@ function renderUsersScreen(){
     <td>${esc(u.empresa)}</td>
     <td><span class="rol-badge ${esc(u.rol||'conductor')}">${esc(u.rol||'conductor')}</span></td>
     <td style="white-space:nowrap">
-      <button class="btn-usr-edit" onclick="openUserModal(${i})">Editar</button>
-      <button class="btn-usr-del" onclick="deleteUser(${i})">Eliminar</button>
+      <button class="btn-usr-edit" onclick="openUserModal(${origIdx})">Editar</button>
+      <button class="btn-usr-del" onclick="deleteUser(${origIdx})">Eliminar</button>
     </td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 function _populateUmEmpresa(){
@@ -7983,7 +7991,7 @@ function _populateUmEmpresa(){
   if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— Seleccionar Empresa —</option>';
-  (_transportistaDB.empresas||[]).forEach(e=>{
+  [...(_transportistaDB.empresas||[])].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es')).forEach(e=>{
     const opt=document.createElement('option');
     opt.value=e.razonSocial||'';
     opt.textContent=e.razonSocial||'';
@@ -9068,7 +9076,7 @@ function renderEmpresaList(){
   if(!tbody)return;
   if(!_transportistaDB.empresas.length){tbody.innerHTML='';if(empty)empty.style.display='';return;}
   if(empty)empty.style.display='none';
-  tbody.innerHTML=_transportistaDB.empresas.map(e=>`<tr>
+  tbody.innerHTML=[..._transportistaDB.empresas].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es')).map(e=>`<tr>
     <td><strong>${esc(e.razonSocial)}</strong></td>
     <td>${esc(e.ruc)}</td>
     <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.direccion||'—')}</td>
@@ -9089,7 +9097,8 @@ function openVehiculoModal(id){
   document.getElementById('vm-codigoMTC').value=v?.codigoMTC||'';
   const esel=document.getElementById('vm-empresa');
   esel.innerHTML='<option value="">— Seleccionar Empresa —</option>'+
-    _transportistaDB.empresas.map(e=>`<option value="${esc(e.razonSocial)}"${v?.empresa===e.razonSocial?' selected':''}>${esc(e.razonSocial)}</option>`).join('');
+    [..._transportistaDB.empresas].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es'))
+      .map(e=>`<option value="${esc(e.razonSocial)}"${v?.empresa===e.razonSocial?' selected':''}>${esc(e.razonSocial)}</option>`).join('');
   document.getElementById('vehiculo-modal-ov').style.display='flex';
 }
 function closeVehiculoModal(){document.getElementById('vehiculo-modal-ov').style.display='none';}
@@ -9126,7 +9135,7 @@ function renderVehiculoList(){
   if(!tbody)return;
   if(!_transportistaDB.vehiculos.length){tbody.innerHTML='';if(empty)empty.style.display='';return;}
   if(empty)empty.style.display='none';
-  tbody.innerHTML=_transportistaDB.vehiculos.map(v=>`<tr>
+  tbody.innerHTML=[..._transportistaDB.vehiculos].sort((a,b)=>(a.placa||'').localeCompare(b.placa||'','es')).map(v=>`<tr>
     <td><strong>${esc(v.placa)}</strong></td>
     <td>${esc(v.tipoUnidad||'—')}</td>
     <td>${esc(v.marca||'—')}</td>
@@ -9142,7 +9151,8 @@ function populateTransportistaSelect(){
   if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— Seleccionar Empresa —</option>'+
-    _transportistaDB.empresas.map(e=>`<option value="${esc(e.razonSocial)}">${esc(e.razonSocial)}</option>`).join('');
+    [..._transportistaDB.empresas].sort((a,b)=>(a.razonSocial||'').localeCompare(b.razonSocial||'','es'))
+      .map(e=>`<option value="${esc(e.razonSocial)}">${esc(e.razonSocial)}</option>`).join('');
   if(cur)sel.value=cur;
 }
 
@@ -9153,14 +9163,19 @@ function onTransportistaChange(){
   if(placaSel){
     const vehs=transp?_transportistaDB.vehiculos.filter(v=>v.empresa===transp):_transportistaDB.vehiculos;
     placaSel.innerHTML='<option value="">— Seleccionar Placa —</option>'+
-      vehs.map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}${v.tipoUnidad?' · '+v.tipoUnidad:''}</option>`).join('');
+      [...vehs].sort((a,b)=>(a.placa||'').localeCompare(b.placa||'','es'))
+        .map(v=>`<option value="${esc(v.placa)}">${esc(v.placa)}${v.tipoUnidad?' · '+v.tipoUnidad:''}</option>`).join('');
   }
   // Filtrar CONDUCTOR
   const condSel=document.getElementById('f-conductor');
   if(condSel){
     const conds=_sysUsers.filter(u=>(u.rol||'').toLowerCase()==='conductor'&&(!transp||u.empresa===transp));
     condSel.innerHTML='<option value="">— Seleccionar Conductor —</option>'+
-      conds.map(u=>{const lbl=[u.nombre,u.apellidos].filter(Boolean).join(' ').toUpperCase();return `<option value="${esc(lbl)}">${esc(lbl)}</option>`;}).join('');
+      [...conds].sort((a,b)=>{
+        const ka=((a.nombre||'')+' '+(a.apellidos||'')).toLowerCase();
+        const kb=((b.nombre||'')+' '+(b.apellidos||'')).toLowerCase();
+        return ka.localeCompare(kb,'es');
+      }).map(u=>{const lbl=[u.nombre,u.apellidos].filter(Boolean).join(' ').toUpperCase();return `<option value="${esc(lbl)}">${esc(lbl)}</option>`;}).join('');
   }
 }
 
@@ -9227,7 +9242,7 @@ renderDashboard=function(){
     <input type="hidden" id="vm-id">
     <div class="f-row"><label>Placa * <span style="font-size:10px;font-weight:400">(ej: A2R-725)</span></label><input type="text" id="vm-placa" placeholder="ABC-123" maxlength="7" oninput="this.value=this.value.toUpperCase()"></div>
     <div class="f-row"><label>Tipo de Unidad *</label>
-      <select id="vm-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>FURGÓN</option><option>TRAILER</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>PLATAFORMA</option><option>FURGONETA</option><option>OTRO</option></select>
+      <select id="vm-tipoUnidad"><option value="">—</option><option>CAMIÓN</option><option>CONTENEDOR 20'</option><option>CONTENEDOR 40'</option><option>FURGÓN</option><option>FURGONETA</option><option>OTRO</option><option>PLATAFORMA</option><option>TRAILER</option></select>
     </div>
     <div class="f-row"><label>Marca</label><input type="text" id="vm-marca" placeholder="VOLVO"></div>
     <div class="f-row"><label>Modelo</label><input type="text" id="vm-modelo" placeholder="FH16"></div>
