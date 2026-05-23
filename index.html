@@ -4165,11 +4165,18 @@ function showExportFilter(type){
   _efmBuild();
   _efmUpdateCount();
   document.getElementById('efm-gen-btn').textContent=_EFM_TYPE_LABELS[type]||'Generar';
+  history.pushState({_efmOpen:true},'');
   document.getElementById('efmOv').classList.add('on');
 }
 function closeExportFilter(){
   document.getElementById('efmOv').classList.remove('on');
+  if(history.state?._efmOpen) history.back();
 }
+window.addEventListener('popstate',function(){
+  if(document.getElementById('efmOv')?.classList.contains('on')){
+    document.getElementById('efmOv').classList.remove('on');
+  }
+});
 function _efmUniq(key,recs){
   var src=recs||records;
   var seen=new Set();
