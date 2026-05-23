@@ -2335,6 +2335,7 @@ async function signIn(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.replaceState({_appRoot:true},'');
     history.pushState({_appRoot:true},'');
     checkLiveHash();
 
@@ -2376,6 +2377,7 @@ async function _handleRedirectCallback(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.replaceState({_appRoot:true},'');
     history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
@@ -2421,6 +2423,7 @@ async function tryAutoLogin(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.replaceState({_appRoot:true},'');
     history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
@@ -4159,6 +4162,7 @@ var _EFM_STATUS_LABELS={pendiente:'Pendiente','en-ruta':'En Ruta',completado:'Co
 var _EFM_TYPE_LABELS={pdf:'Generar PDF',ppt:'Generar PPT',live:'Generar LIVE'};
 
 var _efmIsOpen=false;
+var _efmBackClean=false;
 function showExportFilter(type){
   _efm.type=type;
   _efm.state={};
@@ -4176,18 +4180,19 @@ function showExportFilter(type){
 function closeExportFilter(){
   _efmIsOpen=false;
   document.getElementById('efmOv').classList.remove('on');
-  if(history.state?._efmOpen) history.back();
+  if(history.state?._efmOpen){_efmBackClean=true;history.back();}
 }
 window.addEventListener('popstate',function(){
+  // Caso 1: modal abierto + retroceder físico → cerrar modal
   if(_efmIsOpen){
     _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
     return;
   }
-  // Si el usuario está autenticado, bloquear retroceso hacia la pantalla de login
-  if(user){
-    history.pushState({_appRoot:true},'');
-  }
+  // Caso 2: botón X llamó history.back() para limpiar estado → ignorar
+  if(_efmBackClean){_efmBackClean=false;return;}
+  // Caso 3: retroceder estando autenticado → bloquear salida
+  if(user){history.pushState({_appRoot:true},'')}
 });
 function _efmUniq(key,recs){
   var src=recs||records;
