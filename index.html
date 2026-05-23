@@ -1906,6 +1906,12 @@ body.has-pending .pending-dot{display:inline-block}
     </svg>
     <span>Usuarios</span>
   </button>
+  <button class="nb" id="nb-transportista" onclick="showScr('transportista')" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+    <span>Transportista</span>
+  </button>
   <button class="nb" id="nb-mapa" onclick="showScr('mapa')" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
@@ -2009,10 +2015,6 @@ body.has-pending .pending-dot{display:inline-block}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Permisos
     </button>
-    <button class="utab" id="utab-transportista" onclick="switchUsersTab('transportista')">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      Transportista
-    </button>
   </div>
   <!-- Tab: Usuarios -->
   <div id="utab-content-users">
@@ -2037,37 +2039,49 @@ body.has-pending .pending-dot{display:inline-block}
       <button class="btn-usr-save" style="width:100%;max-width:320px" onclick="savePermsAction()">Guardar permisos</button>
     </div>
   </div>
-  <!-- Tab: Transportista -->
-  <div id="utab-content-transportista" style="display:none">
-    <div class="utab-bar" style="padding:10px 12px 0;border-bottom:none;margin-bottom:0">
-      <button class="utab on" id="trtab-empresa" onclick="switchTranspSubTab('empresa')">Empresa</button>
-      <button class="utab" id="trtab-vehiculos" onclick="switchTranspSubTab('vehiculos')">Vehículos</button>
-    </div>
-    <!-- Sub-tab Empresa -->
-    <div id="trtab-content-empresa">
-      <div class="users-hdr" style="padding:10px 16px 6px">
-        <div style="font-size:12px;color:var(--text2)">Empresas transportistas registradas</div>
-        <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openEmpresaModal()">+ Añadir</button></div>
-      </div>
-      <div class="users-tbl-wrap">
-        <table class="users-tbl"><thead><tr><th>Razón Social</th><th>RUC</th><th>Dirección</th><th>Cód. MTC</th><th></th></tr></thead><tbody id="empresa-tbody"></tbody></table>
-        <div id="empresa-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay empresas registradas. Pulsa <strong>+ Añadir</strong>.</div>
-      </div>
-    </div>
-    <!-- Sub-tab Vehículos -->
-    <div id="trtab-content-vehiculos" style="display:none">
-      <div class="users-hdr" style="padding:10px 16px 6px">
-        <div style="font-size:12px;color:var(--text2)">Vehículos registrados</div>
-        <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openVehiculoModal()">+ Añadir</button></div>
-      </div>
-      <div class="users-tbl-wrap">
-        <table class="users-tbl"><thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Empresa</th><th></th></tr></thead><tbody id="vehiculo-tbody"></tbody></table>
-        <div id="vehiculo-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay vehículos registrados. Pulsa <strong>+ Añadir</strong>.</div>
-      </div>
-    </div>
-  </div>
   <div class="admin-logout-wrap">
     <button class="admin-logout-btn" onclick="adminSignOut()">Cerrar sesión admin</button>
+  </div>
+</div>
+
+<div class="scr" id="scr-transportista">
+  <div class="users-hdr">
+    <div>
+      <div class="users-hdr-title">Transportista</div>
+      <div class="users-hdr-sub">Gestión de empresas y vehículos</div>
+    </div>
+  </div>
+  <div class="utab-bar">
+    <button class="utab on" id="trtab-empresa" onclick="switchTranspSubTab('empresa')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Empresa
+    </button>
+    <button class="utab" id="trtab-vehiculos" onclick="switchTranspSubTab('vehiculos')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Vehículos
+    </button>
+  </div>
+  <!-- Sub-tab Empresa -->
+  <div id="trtab-content-empresa">
+    <div class="users-hdr" style="padding:10px 16px 6px">
+      <div style="font-size:12px;color:var(--text2)">Empresas transportistas registradas</div>
+      <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openEmpresaModal()">+ Añadir</button></div>
+    </div>
+    <div class="users-tbl-wrap">
+      <table class="users-tbl"><thead><tr><th>Razón Social</th><th>RUC</th><th>Dirección</th><th>Cód. MTC</th><th></th></tr></thead><tbody id="empresa-tbody"></tbody></table>
+      <div id="empresa-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay empresas registradas. Pulsa <strong>+ Añadir</strong>.</div>
+    </div>
+  </div>
+  <!-- Sub-tab Vehículos -->
+  <div id="trtab-content-vehiculos" style="display:none">
+    <div class="users-hdr" style="padding:10px 16px 6px">
+      <div style="font-size:12px;color:var(--text2)">Vehículos registrados</div>
+      <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openVehiculoModal()">+ Añadir</button></div>
+    </div>
+    <div class="users-tbl-wrap">
+      <table class="users-tbl"><thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Empresa</th><th></th></tr></thead><tbody id="vehiculo-tbody"></tbody></table>
+      <div id="vehiculo-empty" style="display:none;padding:24px;text-align:center;color:var(--text2);font-size:13px">No hay vehículos registrados. Pulsa <strong>+ Añadir</strong>.</div>
+    </div>
   </div>
 </div>
 
@@ -3033,7 +3047,7 @@ function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_K
 function showScr(name){
   closeEM(); document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('scr-'+name).classList.add('on'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   const bb=document.getElementById('backBtn'), fab=document.getElementById('fab'), exp=document.getElementById('expBtn'), nav=document.getElementById('nav');
-  setEl('hdrT',{list:'Registro de Transporte',form:editingId?'Editar Registro':'Nuevo Registro',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Reportes',users:'Gestión de Usuarios',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
+  setEl('hdrT',{list:'Registro de Transporte',form:editingId?'Editar Registro':'Nuevo Registro',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Reportes',users:'Gestión de Usuarios',transportista:'Transportista',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
   if(name==='list'){bb.style.display='none';fab.style.display='flex';exp.style.display='flex';nav.style.display='flex';document.getElementById('nb-list').classList.add('on');renderList();}
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
@@ -3041,6 +3055,7 @@ function showScr(name){
   else if(name==='settings'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-set').classList.add('on');renderUserCard();_showAISettings?.();}
   else if(name==='records'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-records').classList.add('on');renderRecordsTable();}
   else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});startUsersAutoRefresh();}
+  else if(name==='transportista'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-transportista').classList.add('on');switchTranspSubTab('empresa');}
   else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
@@ -7695,6 +7710,8 @@ function enterAdminMode(){
   _adminMode=true;
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='';
+  const nbT=document.getElementById('nb-transportista');
+  if(nbT)nbT.style.display='';
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='';
   loadTransportista();
@@ -7706,6 +7723,8 @@ function adminSignOut(){
   stopUsersAutoRefresh();
   const nb=document.getElementById('nb-users');
   if(nb)nb.style.display='none';
+  const nbT=document.getElementById('nb-transportista');
+  if(nbT)nbT.style.display='none';
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='none';
   showScr('list');
@@ -8467,14 +8486,11 @@ function applyRoleRestrictions(){
 function switchUsersTab(tab){
   document.getElementById('utab-content-users').style.display=tab==='users'?'':'none';
   document.getElementById('utab-content-perms').style.display=tab==='perms'?'':'none';
-  document.getElementById('utab-content-transportista').style.display=tab==='transportista'?'':'none';
   document.getElementById('utab-users').classList.toggle('on',tab==='users');
   document.getElementById('utab-perms').classList.toggle('on',tab==='perms');
-  document.getElementById('utab-transportista').classList.toggle('on',tab==='transportista');
   const actions=document.getElementById('users-hdr-actions');
   if(actions)actions.style.display=tab==='users'?'flex':'none';
   if(tab==='perms')renderPermsPanel();
-  if(tab==='transportista'){switchTranspSubTab('empresa');}
 }
 
 /* ════════════════════════════════════════════════════════
