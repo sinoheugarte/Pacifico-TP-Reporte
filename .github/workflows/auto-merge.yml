@@ -17,16 +17,18 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Configurar git
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
       - name: Fusionar branch en main
         run: |
+          git fetch origin main
           git checkout main
-          git pull origin main
           git merge --strategy-option=theirs origin/claude/spanish-greeting-49mWq \
             -m "Auto-merge: claude/spanish-greeting-49mWq → main"
           git push origin main
