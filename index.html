@@ -4166,7 +4166,7 @@ function doneTruckOv(title,msg,btnText,btnAction){
       document.getElementById('tov-done-msg').textContent=msg||'';
       var btn=document.getElementById('tov-done-btn');
       btn.textContent=btnText||'✅ Cerrar';
-      btn.onclick=btnAction?function(){btnAction();hideTruckOv();}:hideTruckOv;
+      btn.onclick=btnAction?function(){hideTruckOv();setTimeout(btnAction,80);}:hideTruckOv;
       document.getElementById('tov-done').classList.add('show');
     },1600);
   },wait);
@@ -4183,13 +4183,13 @@ var _efm={type:'pdf',state:{},dateMode:'list',dateFrom:'',dateTo:'',primaryField
 var _EFM_FIELDS=[
   {id:'orden',label:'📋 Número de Orden',key:'orden'},
   {id:'fecha',label:'📅 Fecha de Inicio',key:'fechaInicio',isDate:true},
+  {id:'cliente',label:'🏢 Cliente',key:'cliente',getVals:function(){return (_clientes||[]).map(function(c){return c.razonSocial||'';}).filter(Boolean).sort();}},
   {id:'motivo',label:'🚚 Motivo de Traslado',key:'motivo'},
   {id:'transportista',label:'👤 Transportista',key:'transportista',getVals:function(){return (_transportistaDB.empresas||[]).map(function(e){return e.razonSocial||'';}).filter(Boolean).sort();}},
   {id:'placa',label:'🚗 Placa',key:'placa'},
   {id:'conductor',label:'🧑‍✈️ Conductor',key:'conductor'},
-  {id:'status',label:'🏷️ Status',key:'status'},
   {id:'ruta',label:'🗺️ Ruta',key:'ruta'},
-  {id:'cliente',label:'🏢 Cliente',key:'cliente',getVals:function(){return (_clientes||[]).map(function(c){return c.razonSocial||'';}).filter(Boolean).sort();}}
+  {id:'status',label:'🏷️ Status',key:'status'}
 ];
 var _EFM_STATUS_LABELS={pendiente:'Pendiente','en-ruta':'En Ruta',completado:'Completado',cancelado:'Cancelado'};
 var _EFM_TYPE_LABELS={pdf:'Generar PDF',ppt:'Generar PPT',live:'Generar LIVE'};
@@ -5227,17 +5227,21 @@ async function generatePDF(){
     const axisHD={grid:{color:'#E2E8F0'},ticks:{font:{size:24},color:'#475569'}};
     const legendBot={display:true,position:'bottom',labels:{font:{size:24},color:'#0F172A',boxWidth:32,padding:24}};
 
+    const _yld=()=>new Promise(r=>setTimeout(r,0));
+
     // Estado doughnut
     const imgEstado=renderChartImg('doughnut',
       ['Completado','En Ruta','Pendiente','Cancelado'],
       [{data:[comp,enRuta,pend,cancel],backgroundColor:['#22C55E','#3B82F6','#F59E0B','#EF4444'],borderWidth:0}],
       {cutout:'52%'},legendBot,2000,1000);
+    await _yld(); if(_tovCancelled)return;
 
     // Motivos pie
     const imgMotivos=topMotivosP.length?renderChartImg('pie',
       topMotivosP.map(([k])=>k.length>22?k.slice(0,20)+'…':k),
       [{data:topMotivosP.map(([,v])=>v),backgroundColor:pcols.slice(0,topMotivosP.length),borderWidth:0}],
       {},legendBot,2000,1000):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Transportistas horizontal bar
     const imgTransp=topTranspP.length?renderChartImg('bar',
@@ -5245,6 +5249,7 @@ async function generatePDF(){
       [{data:topTranspP.map(([,v])=>v),backgroundColor:'#1D4ED8',borderWidth:0,label:'Viajes',barThickness:38}],
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Tendencia mensual line
     const imgMensual=mensualValuesP.length?renderChartImg('line',mensualLabelsP,
@@ -5252,6 +5257,7 @@ async function generatePDF(){
         borderWidth:5,pointRadius:10,pointBackgroundColor:'#0F2340',tension:0.3,fill:true}],
       {scales:{x:{...axisHD},y:{...axisHD,beginAtZero:true}}},
       {display:false},2400,900):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Rutas horizontal bar
     const imgRutas=topRutasP.length?renderChartImg('bar',
@@ -5259,6 +5265,7 @@ async function generatePDF(){
       [{data:topRutasP.map(([,v])=>v),backgroundColor:'#7C3AED',borderWidth:0,label:'Ops',barThickness:38}],
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Placas horizontal bar
     const imgPlacasP=topPlacasP.length?renderChartImg('bar',
@@ -5266,6 +5273,7 @@ async function generatePDF(){
       [{data:topPlacasP.map(([,v])=>v),backgroundColor:'#0EA5E9',borderWidth:0,label:'Viajes',barThickness:38}],
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Conductores horizontal bar
     const imgCondsP=topCondsP.length?renderChartImg('bar',
@@ -5280,12 +5288,14 @@ async function generatePDF(){
       [{data:topClientesP.map(([,v])=>v),backgroundColor:'#F59E0B',borderWidth:0,label:'Ops',barThickness:35}],
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:22},color:'#0F172A'}}}},
       {display:false},2400,1100):null;
+    await _yld(); if(_tovCancelled)return;
 
     // Carga vertical bar
     const imgCarga=renderChartImg('bar',['Paletas','Cajas','Sobres'],
       [{data:[paletas,cajas,sobres],backgroundColor:['#1D4ED8','#22C55E','#F59E0B'],borderWidth:0,barThickness:90}],
       {scales:{x:{grid:{display:false},ticks:{font:{size:30},color:'#0F172A'}},y:{...axisHD,beginAtZero:true}}},
       {display:false},1600,1000);
+    await _yld(); if(_tovCancelled)return;
 
     // ── Helper: hex → [r,g,b] ──
     function hexToRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
@@ -8199,7 +8209,7 @@ function renderClientesTable(){
     <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.direccion||'—')}</td>
     <td>${esc(c.contacto||'—')}</td>
     <td>${esc(c.telefono||'—')}</td>
-    <td><button class="btn-usr-edit" onclick="openClienteModal('${c.id}')">Editar</button><button class="btn-usr-del" onclick="deleteCliente('${c.id}')">Eliminar</button></td>
+    <td style="white-space:nowrap"><button class="btn-usr-edit" onclick="openClienteModal('${c.id}')">Editar</button><button class="btn-usr-del" onclick="deleteCliente('${c.id}')">Eliminar</button></td>
   </tr>`).join('');
 }
 
