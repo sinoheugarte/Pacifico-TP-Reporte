@@ -5154,6 +5154,8 @@ async function generatePDF(){
     const topPlacasP=Object.entries(placaMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const condMapP={};records.forEach(r=>{if(r.conductor)condMapP[r.conductor]=(condMapP[r.conductor]||0)+1;});
     const topCondsP=Object.entries(condMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const clienteMapP={};records.forEach(r=>{if(r.cliente)clienteMapP[r.cliente]=(clienteMapP[r.cliente]||0)+1;});
+    const topClientesP=Object.entries(clienteMapP).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const byMonthP={};
     records.forEach(r=>{if(!r.fechaInicio)return;const p=r.fechaInicio.split('-');const mk=p.length>=2?`${p[1]}/${p[0]}`:'Otros';byMonthP[mk]=(byMonthP[mk]||0)+1;});
     const monthEntriesP=Object.entries(byMonthP).sort();
@@ -5272,6 +5274,13 @@ async function generatePDF(){
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
 
+    // Clientes horizontal bar
+    const imgClientesP=topClientesP.length?renderChartImg('bar',
+      topClientesP.map(([k])=>k.length>28?k.slice(0,26)+'…':k),
+      [{data:topClientesP.map(([,v])=>v),backgroundColor:'#F59E0B',borderWidth:0,label:'Ops',barThickness:35}],
+      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:22},color:'#0F172A'}}}},
+      {display:false},2400,1100):null;
+
     // Carga vertical bar
     const imgCarga=renderChartImg('bar',['Paletas','Cajas','Sobres'],
       [{data:[paletas,cajas,sobres],backgroundColor:['#1D4ED8','#22C55E','#F59E0B'],borderWidth:0,barThickness:90}],
@@ -5355,6 +5364,9 @@ async function generatePDF(){
     if(imgCondsP) addChartRow(imgCondsP,'Top Conductores',
       topCondsP.map(([k])=>k),topCondsP.map(([,v])=>v),
       Array(topCondsP.length).fill('#14B8A6'),total);
+    if(imgClientesP) addChartRow(imgClientesP,'Top Clientes',
+      topClientesP.map(([k])=>k),topClientesP.map(([,v])=>v),
+      Array(topClientesP.length).fill('#F59E0B'),total);
     addChartRow(imgCarga,'Carga Transportada',
       ['Paletas','Cajas','Sobres'],[paletas,cajas,sobres],
       ['#1D4ED8','#22C55E','#F59E0B'],paletas+cajas+sobres);
@@ -5447,6 +5459,15 @@ async function generatePDF(){
       para(`Se identificaron ${topMotivosP.length} motivo${topMotivosP.length!==1?'s':''} de traslado. El motivo predominante fue "${topMotivosP[0][0]}" con ${topMotivosP[0][1]} operación${topMotivosP[0][1]!==1?'es':''}` +
         ` (${Math.round(topMotivosP[0][1]/total*100)}% del total)` +
         (topMotivosP.length>1?`, seguido por "${topMotivosP[1][0]}" con ${topMotivosP[1][1]} (${Math.round(topMotivosP[1][1]/total*100)}%).`:'.'));
+    }
+
+    // 7. Clientes
+    if(topClientesP.length>0){
+      secHdr('7.  ANÁLISIS DE CLIENTES');
+      const concCli=Math.round(topClientesP[0][1]/total*100);
+      para(`Se atendieron ${topClientesP.length} cliente${topClientesP.length!==1?'s':''} durante el período. El cliente principal fue "${topClientesP[0][0]}" con ${topClientesP[0][1]} operación${topClientesP[0][1]!==1?'es':''}, representando el ${concCli}% del total. ${concCli>50?'Esta alta concentración en un solo cliente sugiere una oportunidad de diversificación de la cartera.':'La distribución de operaciones entre clientes refleja una cartera diversificada.'}`);
+      topClientesP.slice(0,6).forEach(([k,v])=>bullet(`${k}: ${v} operación${v!==1?'es':''} — ${total?Math.round(v/total*100):0}% del total`,[245,158,11]));
+      y+=2;
     }
 
     // ── CONCLUSIONES Y RECOMENDACIONES ──
@@ -5699,6 +5720,8 @@ async function generatePPTX(){
     const topPlacas=Object.entries(placaMapX).sort((a,b)=>b[1]-a[1]);
     const condMapX={};records.forEach(r=>{if(r.conductor)condMapX[r.conductor]=(condMapX[r.conductor]||0)+1;});
     const topConds=Object.entries(condMapX).sort((a,b)=>b[1]-a[1]);
+    const clienteMapX={};records.forEach(r=>{if(r.cliente)clienteMapX[r.cliente]=(clienteMapX[r.cliente]||0)+1;});
+    const topClientes=Object.entries(clienteMapX).sort((a,b)=>b[1]-a[1]);
 
     // Tendencia mensual
     const byMonth={};
