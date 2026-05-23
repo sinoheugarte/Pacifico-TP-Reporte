@@ -1414,7 +1414,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="sbar">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="sbar-inp" id="srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderList()">
+      <input class="sbar-inp" id="srch" placeholder="Buscar orden, ruta, transportista, placa, conductor…" oninput="renderList()">
     </div>
     <div class="sbar-dates">
       <div class="sbar-date-grp">
@@ -1703,7 +1703,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="sbar" style="padding-bottom:8px">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="sbar-inp" id="dash-srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderDashboard()">
+      <input class="sbar-inp" id="dash-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor…" oninput="renderDashboard()">
     </div>
     <div class="sbar-dates">
       <div class="sbar-date-grp">
@@ -1800,6 +1800,18 @@ body.has-pending .pending-dot{display:inline-block}
       <div class="dash-chart-area" style="position:relative;height:180px"><canvas id="chartCarga"></canvas></div>
     </div>
 
+    <!-- Placas bar -->
+    <div class="dash-card">
+      <div class="dash-card-title">Top Placas</div>
+      <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartPlacas"></canvas></div>
+    </div>
+
+    <!-- Conductores bar -->
+    <div class="dash-card">
+      <div class="dash-card-title">Top Conductores</div>
+      <div class="dash-chart-area" style="position:relative;height:220px"><canvas id="chartConductores"></canvas></div>
+    </div>
+
     <!-- ÓRDENES CON MÚLTIPLES VIAJES -->
     <div class="dash-card">
       <div class="dash-card-title">Órdenes con Múltiples Viajes</div>
@@ -1839,7 +1851,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="sbar" style="padding-bottom:8px">
     <div class="sbar-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="sbar-inp" id="rec-srch" placeholder="Buscar orden, ruta, transportista…" oninput="renderRecordsTable()">
+      <input class="sbar-inp" id="rec-srch" placeholder="Buscar orden, ruta, transportista, placa, conductor…" oninput="renderRecordsTable()">
     </div>
     <div class="sbar-dates">
       <div class="sbar-date-grp">
@@ -3069,7 +3081,9 @@ function _matchesSearch(r, q){
   const ql = q.toLowerCase();
   return (r.orden||'').toLowerCase().includes(ql)
       || (r.ruta||'').toLowerCase().includes(ql)
-      || (r.transportista||'').toLowerCase().includes(ql);
+      || (r.transportista||'').toLowerCase().includes(ql)
+      || (r.placa||'').toLowerCase().includes(ql)
+      || (r.conductor||'').toLowerCase().includes(ql);
 }
 
 function clearDateFilter(){
@@ -4114,6 +4128,8 @@ var _EFM_FIELDS=[
   {id:'fecha',label:'📅 Fecha de Inicio',key:'fechaInicio',isDate:true},
   {id:'motivo',label:'🚚 Motivo de Traslado',key:'motivo'},
   {id:'transportista',label:'👤 Transportista',key:'transportista'},
+  {id:'placa',label:'🚗 Placa',key:'placa'},
+  {id:'conductor',label:'🧑‍✈️ Conductor',key:'conductor'},
   {id:'status',label:'🏷️ Status',key:'status'},
   {id:'ruta',label:'🗺️ Ruta',key:'ruta'}
 ];
@@ -4616,6 +4632,36 @@ function renderDashboard(){
       scales:{x:{grid:{display:false},ticks:{color:_gc}},y:{grid:{color:_ggc},ticks:{color:_gc}}}}
   });
 
+  // ── PLACAS BAR ──
+  const placaMap={};
+  fil.forEach(r=>{if(r.placa) placaMap[r.placa]=(placaMap[r.placa]||0)+1;});
+  const placaEntries=Object.entries(placaMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  chartInstances.placas = new Chart(document.getElementById('chartPlacas'),{
+    type:'bar',
+    data:{labels:placaEntries.map(([k])=>k),
+      datasets:[{label:'Viajes',data:placaEntries.map(([,v])=>v),
+        backgroundColor:'#0EA5E9',borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+              y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
+  });
+
+  // ── CONDUCTORES BAR ──
+  const condMap={};
+  fil.forEach(r=>{if(r.conductor) condMap[r.conductor]=(condMap[r.conductor]||0)+1;});
+  const condEntries=Object.entries(condMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  chartInstances.conductores = new Chart(document.getElementById('chartConductores'),{
+    type:'bar',
+    data:{labels:condEntries.map(([k])=>k),
+      datasets:[{label:'Viajes',data:condEntries.map(([,v])=>v),
+        backgroundColor:'#14B8A6',borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:_ggc},ticks:{font:{size:10},color:_gc}},
+              y:{grid:{display:false},ticks:{font:{size:10},color:_gc}}}}
+  });
+
   // ── TABLE: ÓRDENES CON MÚLTIPLES VIAJES ──
   const ovMap={};
   fil.forEach(r=>{
@@ -4643,7 +4689,7 @@ function renderDashboard(){
   // ── TABLE: ÚLTIMOS 5 REGISTROS ──
   const last5=fil.slice().sort((a,b)=>(b.updatedAt||b.fechaInicio||'').localeCompare(a.updatedAt||a.fechaInicio||'')).slice(0,5);
   if(last5.length>0){
-    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Viaje</th><th ${thS}>Ruta</th><th ${thS}>Status</th></tr>`;
+    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Placa</th><th ${thS}>Conductor</th><th ${thS}>Ruta</th><th ${thS}>Status</th></tr>`;
     const sBadge=(s)=>{
       const colors=_dk
         ?{completado:'#6ee7b7',pendiente:'#fcd34d','en-ruta':'#93c5fd',cancelado:'#fca5a5'}
@@ -4654,7 +4700,7 @@ function renderDashboard(){
       return `<span style="background:${bgs[s]||(_dk?'#1e293b':'#f1f5f9')};color:${colors[s]||(_dk?'#94a3b8':'#64748b')};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase">${s||'—'}</span>`;
     };
     last5.forEach((r,i)=>{
-      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${r.viaje||'—'}</td><td ${tdS(i)}>${(r.ruta||'—').substring(0,20)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
+      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${r.placa||'—'}</td><td ${tdS(i)}>${(r.conductor||'—').substring(0,15)}</td><td ${tdS(i)}>${(r.ruta||'—').substring(0,18)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
     });
     h+='</table>';
     setEl('tblUltimos',h);
@@ -4985,6 +5031,10 @@ async function generatePDF(){
     const topTranspP=Object.entries(transMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const rutaMapP={};records.forEach(r=>{if(r.ruta)rutaMapP[r.ruta]=(rutaMapP[r.ruta]||0)+1;});
     const topRutasP=Object.entries(rutaMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const placaMapP={};records.forEach(r=>{if(r.placa)placaMapP[r.placa]=(placaMapP[r.placa]||0)+1;});
+    const topPlacasP=Object.entries(placaMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const condMapP={};records.forEach(r=>{if(r.conductor)condMapP[r.conductor]=(condMapP[r.conductor]||0)+1;});
+    const topCondsP=Object.entries(condMapP).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const byMonthP={};
     records.forEach(r=>{if(!r.fechaInicio)return;const p=r.fechaInicio.split('-');const mk=p.length>=2?`${p[1]}/${p[0]}`:'Otros';byMonthP[mk]=(byMonthP[mk]||0)+1;});
     const monthEntriesP=Object.entries(byMonthP).sort();
@@ -5089,6 +5139,20 @@ async function generatePDF(){
       {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
 
+    // Placas horizontal bar
+    const imgPlacasP=topPlacasP.length?renderChartImg('bar',
+      topPlacasP.map(([k])=>k),
+      [{data:topPlacasP.map(([,v])=>v),backgroundColor:'#0EA5E9',borderWidth:0,label:'Viajes',barThickness:38}],
+      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {display:false},2400,1000):null;
+
+    // Conductores horizontal bar
+    const imgCondsP=topCondsP.length?renderChartImg('bar',
+      topCondsP.map(([k])=>k.length>26?k.slice(0,24)+'…':k),
+      [{data:topCondsP.map(([,v])=>v),backgroundColor:'#14B8A6',borderWidth:0,label:'Viajes',barThickness:38}],
+      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {display:false},2400,1000):null;
+
     // Carga vertical bar
     const imgCarga=renderChartImg('bar',['Paletas','Cajas','Sobres'],
       [{data:[paletas,cajas,sobres],backgroundColor:['#1D4ED8','#22C55E','#F59E0B'],borderWidth:0,barThickness:90}],
@@ -5166,6 +5230,12 @@ async function generatePDF(){
     if(imgRutas) addChartRow(imgRutas,'Top Rutas',
       topRutasP.map(([k])=>k),topRutasP.map(([,v])=>v),
       Array(topRutasP.length).fill('#7C3AED'),total);
+    if(imgPlacasP) addChartRow(imgPlacasP,'Top Placas',
+      topPlacasP.map(([k])=>k),topPlacasP.map(([,v])=>v),
+      Array(topPlacasP.length).fill('#0EA5E9'),total);
+    if(imgCondsP) addChartRow(imgCondsP,'Top Conductores',
+      topCondsP.map(([k])=>k),topCondsP.map(([,v])=>v),
+      Array(topCondsP.length).fill('#14B8A6'),total);
     addChartRow(imgCarga,'Carga Transportada',
       ['Paletas','Cajas','Sobres'],[paletas,cajas,sobres],
       ['#1D4ED8','#22C55E','#F59E0B'],paletas+cajas+sobres);
@@ -5506,6 +5576,10 @@ async function generatePPTX(){
     const topMotivos=Object.entries(motivoMap).sort((a,b)=>b[1]-a[1]);
     const unitMap={};records.forEach(r=>{if(r.tipoUnidad)unitMap[r.tipoUnidad]=(unitMap[r.tipoUnidad]||0)+1;});
     const topUnidades=Object.entries(unitMap).sort((a,b)=>b[1]-a[1]);
+    const placaMapX={};records.forEach(r=>{if(r.placa)placaMapX[r.placa]=(placaMapX[r.placa]||0)+1;});
+    const topPlacas=Object.entries(placaMapX).sort((a,b)=>b[1]-a[1]);
+    const condMapX={};records.forEach(r=>{if(r.conductor)condMapX[r.conductor]=(condMapX[r.conductor]||0)+1;});
+    const topConds=Object.entries(condMapX).sort((a,b)=>b[1]-a[1]);
 
     // Tendencia mensual
     const byMonth={};
@@ -5707,6 +5781,62 @@ async function generatePPTX(){
       s7.addText(pct2+'%',{x:8.82,y:ry,w:.85,h:.52,fontSize:9,bold:true,color:BLUE,align:'center',valign:'middle'});
     });
 
+    // ══ SLIDE 7b — PLACAS (native horizontal bar) ══
+    setUpStep('Top Placas'); setUpBar(50);
+    const s7b=pptx.addSlide(); s7b.background={color:BG};
+    addHdr(s7b,'TOP PLACAS',`${topPlacas.length} placa${topPlacas.length!==1?'s':''} registrada${topPlacas.length!==1?'s':''}`); addFtr(s7b,++pageN);
+    const pSlice=topPlacas.slice(0,8);
+    if(pSlice.length>0){
+      s7b.addChart(pptx.ChartType.bar,[{name:'Viajes',labels:pSlice.map(([k])=>k),values:pSlice.map(([,v])=>v||0)}],{
+        ...cBase,x:ML,y:CTX_Y,w:5.0,h:CTX_H,
+        barDir:'bar',barGapWidthPct:55,chartColors:['0EA5E9'],
+        showLegend:false,showValue:true,
+        dataLabelFontSize:9,dataLabelFontBold:true,dataLabelColor:WHITE,
+      });
+    }
+    s7b.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
+    s7b.addText('#',{x:5.58,y:CTX_Y,w:.38,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7b.addText('PLACA',{x:5.98,y:CTX_Y,w:2.18,h:.46,fontSize:7.5,bold:true,color:WHITE,valign:'middle'});
+    s7b.addText('VJ.',{x:8.18,y:CTX_Y,w:.62,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7b.addText('%',{x:8.82,y:CTX_Y,w:.85,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    pSlice.slice(0,7).forEach(([name,cnt],i)=>{
+      const ry=CTX_Y+.48+i*.54, pct2=total?Math.round(cnt/total*100):0;
+      s7b.addShape(pptx.ShapeType.rect,{x:5.55,y:ry,w:4.12,h:.52,fill:{color:i%2===0?WHITE:'F8FAFC'},line:{color:BORDER,width:.25}});
+      s7b.addShape(pptx.ShapeType.roundRect,{x:5.59,y:ry+.13,w:.26,h:.26,fill:{color:i<3?AMBER:BORDER},line:{color:i<3?AMBER:BORDER}});
+      s7b.addText(String(i+1),{x:5.59,y:ry+.13,w:.26,h:.26,fontSize:7,bold:true,color:i<3?NAVY:T2,align:'center',valign:'middle'});
+      s7b.addText(name,{x:5.88,y:ry,w:2.28,h:.52,fontSize:8,color:T1,valign:'middle'});
+      s7b.addText(String(cnt),{x:8.18,y:ry,w:.62,h:.52,fontSize:9,bold:true,color:T1,align:'center',valign:'middle'});
+      s7b.addText(pct2+'%',{x:8.82,y:ry,w:.85,h:.52,fontSize:9,bold:true,color:'0EA5E9',align:'center',valign:'middle'});
+    });
+
+    // ══ SLIDE 7c — CONDUCTORES (native horizontal bar) ══
+    setUpStep('Top Conductores'); setUpBar(52);
+    const s7c=pptx.addSlide(); s7c.background={color:BG};
+    addHdr(s7c,'TOP CONDUCTORES',`${topConds.length} conductor${topConds.length!==1?'es':''} registrado${topConds.length!==1?'s':''}`); addFtr(s7c,++pageN);
+    const cSlice=topConds.slice(0,8);
+    if(cSlice.length>0){
+      s7c.addChart(pptx.ChartType.bar,[{name:'Viajes',labels:cSlice.map(([k])=>k.length>20?k.slice(0,18)+'…':k),values:cSlice.map(([,v])=>v||0)}],{
+        ...cBase,x:ML,y:CTX_Y,w:5.0,h:CTX_H,
+        barDir:'bar',barGapWidthPct:55,chartColors:['14B8A6'],
+        showLegend:false,showValue:true,
+        dataLabelFontSize:9,dataLabelFontBold:true,dataLabelColor:WHITE,
+      });
+    }
+    s7c.addShape(pptx.ShapeType.rect,{x:5.55,y:CTX_Y,w:4.12,h:.46,fill:{color:NAVY}});
+    s7c.addText('#',{x:5.58,y:CTX_Y,w:.38,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7c.addText('CONDUCTOR',{x:5.98,y:CTX_Y,w:2.18,h:.46,fontSize:7.5,bold:true,color:WHITE,valign:'middle'});
+    s7c.addText('VJ.',{x:8.18,y:CTX_Y,w:.62,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    s7c.addText('%',{x:8.82,y:CTX_Y,w:.85,h:.46,fontSize:7.5,bold:true,color:WHITE,align:'center',valign:'middle'});
+    cSlice.slice(0,7).forEach(([name,cnt],i)=>{
+      const ry=CTX_Y+.48+i*.54, pct2=total?Math.round(cnt/total*100):0;
+      s7c.addShape(pptx.ShapeType.rect,{x:5.55,y:ry,w:4.12,h:.52,fill:{color:i%2===0?WHITE:'F8FAFC'},line:{color:BORDER,width:.25}});
+      s7c.addShape(pptx.ShapeType.roundRect,{x:5.59,y:ry+.13,w:.26,h:.26,fill:{color:i<3?AMBER:BORDER},line:{color:i<3?AMBER:BORDER}});
+      s7c.addText(String(i+1),{x:5.59,y:ry+.13,w:.26,h:.26,fontSize:7,bold:true,color:i<3?NAVY:T2,align:'center',valign:'middle'});
+      s7c.addText(name.length>22?name.slice(0,20)+'…':name,{x:5.88,y:ry,w:2.28,h:.52,fontSize:8,color:T1,valign:'middle'});
+      s7c.addText(String(cnt),{x:8.18,y:ry,w:.62,h:.52,fontSize:9,bold:true,color:T1,align:'center',valign:'middle'});
+      s7c.addText(pct2+'%',{x:8.82,y:ry,w:.85,h:.52,fontSize:9,bold:true,color:'14B8A6',align:'center',valign:'middle'});
+    });
+
     // ══ SLIDE 8 — RUTAS & UNIDADES (two native charts) ══
     setUpStep('Rutas y Tipos de Unidad'); setUpBar(54);
     const s8=pptx.addSlide(); s8.background={color:BG};
@@ -5767,27 +5897,27 @@ async function generatePPTX(){
       st.addTable([[
         {text:'Fecha',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Orden',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Viaje',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
+        {text:'Placa',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
+        {text:'Conductor',    options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Ruta',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Transportista',options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Motivo',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Estado',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Pal.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Caj.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
       ],...recs.map((r,ri)=>{
         const bg=ri%2===0?WHITE:'F1F5F9', sc=stC[(r.status||'').toLowerCase()]||T1;
         return[
           {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.orden||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.viaje||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.ruta||'—').slice(0,22),         options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.transportista||'—').slice(0,18),options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.motivo||'—').slice(0,16),       options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.placa||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.conductor||'—').slice(0,14),    options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.ruta||'—').slice(0,20),         options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.transportista||'—').slice(0,16),options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.motivo||'—').slice(0,14),       options:{fontSize:7,fill:bg,valign:'middle'}},
           {text:String(r.status||'—'),                   options:{fontSize:7,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.paletas||'0'),                  options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.cajas||'0'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
         ];
-      })],{x:ML,y:CTX_Y,w:CW,colW:[1.05,.72,.5,1.82,1.72,1.38,.88,.66,.67],fontSize:7,border:{pt:.3,color:BORDER},rowH:.36});
+      })],{x:ML,y:CTX_Y,w:CW,colW:[1.0,.65,.6,1.3,1.55,1.35,1.1,.75,.7],fontSize:7,border:{pt:.3,color:BORDER},rowH:.36});
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
@@ -7137,6 +7267,8 @@ var _rtCols=[
   {k:'dam',               label:'DAM',             fmt:r=>r.dam||'—',                                    cls:'td-trunc'},
   {k:'tipoUnidad',        label:'Tipo Unidad',     fmt:r=>r.tipoUnidad||'—',                             cls:'td-trunc'},
   {k:'transportista',     label:'Transportista',   fmt:r=>r.transportista||'—',                          cls:'td-trunc'},
+  {k:'placa',             label:'Placa',           fmt:r=>r.placa||'—',                                  cls:''},
+  {k:'conductor',         label:'Conductor',       fmt:r=>r.conductor||'—',                              cls:'td-trunc'},
   {k:'ruta',              label:'Ruta',            fmt:r=>r.ruta||'—',                                   cls:'td-trunc'},
   {k:'motivo',            label:'Motivo',          fmt:r=>r.motivo||'—',                                 cls:'td-trunc'},
   {k:'viaje',             label:'Viaje',           fmt:r=>r.viaje||'—',                                  cls:''},
