@@ -2335,6 +2335,7 @@ async function signIn(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.pushState({_appRoot:true},'');
     checkLiveHash();
 
   } catch(e){
@@ -2375,6 +2376,7 @@ async function _handleRedirectCallback(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   }catch(e){
@@ -2419,6 +2421,7 @@ async function tryAutoLogin(){
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
+    history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   } catch(e){
@@ -4175,6 +4178,11 @@ function closeExportFilter(){
 window.addEventListener('popstate',function(){
   if(document.getElementById('efmOv')?.classList.contains('on')){
     document.getElementById('efmOv').classList.remove('on');
+    return;
+  }
+  // Si el usuario está autenticado, bloquear retroceso hacia la pantalla de login
+  if(user){
+    history.pushState({_appRoot:true},'');
   }
 });
 function _efmUniq(key,recs){
