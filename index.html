@@ -4162,7 +4162,6 @@ var _EFM_STATUS_LABELS={pendiente:'Pendiente','en-ruta':'En Ruta',completado:'Co
 var _EFM_TYPE_LABELS={pdf:'Generar PDF',ppt:'Generar PPT',live:'Generar LIVE'};
 
 var _efmIsOpen=false;
-var _efmBackClean=false;
 function showExportFilter(type){
   _efm.type=type;
   _efm.state={};
@@ -4174,24 +4173,22 @@ function showExportFilter(type){
   _efmUpdateCount();
   document.getElementById('efm-gen-btn').textContent=_EFM_TYPE_LABELS[type]||'Generar';
   _efmIsOpen=true;
-  history.pushState({_efmOpen:true},'');
   document.getElementById('efmOv').classList.add('on');
 }
 function closeExportFilter(){
   _efmIsOpen=false;
   document.getElementById('efmOv').classList.remove('on');
-  if(history.state?._efmOpen){_efmBackClean=true;history.back();}
 }
 window.addEventListener('popstate',function(){
-  // Caso 1: modal abierto + retroceder físico → cerrar modal
+  // Si el modal está abierto, el retroceder lo cierra (igual que botón X)
   if(_efmIsOpen){
     _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
+    // Empujamos un nuevo estado para que el usuario quede en la app
+    if(user) history.pushState({_appRoot:true},'');
     return;
   }
-  // Caso 2: botón X llamó history.back() para limpiar estado → ignorar
-  if(_efmBackClean){_efmBackClean=false;return;}
-  // Caso 3: retroceder estando autenticado → bloquear salida
+  // Retroceder estando autenticado fuera del modal → bloquear salida al login
   if(user){history.pushState({_appRoot:true},'')}
 });
 function _efmUniq(key,recs){
