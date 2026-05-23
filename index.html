@@ -8721,9 +8721,10 @@ function applyRoleRestrictions(){
   if(!_rolePerms)loadRolePerms();
   const rol=userRole||'conductor';
   const p=_rolePerms[rol]||DEFAULT_PERMS[rol];
-  // FAB (crear)
+  // FAB solo visible en la pestaña de Registros (scr-list)
   const fab=document.getElementById('fab');
-  if(fab)fab.style.display=p.crear?'flex':'none';
+  const onList=document.getElementById('scr-list')?.classList.contains('on');
+  if(fab)fab.style.display=(p.crear&&onList)?'flex':'none';
 }
 
 function switchUsersTab(tab){
