@@ -3093,11 +3093,24 @@ function clearDateFilter(){
   document.getElementById('srch-hasta').value='';
   renderList();
 }
+function _conductorFullName(){
+  if(!user)return '';
+  const u=_sysUsers.find(x=>(x.email||'').toLowerCase()===(user.email||'').toLowerCase());
+  if(!u)return '';
+  return [u.nombre,u.apellidos].filter(Boolean).join(' ').toUpperCase().trim();
+}
+function _visibleRecords(){
+  if((userRole||'conductor')!=='conductor')return records;
+  const myName=_conductorFullName();
+  if(!myName)return records;
+  return records.filter(r=>(r.conductor||'').toUpperCase().trim()===myName);
+}
 function renderList(){
   const q=(document.getElementById('srch').value||'').toLowerCase();
   const desde=document.getElementById('srch-desde').value||'';
   const hasta=document.getElementById('srch-hasta').value||'';
-  let fil=records.filter(r=>{
+  const _vr=_visibleRecords();
+  let fil=_vr.filter(r=>{
     if(activeFilter!=='todos'&&(r.status||'').toLowerCase()!==activeFilter)return false;
     if(!_matchesSearch(r,q))return false;
     const f=r.fechaInicio||'';
@@ -3105,12 +3118,12 @@ function renderList(){
     if(hasta&&f&&f>hasta)return false;
     return true;
   });
-  const total    = records.length;
-  const comp     = records.filter(r=>r.status==='completado').length;
-  const enRuta   = records.filter(r=>r.status==='en-ruta').length;
-  const pend     = records.filter(r=>r.status==='pendiente').length;
-  const cancel   = records.filter(r=>r.status==='cancelado').length;
-  const cajas    = records.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
+  const total    = _vr.length;
+  const comp     = _vr.filter(r=>r.status==='completado').length;
+  const enRuta   = _vr.filter(r=>r.status==='en-ruta').length;
+  const pend     = _vr.filter(r=>r.status==='pendiente').length;
+  const cancel   = _vr.filter(r=>r.status==='cancelado').length;
+  const cajas    = _vr.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
   setEl('stats',
     `<div class="sc"><div class="v">${total}</div><div class="l">Reportes</div></div>` +
     `<div class="sc green"><div class="v">${comp}</div><div class="l">Completados</div></div>` +
@@ -3303,7 +3316,7 @@ function newRecord(){
   const _hoy=[_t.getFullYear(),String(_t.getMonth()+1).padStart(2,'0'),String(_t.getDate()).padStart(2,'0')].join('-');
   const todayEl=document.getElementById('f-fechaInicio');
   if(todayEl) todayEl.value=_hoy;
-  renderIG();setEl('iStatus','');showScr('form');
+  renderIG();setEl('iStatus','');_unlockForm();showScr('form');
   setTimeout(()=>{ clearSig(); initSigPad(); captureGPS(); },180);
 }
 function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
@@ -3728,6 +3741,7 @@ async function editRec(id){
       }).catch(()=>{});
     }
     captureGPS();
+    _lockFormForConductor();
   }, 50);
   showScr('form');
 }
@@ -4470,6 +4484,7 @@ function destroyCharts(){
 }
 
 function renderDashboard(){
+  const records=_visibleRecords();
   destroyCharts();
   const q     = (document.getElementById('dash-srch')?.value||'').toLowerCase();
   const desde = document.getElementById('dash-desde')?.value||'';
@@ -7339,6 +7354,7 @@ var _rtCols=[
 var _rtVisibleCols=new Set(['fechaInicio','orden','viaje','transportista','ruta','motivo','status','cajas','paletas']);
 
 function renderRecordsTable(){
+  const records=_visibleRecords();
   /* column toggles */
   const tog=document.getElementById('rtbl-col-toggle');
   tog.innerHTML=_rtCols.map(c=>`<button class="rtbl-col-btn ${_rtVisibleCols.has(c.k)?'on':''}" onclick="toggleRtCol('${c.k}',this)">${c.label}</button>`).join('');
@@ -8682,6 +8698,30 @@ async function savePermsAction(){
   }
 }
 
+function _lockFormForConductor(){
+  if((userRole||'conductor')!=='conductor')return;
+  const ALLOWED=new Set(['f-guiaRemitente','f-guiaTransportista','f-hojaIngreso']);
+  const form=document.getElementById('scr-form');
+  if(!form)return;
+  // Deshabilitar todos los inputs/selects/textareas excepto los permitidos y los file inputs
+  form.querySelectorAll('input:not(#camIn):not(#filIn):not(#docIn),select,textarea').forEach(el=>{
+    if(!ALLOWED.has(el.id))el.disabled=true;
+  });
+  // Bloquear firma digital
+  const sigWrap=document.getElementById('signature-pad-wrap');
+  if(sigWrap){sigWrap.style.pointerEvents='none';sigWrap.style.opacity='.45';}
+  const sigBtns=sigWrap?.nextElementSibling?.querySelectorAll('button');
+  if(sigBtns)sigBtns.forEach(b=>b.disabled=true);
+}
+function _unlockForm(){
+  const form=document.getElementById('scr-form');
+  if(!form)return;
+  form.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=false);
+  const sigWrap=document.getElementById('signature-pad-wrap');
+  if(sigWrap){sigWrap.style.pointerEvents='';sigWrap.style.opacity='';}
+  const sigBtns=sigWrap?.nextElementSibling?.querySelectorAll('button');
+  if(sigBtns)sigBtns.forEach(b=>b.disabled=false);
+}
 function applyRoleRestrictions(){
   if(!_rolePerms)loadRolePerms();
   const rol=userRole||'conductor';
