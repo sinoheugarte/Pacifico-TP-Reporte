@@ -3132,6 +3132,7 @@ function renderList(){
       <div class="rc-top"><div class="rc-num">${r.orden||'S/N'}${r.viaje?' · V'+r.viaje:''}</div><div class="rc-date">${formatDateToDDMMYYYY(r.fechaInicio)}${r.turnoInicio?' · '+r.turnoInicio:''}</div></div>
       <div class="rc-main">${r.ruta||'Sin ruta'}</div>
       <div class="rc-sub">${r.transportista||'—'}${r.tipoUnidad?' · '+r.tipoUnidad:''}</div>
+      ${(r.placa||r.conductor)?`<div class="rc-sub" style="font-size:11px;opacity:.8">${r.placa||''}${r.placa&&r.conductor?' · ':''}${r.conductor||''}</div>`:''}
       ${chips?`<div class="rc-chips">${chips}</div>`:''}
       <div class="rc-foot"><span class="badge ${sc}">${r.status||'—'}</span><div class="thumbs">${ths}${more}</div></div>
     </div>`;
@@ -4127,7 +4128,7 @@ var _EFM_FIELDS=[
   {id:'orden',label:'📋 Número de Orden',key:'orden'},
   {id:'fecha',label:'📅 Fecha de Inicio',key:'fechaInicio',isDate:true},
   {id:'motivo',label:'🚚 Motivo de Traslado',key:'motivo'},
-  {id:'transportista',label:'👤 Transportista',key:'transportista'},
+  {id:'transportista',label:'👤 Transportista',key:'transportista',getVals:function(){return (_transportistaDB.empresas||[]).map(function(e){return e.razonSocial||'';}).filter(Boolean).sort();}},
   {id:'placa',label:'🚗 Placa',key:'placa'},
   {id:'conductor',label:'🧑‍✈️ Conductor',key:'conductor'},
   {id:'status',label:'🏷️ Status',key:'status'},
@@ -4236,7 +4237,7 @@ function _efmBuild(){
   body.innerHTML='';
   var allVals={};
   _EFM_FIELDS.forEach(function(f){
-    var vals=_efmUniq(f.key);
+    var vals=f.getVals?f.getVals():_efmUniq(f.key);
     allVals[f.id]=vals;
     if(!_efm.state[f.id]){_efm.state[f.id]=new Set(vals);}
   });
@@ -4689,7 +4690,7 @@ function renderDashboard(){
   // ── TABLE: ÚLTIMOS 5 REGISTROS ──
   const last5=fil.slice().sort((a,b)=>(b.updatedAt||b.fechaInicio||'').localeCompare(a.updatedAt||a.fechaInicio||'')).slice(0,5);
   if(last5.length>0){
-    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Placa</th><th ${thS}>Conductor</th><th ${thS}>Ruta</th><th ${thS}>Status</th></tr>`;
+    let h=`<table ${tblS}><tr><th ${thS}>Orden</th><th ${thS}>Transportista</th><th ${thS}>Placa</th><th ${thS}>Conductor</th><th ${thS}>Status</th></tr>`;
     const sBadge=(s)=>{
       const colors=_dk
         ?{completado:'#6ee7b7',pendiente:'#fcd34d','en-ruta':'#93c5fd',cancelado:'#fca5a5'}
@@ -4700,7 +4701,7 @@ function renderDashboard(){
       return `<span style="background:${bgs[s]||(_dk?'#1e293b':'#f1f5f9')};color:${colors[s]||(_dk?'#94a3b8':'#64748b')};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase">${s||'—'}</span>`;
     };
     last5.forEach((r,i)=>{
-      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${r.placa||'—'}</td><td ${tdS(i)}>${(r.conductor||'—').substring(0,15)}</td><td ${tdS(i)}>${(r.ruta||'—').substring(0,18)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
+      h+=`<tr onclick="showDet('${r.id}')" style="cursor:pointer"><td ${tdS(i)}>${r.orden||'—'}</td><td ${tdS(i)}>${(r.transportista||'—').substring(0,16)}</td><td ${tdS(i)}>${r.placa||'—'}</td><td ${tdS(i)}>${(r.conductor||'—').substring(0,14)}</td><td ${tdS(i)}>${sBadge(r.status)}</td></tr>`;
     });
     h+='</table>';
     setEl('tblUltimos',h);
