@@ -4923,6 +4923,12 @@ letter-spacing:.12em;cursor:pointer;font-family:inherit;box-shadow:0 4px 24px rg
   const js=`<script>
 var _saRocketAu=null;
 function saStartIntro(){
+  /* Desbloquear heartbeat + música de fondo DENTRO del gesto del usuario.
+     _hb() y _bg() crean lazy los objetos Audio la primera vez que se llaman.
+     Al llamarlos aquí y hacer play→pause el navegador/WebView los marca como
+     "desbloqueados" y permite reproducirlos más tarde sin gesto adicional. */
+  try{var _u=_hb();if(_u){var _pu=_u.play();if(_pu)_pu.then(function(){_u.pause();_u.currentTime=0;}).catch(function(){});}}catch(e){}
+  try{var _v=_bg();if(_v){var _pv=_v.play();if(_pv)_pv.then(function(){_v.pause();_v.currentTime=0;}).catch(function(){});}}catch(e){}
   _saRocketAu=new Audio('${BASE}rocket-whoosh.mp3');
   _saRocketAu.volume=0.6;
   var p=_saRocketAu.play();
@@ -7214,19 +7220,15 @@ window.addEventListener('resize',function(){
   }catch(e){console.warn('Share URL:',e);}
 
   if(_isAndroidLive){
-    /* Android: 3 opciones como en web — ABRIR LIVE + Descargar + Compartir */
+    /* Android: 3 opciones — ABRIR LIVE (abre la presentación) + Descargar + Compartir
+       Usamos _saHtml (standalone) para "Abrir": tiene URLs de audio absolutas, no
+       depende de window.opener, y funciona sin conexión. Sin descarga automática
+       para evitar el diálogo nativo "Guardar como" que aparece antes de mostrar botones. */
     try{
-      // Blob para "Abrir Live" (CDN online, más liviano)
-      var _openBlob=new Blob([html],{type:'text/html'});
-      var _openBlobUrl=URL.createObjectURL(_openBlob);
-      setTimeout(function(){try{URL.revokeObjectURL(_openBlobUrl);}catch(e){}},120000);
-      // Auto-descarga del archivo standalone (sin CDN, apto offline)
-      var _rdl=new FileReader();
-      _rdl.onloadend=function(){
-        window.AndroidBridge.downloadBase64(_rdl.result.split(',')[1],_dlName,'text/html');
-      };
-      _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
-      // Botón secundario "Descargar Live" (re-descarga)
+      // Blob standalone para "Abrir Live" (audio CDN absoluto, sin window.opener)
+      var _openBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
+      setTimeout(function(){try{URL.revokeObjectURL(_openBlobUrl);}catch(e){}},300000);
+      // Botón secundario "Descargar Live" → descarga solo cuando el usuario lo pide
       var _dlBtn=document.getElementById('tov-live-dl-btn');
       if(_dlBtn){
         _dlBtn.style.display='';
@@ -7243,7 +7245,7 @@ window.addEventListener('resize',function(){
         if(_su)_su.value=_liveShareUrl;
         if(_sb)_sb.style.display='flex';
       }
-      // Botón principal "ABRIR LIVE" → abre en nueva ventana/pestaña
+      // Botón principal "ABRIR LIVE" → abre presentación standalone en nueva ventana
       doneTruckOv('🖥️ Presentación Live Lista','La presentación está lista para iniciar','▶ ABRIR LIVE',function(){
         try{
           var _w=window.open(_openBlobUrl,'_blank');
