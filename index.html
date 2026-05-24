@@ -413,8 +413,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   flex-direction:column;align-items:center;justify-content:center;gap:22px;
   color:#fff;padding:24px;text-align:center;overflow:hidden}
 #tovOv.on{display:flex}
-.tov-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;
-  animation:tovTw var(--t) ease-in-out infinite alternate;opacity:.15;pointer-events:none}
+.tov-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;will-change:opacity;
+  animation:tovTw var(--t) ease-in-out infinite alternate;opacity:.15}
 @keyframes tovTw{to{opacity:.95}}
 #tovOv h2{font-size:1.25rem;font-weight:700;line-height:1.4;z-index:1}
 #tovOv .tov-st{font-size:.85rem;opacity:.55;min-height:1.2em;transition:opacity .3s;z-index:1}
@@ -438,17 +438,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .tov-ground{height:16px;background:#0e1520}
 .tov-pw{width:min(90vw,440px);background:rgba(255,255,255,.08);border-radius:99px;height:7px;overflow:hidden;z-index:1}
 .tov-pb{height:100%;background:linear-gradient(90deg,#3b82f6,#f59e0b);border-radius:99px;width:2%;transition:width .5s ease}
-.tov-done{display:none;flex-direction:column;align-items:center;gap:14px;z-index:10}
-@keyframes tovUp{from{opacity:0}to{opacity:1}}
-.tov-done.show{display:flex;animation:tovUp .3s ease forwards}
+.tov-done{display:none;flex-direction:column;align-items:center;gap:14px;z-index:1}
+@keyframes tovUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.tov-done.show{display:flex;animation:tovUp .55s ease}
 .tov-done p{font-size:.9rem;opacity:.75}
 .tov-done button{background:#f59e0b;color:#0f2340;border:none;border-radius:12px;
   padding:14px 44px;font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.04em;
-  box-shadow:0 4px 20px rgba(245,158,11,.45);touch-action:manipulation;position:relative;z-index:11}
+  box-shadow:0 4px 20px rgba(245,158,11,.45)}
 #tov-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.12);
   color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;
-  padding:12px 18px;font-size:.85rem;font-weight:700;cursor:pointer;z-index:20;
-  font-family:inherit;letter-spacing:.02em;touch-action:manipulation}
+  padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer;z-index:2;
+  font-family:inherit;letter-spacing:.02em}
 
 /* ── EXPORT FILTER MODAL ─────────────────────────────── */
 #efmOv{display:none;position:fixed;inset:0;background:rgba(15,35,64,.82);z-index:950;
@@ -4142,8 +4142,8 @@ function showTruckOv(title,msgs){
   // Populate stars
   var sky=ov.querySelector('.tov-sky');
   ov.querySelectorAll('.tov-star').forEach(function(s){s.remove();});
-  for(var i=0;i<10;i++){var s=document.createElement('div');s.className='tov-star';
-    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*35+'%;--t:'+(1.5+Math.random()*3)+'s;animation-delay:'+(-Math.random()*4)+'s';
+  for(var i=0;i<18;i++){var s=document.createElement('div');s.className='tov-star';
+    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--t:'+(1.2+Math.random()*3.5)+'s;animation-delay:'+(-Math.random()*4)+'s';
     ov.appendChild(s);}
   ov.classList.add('on');
   // Progress animation
