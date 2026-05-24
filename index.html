@@ -2363,7 +2363,7 @@ async function signIn(){
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
 
   } catch(e){
@@ -2405,7 +2405,7 @@ async function _handleRedirectCallback(){
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   }catch(e){
@@ -2451,7 +2451,7 @@ async function tryAutoLogin(){
     await loadRecordsFromOD();
     showScr('list');
     history.replaceState({_appRoot:true},'');
-    for(var _hi=0;_hi<5;_hi++) history.pushState({_appRoot:true},'');
+    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   } catch(e){
@@ -2465,6 +2465,7 @@ async function signOut(){
   if(!confirm('¿Cerrar sesión de Microsoft?')) return;
   user=null; records=[]; token=null; _ubicPath=null;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(CACHE_KEY);
   document.getElementById('authWall').classList.add('on');
   setSdot('off');
   window.open(`https://login.microsoftonline.com/${cfg.tid}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodeURIComponent(cfg.redir)}`,'_blank','width=1,height=1');
@@ -6370,7 +6371,7 @@ async function generateRevealPresentation(){
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
   const multiVRows=multiV.map(([k,c])=>{const[o,m]=k.split('_');return `<tr><td>${o}</td><td>${m}</td><td><strong>${c}</strong></td></tr>`;}).join('');
-  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>${(r.cliente||'—').slice(0,14)}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,18)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
+  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>${(r.cliente||'—').slice(0,14)}</td><td>${(r.transportista||'—').slice(0,16)}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,18)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
 
   // ── Analysis slide data ──
   const motivoMR={};records.forEach(r=>{const k=(r.motivo||'Sin Motivo').trim();motivoMR[k]=(motivoMR[k]||0)+1;});
@@ -6449,11 +6450,11 @@ async function generateRevealPresentation(){
   <div style="background:#f1f5f9;padding:3px 12px;display:flex;gap:16px;margin-bottom:5px;border-radius:3px">
     <span style="font-size:.36em;color:#475569">${formatDateToDDMMYYYY(rec.fechaInicio)||'—'}</span>
     <span style="font-size:.36em;color:#94a3b8">·</span>
-    <span style="font-size:.36em;color:#475569">${(rec.motivo||'—').slice(0,22)}</span>
+    <span style="font-size:.36em;color:#475569">${rec.motivo||'—'}</span>
     <span style="font-size:.36em;color:#94a3b8">·</span>
-    <span style="font-size:.36em;color:#475569">${(rec.transportista||'—').slice(0,20)}</span>
+    <span style="font-size:.36em;color:#475569">${rec.transportista||'—'}</span>
     <span style="font-size:.36em;color:#94a3b8">·</span>
-    <span style="font-size:.36em;color:#475569">${(rec.ruta||'—').slice(0,25)}</span>
+    <span style="font-size:.36em;color:#475569;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rec.ruta||'—'}</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">${cellsHtml}</div>
 </section>`;
@@ -6694,7 +6695,7 @@ ${topClientsR.length>0?`
 <!-- SLIDE 11: ÚLTIMOS REGISTROS -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Últimos <span class="gold">Registros</span></h2>
-  <table class="data-table"><tr><th>Orden</th><th>Cliente</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
+  <table class="data-table"><tr><th>Orden</th><th>Cliente</th><th>Transportista</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
 </section>
 
 <!-- SLIDE: ANÁLISIS OPERACIONAL -->
