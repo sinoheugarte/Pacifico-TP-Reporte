@@ -4232,7 +4232,18 @@ function closeExportFilter(){
   _efmIsOpen=false;
   document.getElementById('efmOv').classList.remove('on');
 }
+/* Cierra el iframe del LIVE cuando el botón X postea 'live-close' */
+window.addEventListener('message',function(ev){
+  if(ev.data==='live-close'){
+    var _lf=document.getElementById('_liveIframe');
+    if(_lf){_lf.parentNode.removeChild(_lf);}
+  }
+});
+
 window.addEventListener('popstate',function(){
+  // Presentación LIVE abierta en iframe → cerrarla con el botón atrás
+  var _lf=document.getElementById('_liveIframe');
+  if(_lf){_lf.parentNode.removeChild(_lf);history.pushState({_appRoot:true},'');return;}
   if(_efmIsOpen){
     _efmIsOpen=false;
     document.getElementById('efmOv').classList.remove('on');
@@ -4251,6 +4262,9 @@ window.addEventListener('popstate',function(){
    Retorna 'handled' → Android NO cierra la app.
    Retorna 'exit'    → Android puede cerrar normalmente. */
 window.androidBackPressed=function(){
+  // Presentación LIVE abierta en iframe → cerrarla
+  var _lf=document.getElementById('_liveIframe');
+  if(_lf){_lf.parentNode.removeChild(_lf);return 'handled';}
   // Modal de filtros abierto → cerrarlo (igual que botón X)
   if(_efmIsOpen){
     _efmIsOpen=false;
@@ -4886,6 +4900,11 @@ function _makeStandaloneHtml(html){
   // Quitar el antiguo unlock por gesto (ahora lo maneja el botón INICIAR LIVE)
   html=html.replace(
     /var _saUnlocked=false;function _saUnlock\(\)\{[^}]+\}document\.addEventListener[^;]+;document\.addEventListener[^;]+;document\.addEventListener[^;]+;/,'');
+  // Botón X: cerrar el iframe desde dentro, o history.back() si es archivo standalone
+  html=html.replace(
+    'onclick="window.close()" title="Cerrar presentación"',
+    'onclick="try{window.parent.postMessage(\'live-close\',\'*\');}catch(e){} try{if(window.opener)window.close();else history.back();}catch(e2){try{history.back();}catch(e3){}}" title="Cerrar presentación"'
+  );
 
   // Obtener código de la animación del cohete y adaptarlo para standalone
   let animSrc=_beginIntroAnimation.toString()
@@ -7245,12 +7264,14 @@ window.addEventListener('resize',function(){
         if(_su)_su.value=_liveShareUrl;
         if(_sb)_sb.style.display='flex';
       }
-      // Botón principal "ABRIR LIVE" → abre presentación standalone en nueva ventana
+      // Botón principal "ABRIR LIVE" → iframe fullscreen (más fiable que window.open en WebView)
       doneTruckOv('🖥️ Presentación Live Lista','La presentación está lista para iniciar','▶ ABRIR LIVE',function(){
-        try{
-          var _w=window.open(_openBlobUrl,'_blank');
-          if(!_w) window.location.href=_openBlobUrl;
-        }catch(e){ window.location.href=_openBlobUrl; }
+        var _fr=document.createElement('iframe');
+        _fr.id='_liveIframe';
+        _fr.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:none;z-index:999999;background:#000';
+        _fr.setAttribute('allowfullscreen','');
+        _fr.src=_openBlobUrl;
+        document.body.appendChild(_fr);
       });
     }catch(e){hideTruckOv();toast('⚠ Error Live: '+e.message);console.error(e);}
   }else{
