@@ -2402,7 +2402,6 @@ async function _handleRedirectCallback(){
     history.replaceState({_appRoot:true},'');
     for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     setSdot('busy');
-    document.getElementById('srch').value='';
     loadCacheRecords(); renderList(); renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
@@ -2447,7 +2446,6 @@ async function tryAutoLogin(){
     history.replaceState({_appRoot:true},'');
     for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     setSdot('busy');
-    document.getElementById('srch').value='';
     loadCacheRecords();
     renderList();
     renderUserCard();
