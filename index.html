@@ -5542,10 +5542,11 @@ async function generatePDF(){
     const cols=[
       {h:'Fecha',k:'fechaInicio',w:18,fmt:v=>formatDateToDDMMYYYY(v)||'—'},
       {h:'Orden',k:'orden',w:12},
+      {h:'Cliente',k:'cliente',w:22},
       {h:'Viaje',k:'viaje',w:10},
-      {h:'Ruta',k:'ruta',w:34},
-      {h:'Transportista',k:'transportista',w:28},
-      {h:'Motivo',k:'motivo',w:24},
+      {h:'Ruta',k:'ruta',w:30},
+      {h:'Transportista',k:'transportista',w:24},
+      {h:'Motivo',k:'motivo',w:22},
       {h:'Status',k:'status',w:18},
       {h:'Pal.',k:'paletas',w:10},
       {h:'Caj.',k:'cajas',w:10},
@@ -5640,7 +5641,7 @@ async function generatePDF(){
           // Barra de encabezado del registro (azul marino)
           doc.setFillColor(15,35,64); doc.rect(margin,py0,contentW,recHdrH,'F');
           doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7);
-          doc.text(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,margin+2,py0+4.2);
+          doc.text(`Orden: ${rec.orden||'—'}  ·  ${rec.cliente||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,margin+2,py0+4.2);
           const sc=stClrPdf[(rec.status||'').toLowerCase()]||[245,158,11];
           doc.setTextColor(...sc); doc.setFontSize(6);
           doc.text((rec.status||'—').toUpperCase(),margin+contentW-2,py0+4.2,{align:'right'});
@@ -6089,31 +6090,35 @@ async function generatePPTX(){
       addHdr(st,'TABLA DE REGISTROS OPERATIVOS',`Pág. ${si+1}/${tblSlides}  ·  ${total} registros`); addFtr(st,++pageN);
       const stC={completado:'22C55E',pendiente:'F59E0B','en-ruta':'3B82F6',cancelado:'EF4444'};
       st.addTable([[
-        {text:'Fecha',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Orden',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Placa',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Conductor',    options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Cliente',      options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Ruta',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Transportista',options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Motivo',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Estado',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
-        {text:'Caj.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
+        {text:'Fecha',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Orden',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Cliente',      options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Ruta',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Transportista',options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Placa',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Conductor',    options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Motivo',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Pal.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Caj.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Sob.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
+        {text:'Estado',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
       ],...recs.map((r,ri)=>{
         const bg=ri%2===0?WHITE:'F1F5F9', sc=stC[(r.status||'').toLowerCase()]||T1;
         return[
-          {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.orden||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.placa||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.conductor||'—').slice(0,13),    options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.cliente||'—').slice(0,14),      options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.ruta||'—').slice(0,18),         options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.transportista||'—').slice(0,14),options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.motivo||'—').slice(0,12),       options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.status||'—'),                   options:{fontSize:7,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.cajas||'0'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
+          {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.orden||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.cliente||'—'),                  options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
+          {text:String(r.ruta||'—'),                     options:{fontSize:6,fill:bg,valign:'middle',wrap:true,shrinkText:true}},
+          {text:String(r.transportista||'—'),            options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
+          {text:String(r.placa||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.conductor||'—'),                options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
+          {text:String(r.motivo||'—'),                   options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
+          {text:String(r.paletas||'0'),                  options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.cajas||'0'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.sobres||'0'),                   options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:String(r.status||'—'),                   options:{fontSize:6,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
         ];
-      })],{x:ML,y:CTX_Y,w:CW,colW:[0.9,.62,.58,1.2,1.1,1.3,1.1,0.9,.72,.68],fontSize:7,border:{pt:.3,color:BORDER},rowH:.36});
+      })],{x:ML,y:CTX_Y,w:CW,colW:[0.75,.42,.82,1.42,.82,.50,.82,.72,.30,.30,.30,.62],fontSize:6,border:{pt:.3,color:BORDER},rowH:.34});
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
@@ -6152,7 +6157,7 @@ async function generatePPTX(){
           // Encabezado del registro (igual al formato original)
           ps.addShape(pptx.ShapeType.rect,{x:0,y:0,w:10,h:.62,fill:{color:NAVY}});
           ps.addShape(pptx.ShapeType.rect,{x:0,y:.62,w:10,h:.05,fill:{color:AMBER}});
-          ps.addText(`Orden: ${rec.orden||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:6.5,h:.62,fontSize:12,bold:true,color:WHITE,valign:'middle'});
+          ps.addText(`Orden: ${rec.orden||'—'}  ·  ${rec.cliente||'—'}  ·  Viaje N° ${rec.viaje||'—'}`,{x:ML,y:0,w:7.0,h:.62,fontSize:11,bold:true,color:WHITE,valign:'middle',shrinkText:true});
           ps.addText((rec.status||'').toUpperCase(),{x:7.2,y:0,w:2.5,h:.62,fontSize:9,bold:true,color:stCM[(rec.status||'').toLowerCase()]||AMBER,align:'right',valign:'middle'});
           // Barra de info del registro: fecha | motivo | transportista | ruta (h=0.46 para motivo completo)
           ps.addShape(pptx.ShapeType.rect,{x:0,y:.67,w:10,h:.46,fill:{color:WHITE},line:{color:BORDER,width:.3}});
@@ -6499,9 +6504,9 @@ async function generateRevealPresentation(){
   .kpi-val{font-size:48px;font-weight:800;line-height:1.1}
   .kpi-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.7;margin-top:8px}
   .chart-container{background:rgba(255,255,255,.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,.1);max-width:800px;margin:10px auto;height:500px}
-  .data-table{width:90%;margin:15px auto;border-collapse:collapse;font-size:16px}
-  .data-table th{background:var(--amber);color:var(--navy);padding:10px 16px;text-align:left;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
-  .data-table td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0}
+  .data-table{width:96%;margin:10px auto;border-collapse:collapse;font-size:13px}
+  .data-table th{background:var(--amber);color:var(--navy);padding:7px 10px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .data-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0}
   .data-table tr:hover{background:rgba(255,255,255,.05)}
   .badge-completado{background:#065f46;color:#6ee7b7;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
   .badge-pendiente{background:#78350f;color:#fcd34d;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
@@ -6701,7 +6706,7 @@ ${cliSlideHtml}
 <!-- SLIDE 11: ÚLTIMOS REGISTROS -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Últimos <span class="gold">Registros</span></h2>
-  <table class="data-table" style="table-layout:fixed"><tr><th style="width:9%">Orden</th><th style="width:17%">Cliente</th><th style="width:18%">Transportista</th><th style="width:6%">Viaje</th><th style="width:36%">Ruta</th><th style="width:14%">Status</th></tr>${last5Rows}</table>
+  <table class="data-table" style="table-layout:fixed"><tr><th style="width:8%">Orden</th><th style="width:20%">Cliente</th><th style="width:17%">Transportista</th><th style="width:5%">Viaje</th><th style="width:34%">Ruta</th><th style="width:16%">Status</th></tr>${last5Rows}</table>
 </section>
 
 <!-- SLIDE: ANÁLISIS OPERACIONAL -->
