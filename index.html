@@ -2399,13 +2399,14 @@ async function _handleRedirectCallback(){
     const me = await gGet('me?$select=displayName,mail,userPrincipalName');
     user = {name:me.displayName, email:me.mail||me.userPrincipalName};
     document.getElementById('authWall').classList.remove('on');
+    history.replaceState({_appRoot:true},'');
+    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     setSdot('busy');
+    document.getElementById('srch').value='';
     loadCacheRecords(); renderList(); renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
-    history.replaceState({_appRoot:true},'');
-    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   }catch(e){
@@ -2443,15 +2444,16 @@ async function tryAutoLogin(){
     const me = await gGet('me?$select=displayName,mail,userPrincipalName');
     user = {name:me.displayName, email:me.mail||me.userPrincipalName};
     document.getElementById('authWall').classList.remove('on');
+    history.replaceState({_appRoot:true},'');
+    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     setSdot('busy');
+    document.getElementById('srch').value='';
     loadCacheRecords();
     renderList();
     renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
     showScr('list');
-    history.replaceState({_appRoot:true},'');
-    for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
     checkLiveHash();
     return true;
   } catch(e){
@@ -4257,8 +4259,8 @@ window.androidBackPressed=function(){
     // ya en registros: quedarse aquí
     return 'handled';
   }
-  // No autenticado: dejar que Android cierre normalmente
-  return 'exit';
+  // Pantalla de login visible: no cerrar la app
+  return 'handled';
 };
 function _efmUniq(key,recs){
   var src=recs||records;
@@ -6367,6 +6369,9 @@ async function generateRevealPresentation(){
   const condData=JSON.stringify(topConds.map(([,v])=>v));
   const cliLabelsR=JSON.stringify(topClientsR.map(([k])=>k.length>26?k.slice(0,24)+'…':k));
   const cliDataR=JSON.stringify(topClientsR.map(([,v])=>v));
+  const cliSlideHtml=topClientsR.length>0?'<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)"><h2 style="font-size:1.3em">Top <span class="gold">Clientes</span></h2><div class="chart-container" style="height:500px"><canvas id="revChartCli"></canvas></div></section>':'';
+  const cliChartScript=topClientsR.length>0?('new Chart(document.getElementById(\'revChartCli\'),{type:\'bar\',data:{labels:'+cliLabelsR+',datasets:[{label:\'Ops\',data:'+cliDataR+',backgroundColor:\'rgba(245,158,11,.8)\',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:\'y\',layout:{padding:{right:50}},plugins:{legend:{display:false},datalabels:dlBarH},scales:{x:{grid:{color:\'rgba(255,255,255,.06)\'},ticks:{font:{size:12}}},y:{grid:{display:false},ticks:{font:{size:12}}}}}});'):'';
+
   const mensLabels=JSON.stringify(mensual.map(([k])=>k));
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
@@ -6659,12 +6664,7 @@ async function generateRevealPresentation(){
   <div class="chart-container" style="height:500px"><canvas id="revChartConds"></canvas></div>
 </section>
 
-${topClientsR.length>0?`
-<!-- SLIDE: TOP CLIENTES -->
-<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
-  <h2 style="font-size:1.3em">Top <span class="gold">Clientes</span></h2>
-  <div class="chart-container" style="height:500px"><canvas id="revChartCli"></canvas></div>
-</section>`:''}
+${cliSlideHtml}
 
 <!-- SLIDE 10: TENDENCIA -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
@@ -7012,16 +7012,7 @@ Reveal.on('ready',function(){
               y:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
 
-  ${topClientsR.length>0?`new Chart(document.getElementById('revChartCli'),{
-    type:'bar',
-    data:{labels:${cliLabelsR},datasets:[{label:'Ops',data:${cliDataR},
-      backgroundColor:'rgba(245,158,11,.8)',borderRadius:6,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
-      layout:{padding:{right:50}},
-      plugins:{legend:{display:false},datalabels:dlBarH},
-      scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
-              y:{grid:{display:false},ticks:{font:{size:12}}}}}
-  });`:''}
+  ${cliChartScript}
 
 
   new Chart(document.getElementById('revChartMensual'),{
