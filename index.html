@@ -6090,6 +6090,7 @@ async function generatePPTX(){
         {text:'Orden',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Placa',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Conductor',    options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
+        {text:'Cliente',      options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Ruta',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Transportista',options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
         {text:'Motivo',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:7}},
@@ -6101,14 +6102,15 @@ async function generatePPTX(){
           {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.orden||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.placa||'—'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.conductor||'—').slice(0,14),    options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.ruta||'—').slice(0,20),         options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.transportista||'—').slice(0,16),options:{fontSize:7,fill:bg,valign:'middle'}},
-          {text:String(r.motivo||'—').slice(0,14),       options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.conductor||'—').slice(0,13),    options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.cliente||'—').slice(0,14),      options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.ruta||'—').slice(0,18),         options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.transportista||'—').slice(0,14),options:{fontSize:7,fill:bg,valign:'middle'}},
+          {text:String(r.motivo||'—').slice(0,12),       options:{fontSize:7,fill:bg,valign:'middle'}},
           {text:String(r.status||'—'),                   options:{fontSize:7,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.cajas||'0'),                    options:{fontSize:7,fill:bg,align:'center',valign:'middle'}},
         ];
-      })],{x:ML,y:CTX_Y,w:CW,colW:[1.0,.65,.6,1.3,1.55,1.35,1.1,.75,.7],fontSize:7,border:{pt:.3,color:BORDER},rowH:.36});
+      })],{x:ML,y:CTX_Y,w:CW,colW:[0.9,.62,.58,1.2,1.1,1.3,1.1,0.9,.72,.68],fontSize:7,border:{pt:.3,color:BORDER},rowH:.36});
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
@@ -6208,6 +6210,9 @@ async function generatePPTX(){
 
     mSec(sA,RX,y0+SH*2,RW,'6.  MOTIVOS DE TRASLADO');
     mTxt(sA,RX,y0+SH*2+.28,RW,topMotivos[0]?`${topMotivos.length} motivo${topMotivos.length!==1?'s':''} identificados. Predominante: "${topMotivos[0][0]}" — ${topMotivos[0][1]} op. (${Math.round(topMotivos[0][1]/total*100)}%).${topMotivos.length>1?' 2º: "'+topMotivos[1][0]+'" ('+Math.round(topMotivos[1][1]/total*100)+'%).':''}`:'Sin datos de motivos.');
+
+    mSec(sA,LX,y0+SH*3,LW,'7.  CLIENTES');
+    mTxt(sA,LX,y0+SH*3+.28,LW,topClientes[0]?`${topClientes.length} cliente${topClientes.length!==1?'s':''} atendidos. Principal: "${topClientes[0][0]}" — ${topClientes[0][1]} op. (${Math.round(topClientes[0][1]/total*100)}%).${topClientes.length>1?' 2°: "'+topClientes[1][0]+'" ('+Math.round(topClientes[1][1]/total*100)+'%).':''} ${Math.round(topClientes[0][1]/total*100)>50?'Alta concentración — se recomienda diversificar la cartera.':''}`:'Sin datos de clientes.');
 
     // Bottom summary bar
     sA.addShape(pptx.ShapeType.rect,{x:ML,y:CTX_Y+4.0,w:CW,h:.38,fill:{color:NAVY}});
@@ -6359,6 +6364,8 @@ async function generateRevealPresentation(){
   const placaData=JSON.stringify(topPlacas.map(([,v])=>v));
   const condLabels=JSON.stringify(topConds.map(([k])=>k.length>26?k.slice(0,24)+'…':k));
   const condData=JSON.stringify(topConds.map(([,v])=>v));
+  const cliLabelsR=JSON.stringify(topClientsR.map(([k])=>k.length>26?k.slice(0,24)+'…':k));
+  const cliDataR=JSON.stringify(topClientsR.map(([,v])=>v));
   const mensLabels=JSON.stringify(mensual.map(([k])=>k));
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
@@ -6650,6 +6657,13 @@ async function generateRevealPresentation(){
   <h2 style="font-size:1.3em">Top <span class="gold">Conductores</span></h2>
   <div class="chart-container" style="height:500px"><canvas id="revChartConds"></canvas></div>
 </section>
+
+${topClientsR.length>0?`
+<!-- SLIDE: TOP CLIENTES -->
+<section data-transition="convex" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
+  <h2 style="font-size:1.3em">Top <span class="gold">Clientes</span></h2>
+  <div class="chart-container" style="height:500px"><canvas id="revChartCli"></canvas></div>
+</section>`:''}
 
 <!-- SLIDE 10: TENDENCIA -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
@@ -6996,6 +7010,18 @@ Reveal.on('ready',function(){
       scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
               y:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
+
+  ${topClientsR.length>0?`new Chart(document.getElementById('revChartCli'),{
+    type:'bar',
+    data:{labels:${cliLabelsR},datasets:[{label:'Ops',data:${cliDataR},
+      backgroundColor:'rgba(245,158,11,.8)',borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      layout:{padding:{right:50}},
+      plugins:{legend:{display:false},datalabels:dlBarH},
+      scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{font:{size:12}}},
+              y:{grid:{display:false},ticks:{font:{size:12}}}}}
+  });`:''}
+
 
   new Chart(document.getElementById('revChartMensual'),{
     type:'line',
