@@ -6304,9 +6304,8 @@ async function generateRevealPresentation(){
      En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
   const win=window.open('','_blank');
   if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
-  win.document.open();win.document.write(_truckHtml('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']));win.document.close();
-  const _liveMinEnd=Date.now()+4000; // mínimo 4s de animación del camión
-  toast('Generando presentación…');
+  win.document.open();win.document.write('<html><head><title>Cargando LIVE…</title></head><body style="background:#0f2340;color:#fff;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><p style="opacity:.6;font-size:1rem">🚛 Preparando presentaci\xF3n…</p></body></html>');win.document.close();
+  showTruckOv('Preparando Presentaci\xF3n Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotogr\xE1fica…','Preparando diapositivas…','Casi listo…']);
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
   const enRuta=records.filter(r=>r.status==='en-ruta').length;
@@ -7168,8 +7167,6 @@ window.addEventListener('resize',function(){
       if(_bgp)_bgp.then(function(){_bg.pause();_bg.currentTime=0;}).catch(function(){});
       window._presBgAudio=_bg;
     }catch(e){}
-    const _liveWait=Math.max(0,_liveMinEnd-Date.now());
-    await new Promise(r=>setTimeout(r,_liveWait));
     if(!win.closed){
       const _liveBlobUrl=URL.createObjectURL(new Blob([html],{type:'text/html'}));
       win.postMessage({type:'DONE',title:'🖥️ Presentación Lista',msg:'La presentación está lista para iniciar',url:_liveBlobUrl,btn:'▶ ABRIR LIVE'},'*');
@@ -7210,6 +7207,7 @@ window.addEventListener('resize',function(){
       const shareUrl=APP_URL+'#live='+encodeURIComponent(b64);
       if(!win.closed) win.postMessage({type:'SHARE_LINK',url:shareUrl},'*');
     }catch(e){console.warn('Share URL:',e);}
+    doneTruckOv('🖥 Presentaci\xF3n LIVE Lista','Tu presentaci\xF3n est\xE1 lista — toca para abrirla','🖥 VER LIVE',function(){try{win.focus();}catch(e){}});
   }
 }
 
