@@ -6304,7 +6304,7 @@ async function generateRevealPresentation(){
      En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
   const win=window.open('','_blank');
   if(!win){toast('⚠ Permite las ventanas emergentes para ver la presentación');return;}
-  win.document.open();win.document.write('<html><head><title>Cargando LIVE…</title></head><body style="background:#0f2340;color:#fff;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><p style="opacity:.6;font-size:1rem">🚛 Preparando presentaci\xF3n…</p></body></html>');win.document.close();
+  win.document.open();win.document.write(_truckHtml('Cargando Presentaci\xF3n Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotogr\xE1fica…','Preparando diapositivas…','Casi listo…']));win.document.close();
   showTruckOv('Preparando Presentaci\xF3n Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotogr\xE1fica…','Preparando diapositivas…','Casi listo…']);
   const total=records.length;
   const comp=records.filter(r=>r.status==='completado').length;
