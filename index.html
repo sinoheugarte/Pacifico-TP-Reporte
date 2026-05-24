@@ -2493,7 +2493,19 @@ function resizeDataUrl(dataUrl,maxW,maxH,quality=0.82){
 }
 
 function downloadBlob(blob,filename){
-  /* On Android, using octet-stream prevents the browser from opening files inline */
+  /* En Android APK usar el bridge nativo para evitar que a.click() robe
+     el foco al WebView y cause parpadeo en el overlay + touch events zombie */
+  if(window.AndroidBridge&&window.AndroidBridge.isAndroidApp&&window.AndroidBridge.isAndroidApp()){
+    const reader=new FileReader();
+    reader.onloadend=function(){
+      const b64=reader.result.split(',')[1];
+      const mime=blob.type||'application/octet-stream';
+      window.AndroidBridge.downloadBase64(b64,filename,mime);
+    };
+    reader.readAsDataURL(blob);
+    return;
+  }
+  /* Web browser: descarga estándar via blob URL */
   const isAndroid=/Android/i.test(navigator.userAgent);
   const dlBlob=isAndroid?blob.slice(0,blob.size,'application/octet-stream'):blob;
   const url=URL.createObjectURL(dlBlob);
@@ -2501,7 +2513,6 @@ function downloadBlob(blob,filename){
   a.href=url;a.download=filename;a.style.display='none';
   document.body.appendChild(a);
   a.click();
-  /* Keep URL alive long enough for browser download manager to read the full file */
   setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},60000);
 }
 function dataUrlToBlob(dataUrl,fname){
