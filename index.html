@@ -1977,6 +1977,13 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="tov-done" id="tov-done">
     <p id="tov-done-msg"></p>
     <button id="tov-done-btn" onclick="hideTruckOv()">✅ Cerrar</button>
+    <div id="tov-live-extra" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-top:10px;width:min(90vw,380px)">
+      <p style="font-size:.75rem;opacity:.55;margin:0;text-align:center">Enlace para compartir (requiere cuenta de la organización):</p>
+      <div style="display:flex;gap:8px;width:100%">
+        <input id="tov-share-url" type="text" readonly style="flex:1;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 10px;color:#fff;font-size:.75rem;font-family:monospace;outline:none;min-width:0">
+        <button id="tov-copy-btn" onclick="(function(){var u=document.getElementById('tov-share-url');if(!u)return;navigator.clipboard.writeText(u.value).then(function(){var b=document.getElementById('tov-copy-btn');b.textContent='✅';setTimeout(function(){b.textContent='📋 Copiar';},2000);}).catch(function(){try{u.select();document.execCommand('copy');}catch(e){}});})();" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:8px 14px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">📋 Copiar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -6084,41 +6091,51 @@ async function generatePPTX(){
     // ══ TABLA DE REGISTROS ══
     setUpStep('Tabla de Registros'); setUpBar(70);
     const recsPerSlide=10, tblSlides=Math.ceil(records.length/recsPerSlide);
+    // Detectar columnas numéricas con datos reales
+    const _hasPal=records.some(r=>parseInt(r.paletas||0)>0);
+    const _hasCaj=records.some(r=>parseInt(r.cajas||0)>0);
+    const _hasSob=records.some(r=>parseInt(r.sobres||0)>0);
+    // Base widths para 10 columnas fijas (Fecha|Orden|Cliente|Ruta|Trans|Placa|Viaje|Conductor|Motivo|Estado)
+    const _tblBase=[.68,.38,.88,1.72,.82,.46,.36,.88,.82,.58];
+    const _tblNum=(_hasPal?[.44]:[]).concat(_hasCaj?[.44]:[]).concat(_hasSob?[.44]:[]);
+    const _tblRaw=[..._tblBase,..._tblNum];
+    const _tblScale=CW/_tblRaw.reduce((a,v)=>a+v,0);
+    const _tblW=_tblRaw.map(v=>Math.round(v*_tblScale*100)/100);
+    const stC={completado:'22C55E',pendiente:'F59E0B','en-ruta':'3B82F6',cancelado:'EF4444'};
     for(let si=0;si<tblSlides;si++){
       const recs=records.slice(si*recsPerSlide,(si+1)*recsPerSlide);
       const st=pptx.addSlide(); st.background={color:BG};
       addHdr(st,'TABLA DE REGISTROS OPERATIVOS',`Pág. ${si+1}/${tblSlides}  ·  ${total} registros`); addFtr(st,++pageN);
-      const stC={completado:'22C55E',pendiente:'F59E0B','en-ruta':'3B82F6',cancelado:'EF4444'};
-      st.addTable([[
-        {text:'Fecha',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Orden',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Cliente',      options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Ruta',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Transportista',options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Placa',        options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Conductor',    options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Motivo',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Pal.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Caj.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Sob.',         options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-        {text:'Estado',       options:{bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6}},
-      ],...recs.map((r,ri)=>{
+      const _hOpt={bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6};
+      const _hdrRow=[
+        {text:'Fecha',         options:_hOpt},{text:'Orden',        options:_hOpt},
+        {text:'Cliente',       options:_hOpt},{text:'Ruta',         options:_hOpt},
+        {text:'Transportista', options:_hOpt},{text:'Placa',        options:_hOpt},
+        {text:'Viaje',         options:_hOpt},{text:'Conductor',    options:_hOpt},
+        {text:'Motivo',        options:_hOpt},{text:'Estado',       options:_hOpt},
+        ...(_hasPal?[{text:'Paletas',options:_hOpt}]:[]),
+        ...(_hasCaj?[{text:'Cajas',  options:_hOpt}]:[]),
+        ...(_hasSob?[{text:'Sobres', options:_hOpt}]:[]),
+      ];
+      st.addTable([_hdrRow,...recs.map((r,ri)=>{
         const bg=ri%2===0?WHITE:'F1F5F9', sc=stC[(r.status||'').toLowerCase()]||T1;
-        return[
+        const _row=[
           {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.orden||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.cliente||'—'),                  options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
           {text:String(r.ruta||'—'),                     options:{fontSize:6,fill:bg,valign:'middle',wrap:true,shrinkText:true}},
           {text:String(r.transportista||'—'),            options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
           {text:String(r.placa||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
+          {text:'V'+String(r.viaje||'—'),               options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.conductor||'—'),                options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
           {text:String(r.motivo||'—'),                   options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
-          {text:String(r.paletas||'0'),                  options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.cajas||'0'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.sobres||'0'),                   options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
           {text:String(r.status||'—'),                   options:{fontSize:6,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
+          ...(_hasPal?[{text:String(r.paletas||'0'),options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
+          ...(_hasCaj?[{text:String(r.cajas||'0'),  options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
+          ...(_hasSob?[{text:String(r.sobres||'0'), options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
         ];
-      })],{x:ML,y:CTX_Y,w:CW,colW:[0.75,.42,.82,1.42,.82,.50,.82,.72,.30,.30,.30,.62],fontSize:6,border:{pt:.3,color:BORDER},rowH:.34});
+        return _row;
+      })],{x:ML,y:CTX_Y,w:CW,colW:_tblW,fontSize:6,border:{pt:.3,color:BORDER},rowH:.34});
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
@@ -6315,7 +6332,7 @@ async function generateRevealPresentation(){
   if(!records.length){toast('No hay registros');return;}
   /* Abre la ventana ANTES de cualquier await para que Chrome no la bloquee.
      En la primera carga se cargan fotos async (gesture expirado → popup bloqueado). */
-  const _isAndroidLive=!!(window.AndroidBridge&&window.AndroidBridge.isAndroidApp&&window.AndroidBridge.isAndroidApp());
+  const _isAndroidLive=!!window.AndroidBridge;
   let win=null;
   if(_isAndroidLive){
     showTruckOv('Cargando Presentación Live',['Recopilando datos…','Cargando registros y rutas…','Procesando evidencia fotográfica…','Preparando diapositivas…','Casi listo…']);
@@ -6459,7 +6476,7 @@ async function generateRevealPresentation(){
         photoSlidesHtml+=`\n<!-- SLIDE: Ord ${rec.orden||'—'} V${rec.viaje||'—'} -->
 <section data-transition="fade" data-background="#070f1c">
   <div style="background:#0f2340;padding:5px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
-    <span style="font-size:.55em;font-weight:700">Orden: ${rec.orden||'—'} · Viaje N° ${rec.viaje||'—'}</span>
+    <span style="font-size:.55em;font-weight:700">Orden: ${rec.orden||'—'} · ${rec.cliente||'—'} · Viaje N° ${rec.viaje||'—'}</span>
     <span style="font-size:.5em;font-weight:700;color:${stColor}">${(rec.status||'').toUpperCase()}</span>
   </div>
   <div style="height:3px;background:#f59e0b;margin-bottom:3px"></div>
@@ -7179,15 +7196,37 @@ window.addEventListener('resize',function(){
   const _liveWait=Math.max(0,_liveMinEnd-Date.now());
   await new Promise(r=>setTimeout(r,_liveWait));
 
+  /* Generar enlace compartible (común para Android y web) */
+  let _liveShareUrl='';
+  try{
+    const shareData=JSON.stringify(records.map(({images,...r})=>r));
+    let b64;
+    try{
+      const cs=new CompressionStream('deflate-raw');
+      const writer=cs.writable.getWriter();
+      writer.write(new TextEncoder().encode(shareData));
+      writer.close();
+      const buf=await new Response(cs.readable).arrayBuffer();
+      b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }catch(_){ b64=btoa(unescape(encodeURIComponent(shareData))); }
+    _liveShareUrl=APP_URL+'#live='+encodeURIComponent(b64);
+  }catch(e){console.warn('Share URL:',e);}
+
   if(_isAndroidLive){
-    /* Android: descarga directa via AndroidBridge — sin window.open ni postMessage */
+    /* Android: descarga directa + overlay con enlace compartible */
     try{
       var _rdl=new FileReader();
       _rdl.onloadend=function(){
         window.AndroidBridge.downloadBase64(_rdl.result.split(',')[1],_dlName,'text/html');
       };
       _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
-      doneTruckOv('🖥️ Presentación Live Lista','El archivo Live se guardó en tu dispositivo — ábrelo con cualquier navegador','✅ Cerrar');
+      if(_liveShareUrl){
+        var _su=document.getElementById('tov-share-url');
+        var _sb=document.getElementById('tov-live-extra');
+        if(_su)_su.value=_liveShareUrl;
+        if(_sb)_sb.style.display='flex';
+      }
+      doneTruckOv('🖥️ Presentación Live Lista','El archivo Live se guardó — ábrelo con cualquier navegador','✅ Cerrar');
     }catch(e){hideTruckOv();toast('⚠ Error Live: '+e.message);console.error(e);}
   }else{
     /* Web: ventana emergente con postMessage */
@@ -7210,23 +7249,8 @@ window.addEventListener('resize',function(){
       const _dlBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
       win.postMessage({type:'DOWNLOAD_BLOB',url:_dlBlobUrl,filename:_dlName},'*');
       setTimeout(()=>URL.revokeObjectURL(_dlBlobUrl),300000);
+      if(_liveShareUrl) win.postMessage({type:'SHARE_LINK',url:_liveShareUrl},'*');
     }
-    try{
-      const shareData=JSON.stringify(records.map(({images,...r})=>r));
-      let b64;
-      try{
-        const cs=new CompressionStream('deflate-raw');
-        const writer=cs.writable.getWriter();
-        writer.write(new TextEncoder().encode(shareData));
-        writer.close();
-        const buf=await new Response(cs.readable).arrayBuffer();
-        b64=btoa(String.fromCharCode(...new Uint8Array(buf)));
-      }catch(_){
-        b64=btoa(unescape(encodeURIComponent(shareData)));
-      }
-      const shareUrl=APP_URL+'#live='+encodeURIComponent(b64);
-      if(!win.closed) win.postMessage({type:'SHARE_LINK',url:shareUrl},'*');
-    }catch(e){console.warn('Share URL:',e);}
   }
 }
 
