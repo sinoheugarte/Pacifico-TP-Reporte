@@ -5089,7 +5089,6 @@ window.addEventListener('message',function(e){
     dl.style.display='';
   }
 });
-window.androidBackPressed=function(){window.close();return 'handled';};
 <\/script>
 </body></html>`;
 }
@@ -6913,8 +6912,6 @@ window.addEventListener('unload',function(){
     var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}
   }catch(e){}
 });
-/* Botón retroceso nativo Android — cierra la ventana LIVE y vuelve al dashboard */
-window.androidBackPressed=function(){window.close();return 'handled';};
 
 Chart.register(ChartDataLabels);
 
