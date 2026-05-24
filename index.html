@@ -1977,6 +1977,7 @@ body.has-pending .pending-dot{display:inline-block}
   <div class="tov-done" id="tov-done">
     <p id="tov-done-msg"></p>
     <button id="tov-done-btn" onclick="hideTruckOv()">✅ Cerrar</button>
+    <button id="tov-live-dl-btn" style="display:none;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:11px 28px;font-size:.95rem;font-weight:600;cursor:pointer;letter-spacing:.02em;font-family:inherit">📥 Descargar Live</button>
     <div id="tov-live-extra" style="display:none;flex-direction:column;align-items:center;gap:8px;margin-top:10px;width:min(90vw,380px)">
       <p style="font-size:.75rem;opacity:.55;margin:0;text-align:center">Enlace para compartir (requiere cuenta de la organización):</p>
       <div style="display:flex;gap:8px;width:100%">
@@ -7213,20 +7214,42 @@ window.addEventListener('resize',function(){
   }catch(e){console.warn('Share URL:',e);}
 
   if(_isAndroidLive){
-    /* Android: descarga directa + overlay con enlace compartible */
+    /* Android: 3 opciones como en web — ABRIR LIVE + Descargar + Compartir */
     try{
+      // Blob para "Abrir Live" (CDN online, más liviano)
+      var _openBlob=new Blob([html],{type:'text/html'});
+      var _openBlobUrl=URL.createObjectURL(_openBlob);
+      setTimeout(function(){try{URL.revokeObjectURL(_openBlobUrl);}catch(e){}},120000);
+      // Auto-descarga del archivo standalone (sin CDN, apto offline)
       var _rdl=new FileReader();
       _rdl.onloadend=function(){
         window.AndroidBridge.downloadBase64(_rdl.result.split(',')[1],_dlName,'text/html');
       };
       _rdl.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
+      // Botón secundario "Descargar Live" (re-descarga)
+      var _dlBtn=document.getElementById('tov-live-dl-btn');
+      if(_dlBtn){
+        _dlBtn.style.display='';
+        _dlBtn.onclick=function(){
+          var _r2=new FileReader();
+          _r2.onloadend=function(){window.AndroidBridge.downloadBase64(_r2.result.split(',')[1],_dlName,'text/html');};
+          _r2.readAsDataURL(new Blob([_saHtml],{type:'text/html'}));
+        };
+      }
+      // Enlace compartible
       if(_liveShareUrl){
         var _su=document.getElementById('tov-share-url');
         var _sb=document.getElementById('tov-live-extra');
         if(_su)_su.value=_liveShareUrl;
         if(_sb)_sb.style.display='flex';
       }
-      doneTruckOv('🖥️ Presentación Live Lista','El archivo Live se guardó — ábrelo con cualquier navegador','✅ Cerrar');
+      // Botón principal "ABRIR LIVE" → abre en nueva ventana/pestaña
+      doneTruckOv('🖥️ Presentación Live Lista','La presentación está lista para iniciar','▶ ABRIR LIVE',function(){
+        try{
+          var _w=window.open(_openBlobUrl,'_blank');
+          if(!_w) window.location.href=_openBlobUrl;
+        }catch(e){ window.location.href=_openBlobUrl; }
+      });
     }catch(e){hideTruckOv();toast('⚠ Error Live: '+e.message);console.error(e);}
   }else{
     /* Web: ventana emergente con postMessage */
