@@ -4900,10 +4900,10 @@ function _makeStandaloneHtml(html){
   // Quitar el antiguo unlock por gesto (ahora lo maneja el botón INICIAR LIVE)
   html=html.replace(
     /var _saUnlocked=false;function _saUnlock\(\)\{[^}]+\}document\.addEventListener[^;]+;document\.addEventListener[^;]+;document\.addEventListener[^;]+;/,'');
-  // Botón X: cerrar el iframe desde dentro, o history.back() si es archivo standalone
+  // Botón X: en iframe→postMessage al padre; en popup→window.close(); en archivo standalone→about:blank
   html=html.replace(
     'onclick="window.close()" title="Cerrar presentación"',
-    'onclick="try{window.parent.postMessage(\'live-close\',\'*\');}catch(e){} try{if(window.opener)window.close();else history.back();}catch(e2){try{history.back();}catch(e3){}}" title="Cerrar presentación"'
+    'onclick="try{window.parent.postMessage(\'live-close\',\'*\');}catch(e){} window.close(); setTimeout(function(){if(!window.closed){try{window.location.replace(\'about:blank\');}catch(e2){}}},200);" title="Cerrar presentación"'
   );
 
   // Obtener código de la animación del cohete y adaptarlo para standalone
