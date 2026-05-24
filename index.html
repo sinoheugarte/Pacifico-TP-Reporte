@@ -4968,6 +4968,30 @@ ${animSrc}
   return html;
 }
 
+/* Parche mínimo para abrir la presentación LIVE nativa en un <iframe> Android.
+   window.opener es null en iframes → sustituimos por window.parent para que el
+   heartbeat y la música lean los Audio objects creados en la ventana principal.
+   El botón X postea 'live-close' al padre para cerrar el iframe. */
+function _makeIframeHtml(html){
+  html=html.replace(
+    'function _hb(){try{return window.opener&&window.opener._presHbAudio||null;}catch(e){return null;}}',
+    'function _hb(){try{var _w=window.opener||window.parent;return _w&&_w._presHbAudio||null;}catch(e){return null;}}'
+  );
+  html=html.replace(
+    'function _bg(){try{return window.opener&&window.opener._presBgAudio||null;}catch(e){return null;}}',
+    'function _bg(){try{var _w=window.opener||window.parent;return _w&&_w._presBgAudio||null;}catch(e){return null;}}'
+  );
+  html=html.replace(
+    'window.addEventListener(\'unload\',function(){\n  try{\n    var hb=window.opener&&window.opener._presHbAudio;if(hb){hb.pause();window.opener._presHbAudio=null;}\n    var bg=window.opener&&window.opener._presBgAudio;if(bg){bg.pause();window.opener._presBgAudio=null;}\n  }catch(e){}\n});',
+    'window.addEventListener(\'unload\',function(){try{var _w=window.opener||window.parent;if(_w){var hb=_w._presHbAudio;if(hb){hb.pause();_w._presHbAudio=null;}var bg=_w._presBgAudio;if(bg){bg.pause();_w._presBgAudio=null;}}}catch(e){}});'
+  );
+  html=html.replace(
+    'onclick="window.close()" title="Cerrar presentación"',
+    'onclick="try{window.parent.postMessage(\'live-close\',\'*\');}catch(e){}try{window.close();}catch(e2){}" title="Cerrar presentación"'
+  );
+  return html;
+}
+
 function _truckHtml(title,msgs){
   msgs=msgs||['Recopilando datos…','Generando contenido…','Procesando información…','Finalizando…'];
   return `<!doctype html><html lang="es"><head>
@@ -7239,15 +7263,30 @@ window.addEventListener('resize',function(){
   }catch(e){console.warn('Share URL:',e);}
 
   if(_isAndroidLive){
-    /* Android: 3 opciones — ABRIR LIVE (abre la presentación) + Descargar + Compartir
-       Usamos _saHtml (standalone) para "Abrir": tiene URLs de audio absolutas, no
-       depende de window.opener, y funciona sin conexión. Sin descarga automática
-       para evitar el diálogo nativo "Guardar como" que aparece antes de mostrar botones. */
+    /* Android: misma presentación nativa que web, abierta en iframe fullscreen.
+       _makeIframeHtml() parchea window.opener→window.parent para audio.
+       Audio creado en ventana principal (igual que web) antes de abrir iframe.
+       ABRIR LIVE → presentación Reveal.js nativa (html, no standalone).
+       Descargar Live → _saHtml standalone (archivo apto para compartir offline). */
     try{
-      // Blob standalone para "Abrir Live" (audio CDN absoluto, sin window.opener)
-      var _openBlobUrl=URL.createObjectURL(new Blob([_saHtml],{type:'text/html'}));
-      setTimeout(function(){try{URL.revokeObjectURL(_openBlobUrl);}catch(e){}},300000);
-      // Botón secundario "Descargar Live" → descarga solo cuando el usuario lo pide
+      // Crear objetos Audio en ventana principal (igual que rama web)
+      try{
+        if(window._presHbAudio){window._presHbAudio.pause();window._presHbAudio=null;}
+        var _hbA=new Audio('heartbeat.mp3');
+        _hbA.loop=true;_hbA.volume=0;_hbA.play().catch(function(){});
+        window._presHbAudio=_hbA;
+        if(window._presBgAudio){window._presBgAudio.pause();window._presBgAudio=null;}
+        var _bgA=new Audio('026_ON THE RADIOER.mp3');
+        _bgA.loop=false;_bgA.volume=0;
+        var _bgAp=_bgA.play();
+        if(_bgAp)_bgAp.then(function(){_bgA.pause();_bgA.currentTime=0;}).catch(function(){});
+        window._presBgAudio=_bgA;
+      }catch(e){}
+      // Blob de la presentación nativa (audio via window.parent)
+      var _ifrHtml=_makeIframeHtml(html);
+      var _openBlobUrl=URL.createObjectURL(new Blob([_ifrHtml],{type:'text/html'}));
+      setTimeout(function(){try{URL.revokeObjectURL(_openBlobUrl);}catch(e){}},120000);
+      // Botón secundario "Descargar Live" → standalone offline, solo al pedirlo
       var _dlBtn=document.getElementById('tov-live-dl-btn');
       if(_dlBtn){
         _dlBtn.style.display='';
@@ -7264,7 +7303,7 @@ window.addEventListener('resize',function(){
         if(_su)_su.value=_liveShareUrl;
         if(_sb)_sb.style.display='flex';
       }
-      // Botón principal "ABRIR LIVE" → iframe fullscreen (más fiable que window.open en WebView)
+      // Botón principal: iframe fullscreen con la presentación nativa
       doneTruckOv('🖥️ Presentación Live Lista','La presentación está lista para iniciar','▶ ABRIR LIVE',function(){
         var _fr=document.createElement('iframe');
         _fr.id='_liveIframe';
