@@ -6374,7 +6374,7 @@ async function generateRevealPresentation(){
   const mensData=JSON.stringify(mensual.map(([,v])=>v));
 
   const multiVRows=multiV.map(([k,c])=>{const[o,m]=k.split('_');return `<tr><td>${o}</td><td>${m}</td><td><strong>${c}</strong></td></tr>`;}).join('');
-  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>${(r.cliente||'—').slice(0,14)}</td><td>${(r.transportista||'—').slice(0,16)}</td><td>V${r.viaje||'—'}</td><td>${(r.ruta||'—').slice(0,18)}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
+  const last5Rows=last5.map(r=>`<tr><td>${r.orden||'—'}</td><td>${r.cliente||'—'}</td><td>${r.transportista||'—'}</td><td>V${r.viaje||'—'}</td><td>${r.ruta||'—'}</td><td><span class="badge-${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td></tr>`).join('');
 
   // ── Analysis slide data ──
   const motivoMR={};records.forEach(r=>{const k=(r.motivo||'Sin Motivo').trim();motivoMR[k]=(motivoMR[k]||0)+1;});
@@ -6493,7 +6493,7 @@ async function generateRevealPresentation(){
   .chart-container{background:rgba(255,255,255,.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,.1);max-width:800px;margin:10px auto;height:500px}
   .data-table{width:90%;margin:15px auto;border-collapse:collapse;font-size:16px}
   .data-table th{background:var(--amber);color:var(--navy);padding:10px 16px;text-align:left;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
-  .data-table td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .data-table td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0}
   .data-table tr:hover{background:rgba(255,255,255,.05)}
   .badge-completado{background:#065f46;color:#6ee7b7;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
   .badge-pendiente{background:#78350f;color:#fcd34d;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
@@ -6693,7 +6693,7 @@ ${cliSlideHtml}
 <!-- SLIDE 11: ÚLTIMOS REGISTROS -->
 <section data-transition="slide" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <h2 style="font-size:1.3em">Últimos <span class="gold">Registros</span></h2>
-  <table class="data-table"><tr><th>Orden</th><th>Cliente</th><th>Transportista</th><th>Viaje</th><th>Ruta</th><th>Status</th></tr>${last5Rows}</table>
+  <table class="data-table" style="table-layout:fixed"><tr><th style="width:9%">Orden</th><th style="width:17%">Cliente</th><th style="width:18%">Transportista</th><th style="width:6%">Viaje</th><th style="width:36%">Ruta</th><th style="width:14%">Status</th></tr>${last5Rows}</table>
 </section>
 
 <!-- SLIDE: ANÁLISIS OPERACIONAL -->
