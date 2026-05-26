@@ -8278,12 +8278,11 @@ async function _usuariosPath(){
    CLIENTES — CRUD
 ════════════════════════════════════════════════════════ */
 async function _clientesPath(){
-  try{
-    const driveId=await ensureSPDrive();
-    return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/clientes.json')}`;
-  }catch(e){
+  if(cfg.dbStorage==='od'){
     return `me/drive/root:/${encodeGraphPath(OD_ROOT+'/clientes.json')}`;
   }
+  const driveId=await ensureSPDrive();
+  return `drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/clientes.json')}`;
 }
 
 async function loadClientesFromSP(){
