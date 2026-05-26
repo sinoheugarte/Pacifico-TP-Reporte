@@ -2369,6 +2369,7 @@ async function signIn(){
     renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
+    loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
     showScr('list');
     history.replaceState({_appRoot:true},'');
     for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
@@ -2413,6 +2414,7 @@ async function _handleRedirectCallback(){
     loadCacheRecords(); renderList(); renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
+    loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
     showScr('list');
     checkLiveHash();
     return true;
@@ -2459,6 +2461,7 @@ async function tryAutoLogin(){
     renderUserCard();
     await setupOneDrive();
     await loadRecordsFromOD();
+    loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
     showScr('list');
     checkLiveHash();
     return true;
@@ -2749,7 +2752,20 @@ async function loadRecordsFromOD(){
     if(Array.isArray(data)){
       const cloud={};data.forEach(r=>{cloud[r.id]=r;});
       const local={};records.forEach(r=>{local[r.id]=r;});
-      records = Object.values({...local,...cloud});
+      // Cloud prevalece en todos los campos de metadatos.
+      // Para images: conservar solo data-URLs válidas del caché local.
+      // Si photoNames cambió (otro usuario añadió fotos) limpiar images para
+      // que loadPhotosForRec las descargue fresh desde el servidor.
+      records = Object.values({...local,...cloud}).map(r=>{
+        const l=local[r.id];
+        if(!l) return {...r,images:[]};
+        const namesChanged=JSON.stringify(r.photoNames)!==JSON.stringify(l.photoNames);
+        if(namesChanged) return {...r,images:[]};
+        const validImgs=Array.isArray(l.images)
+          ?l.images.filter(img=>typeof img==='string'&&img.startsWith('data:'))
+          :[];
+        return {...r,images:validImgs};
+      });
       saveCache();
     }
     lastSync = new Date(); setSdot('ok'); renderList();
@@ -3036,7 +3052,8 @@ async function deleteFromOD(rec){
 
 /* ── CARGA DE FOTOS (SharePoint o OneDrive según rec.photoStorage) ── */
 async function loadPhotosForRec(rec) {
-  if (rec.images && rec.images.length > 0) return;
+  // Solo omitir descarga si ya hay data-URLs válidas cargadas
+  if(rec.images&&rec.images.length>0&&rec.images.every(img=>typeof img==='string'&&img.startsWith('data:')))return;
   rec.images = [];
   rec._photosPrivate = false;
 
@@ -4568,14 +4585,17 @@ async function refreshRecords(){
   const btn=document.getElementById('refreshBtn');
   if(btn){btn.disabled=true;btn.style.animation='spin360 .8s linear infinite';}
   try{
+    // Sincronizar registros principales (datos.json)
     await loadRecordsFromOD();
-    // Recargar usuarios y permisos desde SharePoint para todos los usuarios
+    // Sincronizar lista de clientes
+    loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
+    // Sincronizar usuarios y permisos
     loadPermsFromSP().catch(()=>{});
     loadUsersFromSP().then(()=>{
       loadUserRole().catch(()=>{});
       if(_adminMode){renderUsersScreen();_updateMapFilterOptions();}
     }).catch(()=>{});
-    // Recargar empresas y vehículos desde la nube
+    // Sincronizar empresas y vehículos
     _loadTransportistaSP().then(()=>{
       if(_adminMode){renderEmpresaList();renderVehiculoList();}
     }).catch(()=>{});
