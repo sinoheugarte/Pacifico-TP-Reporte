@@ -3022,7 +3022,7 @@ async function deleteFromOD(rec){
   const folderName = getFolderName(rec);
   const othersShareFolder = records.some(r => r.folderName === folderName || getFolderName(r) === folderName);
 
-  const storage = rec.photoStorage || 'od';
+  const storage = rec.photoStorage || 'sp';
   if(othersShareFolder && rec.photoNames && rec.photoNames.length > 0){
     setUpStep('Eliminando fotos del registro…'); setUpBar(20);
     for(const fname of rec.photoNames){
@@ -3062,24 +3062,25 @@ async function loadPhotosForRec(rec) {
     return;
   }
 
-  /* Backward compat: records without photoStorage field were saved to OD */
-  const storage = rec.photoStorage || 'od';
-
-  /* Private OneDrive: only the owner can see their photos */
-  if(storage === 'od' && rec.createdBy && rec.createdBy !== (user?.email||'')){
-    rec._photosPrivate = true;
-    return;
-  }
+  /* Backward compat: registros sin campo usan 'sp' (igual que cfg default).
+     Si storage='od' y es de otro usuario: intentar SharePoint primero.
+     Caso típico: registros guardados antes de que existiera el campo, o
+     cuando cfg.photoStorage era 'sp' pero el campo no quedó grabado.
+     Solo se marca _photosPrivate si SP tampoco tiene las fotos. */
+  const storage = rec.photoStorage || 'sp';
+  const isOtherUser = rec.createdBy && rec.createdBy !== (user?.email||'');
+  const useSP = storage === 'sp' || (storage === 'od' && isOtherUser);
 
   const folderPath = `${OD_ROOT}/${OD_PHOTOS}/${getFolderName(rec)}`;
+  let driveId = null;
+  if(useSP) try{ driveId = await ensureSPDrive(); }catch(e){ console.warn('ensureSPDrive:', e); }
 
   for (const fname of rec.photoNames) {
     try {
       const filePath = `${folderPath}/${fname}`;
       const tk  = await freshToken();
       let fetchUrl;
-      if(storage === 'sp'){
-        const driveId = await ensureSPDrive();
+      if(useSP && driveId){
         fetchUrl = `${GRAPH}/drives/${driveId}/root:/${encodeGraphPath(filePath)}:/content`;
       } else {
         fetchUrl = `${GRAPH}/me/drive/root:/${encodeGraphPath(filePath)}:/content`;
@@ -3094,6 +3095,9 @@ async function loadPhotosForRec(rec) {
       console.warn('Foto fallida:', fname, e.message);
     }
   }
+
+  // Si no se encontró ninguna foto y era OD privado de otro usuario → marcar privadas
+  if(rec.images.length === 0 && storage === 'od' && isOtherUser) rec._photosPrivate = true;
 
   // Cache loaded images
   if (rec.images.length > 0) {
@@ -3229,7 +3233,7 @@ function renderList(){
 async function tapMore(id){
   const r=records.find(x=>x.id===id);if(!r)return;
   if(!r.images?.length&&r.photoCount){
-    const storageLbl=(r.photoStorage||'od')==='sp'?'SharePoint':'OneDrive';
+    const storageLbl=(r.photoStorage||'sp')==='sp'?'SharePoint':'OneDrive';
     toast(`Cargando fotos desde ${storageLbl}…`);
     await loadPhotosForRec(r);recImgs[r.id]=r.images;
     if(r._photosPrivate){toast('🔒 Fotos privadas — solo visibles para su autor');return;}
@@ -3570,7 +3574,7 @@ async function saveRecord(){
     if(editingId && deletedImgs.length > 0){
       showUp('Eliminando fotos removidas…','',5);
       const delFolder = existingRec?.folderName || folderName;
-      const delRec = {folderName:delFolder, photoStorage: existingRec?.photoStorage||'od'};
+      const delRec = {folderName:delFolder, photoStorage: existingRec?.photoStorage||'sp'};
       for(const dimg of deletedImgs){
         try{ await deletePhotoFromOD(delRec, dimg.name); }catch(e){ console.warn('del photo:',e); }
       }
@@ -3594,7 +3598,7 @@ async function saveRecord(){
         showUp('Renombrando carpeta…','',8);
         try{
           const tk = await freshToken();
-          const exStorage = existingRec.photoStorage || 'od';
+          const exStorage = existingRec.photoStorage || 'sp';
           let renameUrl;
           if(exStorage === 'sp'){
             const driveId = await ensureSPDrive();
@@ -3650,7 +3654,7 @@ async function loadDetPhotos(id){
     btn.innerHTML = `<div style="width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle"></div> Descargando fotos…`;
   }
 
-  const storageLbl = (r.photoStorage||'od')==='sp' ? 'SharePoint' : 'OneDrive';
+  const storageLbl = (r.photoStorage||'sp')==='sp' ? 'SharePoint' : 'OneDrive';
   showUp(`Descargando fotos desde ${storageLbl}…`, `Carpeta: ${getFolderName(r)}`, 10);
 
   try {
@@ -3755,8 +3759,8 @@ function showDet(id){
       ${r.updatedAt&&r.updatedAt!==r.createdAt?`<div class="di"><div class="l">Actualizado</div><div class="v" style="font-size:12px">${new Date(r.updatedAt).toLocaleString('es-PE')}</div></div><div class="di"><div class="l">Por</div><div class="v" style="font-size:12px">${r.updatedBy||'—'}</div></div>`:''}
     </div></div>`:''}
     ${pc?(()=>{
-      const isPrivate = (r.photoStorage||'od')==='od' && r.createdBy && r.createdBy!==(user?.email||'');
-      const storageLbl = (r.photoStorage||'od')==='sp' ? 'SharePoint' : 'OneDrive';
+      const isPrivate = (r.photoStorage||'sp')==='od' && r.createdBy && r.createdBy!==(user?.email||'');
+      const storageLbl = (r.photoStorage||'sp')==='sp' ? 'SharePoint' : 'OneDrive';
       const secTitle = `Fotos en ${storageLbl} (${pc})`;
       if(isPrivate){
         return `<div class="dsec"><div class="dst">${secTitle}</div>
@@ -3851,7 +3855,7 @@ async function renamePhotosIfNeeded(rec){
     if(oldName !== newName){
       try{
         const tk = await freshToken();
-        const storage = rec.photoStorage || 'od';
+        const storage = rec.photoStorage || 'sp';
         let patchUrl;
         if(storage === 'sp'){
           const driveId = await ensureSPDrive();
@@ -3884,7 +3888,7 @@ async function deletePhotoFromOD(rec, fname){
   const filePath = `${OD_ROOT}/${OD_PHOTOS}/${getFolderName(rec)}/${fname}`;
   try{
     const tk=await freshToken();
-    const storage = rec.photoStorage || 'od';
+    const storage = rec.photoStorage || 'sp';
     let delUrl;
     if(storage === 'sp'){
       const driveId = await ensureSPDrive();
