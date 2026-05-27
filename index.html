@@ -5326,10 +5326,12 @@ async function generatePDF(){
       {l:'CANCELADOS',v:cancel,r:153,g:27,b:27},
       {l:'PALETAS',v:paletas,r:22,g:101,b:52},
       {l:'CAJAS',v:cajas,r:154,g:52,b:18},
+      {l:'SOBRES',v:sobres,r:109,g:40,b:217},
     ];
-    const kpiW=(contentW-9)/4;
+    const KCOLS=3;
+    const kpiW=(contentW-(KCOLS-1)*3)/KCOLS;
     kpis.forEach(({l,v,r,g,b},i)=>{
-      const col=i%4, row=Math.floor(i/4);
+      const col=i%KCOLS, row=Math.floor(i/KCOLS);
       const kx=margin+col*(kpiW+3), ky=y+row*24;
       doc.setFillColor(r,g,b); doc.roundedRect(kx,ky,kpiW,20,3,3,'F');
       doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(18);
@@ -5337,7 +5339,7 @@ async function generatePDF(){
       doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
       doc.text(l,kx+kpiW/2,ky+17,{align:'center'});
     });
-    y+=55;
+    y+=77;
 
     // ── Compute chart data ──
     setUpStep('Generando gráficos del reporte…'); setUpBar(28);
@@ -5515,7 +5517,8 @@ async function generatePDF(){
         const rgb=hexToRgb(clrs[i%clrs.length]);
         doc.setFillColor(...rgb); doc.roundedRect(tx+2,ry+2.5,3,3,0.8,0.8,'F');
         doc.setTextColor(15,23,42); doc.setFont('helvetica','normal'); doc.setFontSize(6.2);
-        doc.text(String(lbl).slice(0,18),tx+7,ry+5);
+        const _lblLine=doc.splitTextToSize(String(lbl),tw-26)[0]||'';
+        doc.text(_lblLine,tx+7,ry+5);
         doc.setFont('helvetica','bold');
         doc.text(String(vals[i]),tx+tw-18,ry+5,{align:'center'});
         doc.setTextColor(30,64,175);
@@ -5735,6 +5738,7 @@ async function generatePDF(){
       {h:'Status',k:'status',w:18},
       {h:'Pal.',k:'paletas',w:10},
       {h:'Caj.',k:'cajas',w:10},
+      {h:'Sob.',k:'sobres',w:10},
     ];
     const totalColW=cols.reduce((a,c)=>a+c.w,0);
     const scale=contentW/totalColW;
@@ -5801,9 +5805,9 @@ async function generatePDF(){
     const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
     const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
     if(pdfPhotoRecsF.length>0){
-      const PCOLS=3, PER_PAGE=15; // 3 cols × 5 filas = 15 fotos/página
-      const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~58mm
-      const photoH=Math.round(photoW*0.72); // ~42mm
+      const PCOLS=3, PER_PAGE=12; // 3 cols × 4 filas = 12 fotos/página
+      const pGap=4, photoW=Math.floor((contentW-(PCOLS-1)*pGap)/PCOLS); // ~59mm
+      const photoH=photoW; // celdas cuadradas para portrait y landscape
       const recHdrH=6, amberH=1, infoBarH=6;
       const stClrPdf={completado:[34,197,94],pendiente:[245,158,11],'en-ruta':[59,130,246],cancelado:[239,68,68]};
       const totalPdfPhotos=pdfPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
@@ -5849,8 +5853,15 @@ async function generatePDF(){
             const px=margin+col*(photoW+pGap);
             const py=py0+row*(photoH+pGap);
             let imgData=batch[bi];
-            if(isMobilePdf) try{imgData=await resizeDataUrl(imgData,900,675,0.78);}catch(e){}
-            try{doc.addImage(imgData,'JPEG',px,py,photoW,photoH,'','FAST');}catch(e){}
+            if(isMobilePdf) try{imgData=await resizeDataUrl(imgData,900,900,0.78);}catch(e){}
+            try{
+              const _dim=await new Promise(res=>{const _i=new Image();_i.onload=()=>res([_i.naturalWidth,_i.naturalHeight]);_i.onerror=()=>res([4,3]);_i.src=imgData;});
+              const _ratio=_dim[0]/_dim[1];
+              let drawW=photoW,drawH=photoH,drawX=px,drawY=py;
+              if(_ratio<photoW/photoH){drawH=photoH;drawW=drawH*_ratio;drawX=px+(photoW-drawW)/2;}
+              else{drawW=photoW;drawH=drawW/_ratio;drawY=py+(photoH-drawH)/2;}
+              doc.addImage(imgData,'JPEG',drawX,drawY,drawW,drawH,'','FAST');
+            }catch(e){}
           }
           pdfPhotoIdx+=batch.length;
         }

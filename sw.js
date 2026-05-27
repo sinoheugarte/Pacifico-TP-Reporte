@@ -1,4 +1,4 @@
-const CACHE = 'pacifico-v152';
+const CACHE = 'pacifico-v153';
 const ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
