@@ -4223,9 +4223,34 @@ function closeGal(){
 }
 function gnav(d){const n=galIdx+d;if(n<0||n>=galImgs.length)return;const i=document.getElementById('gimg');i.classList.add('fd');setTimeout(()=>{galIdx=n;renderGal();i.classList.remove('fd');},120);}
 function renderGal(){
-  const s=galImgs[galIdx],t=galImgs.length; document.getElementById('gimg').src=s;setEl('gctr',`${galIdx+1} / ${t}`);
-  document.getElementById('gprev').classList.toggle('h',galIdx===0); document.getElementById('gnext').classList.toggle('h',galIdx===t-1);
-  const dl=document.getElementById('gdl');dl.href=s;dl.download=`foto_${galIdx+1}.jpg`;
+  const s=galImgs[galIdx],t=galImgs.length;
+  document.getElementById('gimg').src=s;
+  setEl('gctr',`${galIdx+1} / ${t}`);
+  document.getElementById('gprev').classList.toggle('h',galIdx===0);
+  document.getElementById('gnext').classList.toggle('h',galIdx===t-1);
+  /* Descarga: crear Blob URL para evitar bloqueo de data URLs en browsers modernos */
+  const dl=document.getElementById('gdl');
+  if(dl._blobUrl){try{URL.revokeObjectURL(dl._blobUrl);}catch(e){} dl._blobUrl=null;}
+  const fname=`foto_${galIdx+1}.jpg`;
+  try{
+    const parts=s.split(',');
+    const mime=(parts[0].match(/:(.*?);/)||[])[1]||'image/jpeg';
+    const bytes=atob(parts[1]);
+    const u8=new Uint8Array(bytes.length);
+    for(let i=0;i<bytes.length;i++)u8[i]=bytes.charCodeAt(i);
+    const blobUrl=URL.createObjectURL(new Blob([u8],{type:mime}));
+    dl._blobUrl=blobUrl;
+    dl.href=blobUrl;
+    dl.download=fname;
+    dl.onclick=null;
+    /* Android WebView: <a download> no funciona — usar AndroidBridge */
+    if(window.AndroidBridge&&window.AndroidBridge.isAndroidApp&&window.AndroidBridge.isAndroidApp()){
+      dl.onclick=function(e){
+        e.preventDefault();
+        try{window.AndroidBridge.downloadBase64(parts[1],fname,mime);}catch(err){toast('⚠ No se pudo descargar');}
+      };
+    }
+  }catch(e){dl.href=s;dl.download=fname;}
   setEl('gstrip',t<=1?'':galImgs.map((x,i)=>`<img class="gd ${i===galIdx?'on':''}" src="${x}" onclick="galTo(${i})">`).join(''));
 }
 function galTo(i){if(i===galIdx)return;const img=document.getElementById('gimg');img.classList.add('fd');setTimeout(()=>{galIdx=i;renderGal();img.classList.remove('fd');},100);}
