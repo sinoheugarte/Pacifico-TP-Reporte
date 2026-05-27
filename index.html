@@ -5447,7 +5447,7 @@ async function generatePDF(){
     const imgTransp=topTranspP.length?renderChartImg('bar',
       topTranspP.map(([k])=>k.length>26?k.slice(0,24)+'…':k),
       [{data:topTranspP.map(([,v])=>v),backgroundColor:'#1D4ED8',borderWidth:0,label:'Viajes',barThickness:38}],
-      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {indexAxis:'y',layout:{padding:{left:40,right:50}},scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
     await _yld(); if(_tovCancelled)return;
 
@@ -5463,7 +5463,7 @@ async function generatePDF(){
     const imgRutas=topRutasP.length?renderChartImg('bar',
       topRutasP.map(([k])=>k.length>30?k.slice(0,28)+'…':k),
       [{data:topRutasP.map(([,v])=>v),backgroundColor:'#7C3AED',borderWidth:0,label:'Ops',barThickness:38}],
-      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {indexAxis:'y',layout:{padding:{left:40,right:50}},scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
     await _yld(); if(_tovCancelled)return;
 
@@ -5471,7 +5471,7 @@ async function generatePDF(){
     const imgPlacasP=topPlacasP.length?renderChartImg('bar',
       topPlacasP.map(([k])=>k),
       [{data:topPlacasP.map(([,v])=>v),backgroundColor:'#0EA5E9',borderWidth:0,label:'Viajes',barThickness:38}],
-      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {indexAxis:'y',layout:{padding:{left:40,right:50}},scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
     await _yld(); if(_tovCancelled)return;
 
@@ -5479,14 +5479,14 @@ async function generatePDF(){
     const imgCondsP=topCondsP.length?renderChartImg('bar',
       topCondsP.map(([k])=>k.length>26?k.slice(0,24)+'…':k),
       [{data:topCondsP.map(([,v])=>v),backgroundColor:'#14B8A6',borderWidth:0,label:'Viajes',barThickness:38}],
-      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
+      {indexAxis:'y',layout:{padding:{left:40,right:50}},scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:24},color:'#0F172A'}}}},
       {display:false},2400,1000):null;
 
     // Clientes horizontal bar
     const imgClientesP=topClientesP.length?renderChartImg('bar',
       topClientesP.map(([k])=>k.length>28?k.slice(0,26)+'…':k),
       [{data:topClientesP.map(([,v])=>v),backgroundColor:'#F59E0B',borderWidth:0,label:'Ops',barThickness:35}],
-      {indexAxis:'y',scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:22},color:'#0F172A'}}}},
+      {indexAxis:'y',layout:{padding:{left:40,right:50}},scales:{x:{...axisHD},y:{grid:{display:false},ticks:{font:{size:22},color:'#0F172A'}}}},
       {display:false},2400,1100):null;
     await _yld(); if(_tovCancelled)return;
 
@@ -5802,7 +5802,11 @@ async function generatePDF(){
       setUpStep(`Cargando fotos ${Math.min(_i+3,pdfNeedPhotos.length)}/${pdfNeedPhotos.length}…`);
       await Promise.allSettled(pdfNeedPhotos.slice(_i,_i+3).map(r=>loadPhotosForRec(r)));
     }
-    const pdfPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+    const pdfPhotoRecs=[...records].sort((a,b)=>{
+      const fd=(a.fechaInicio||'').localeCompare(b.fechaInicio||'');if(fd!==0)return fd;
+      const od=(a.orden||'').localeCompare(b.orden||'');if(od!==0)return od;
+      return (parseInt(a.viaje)||0)-(parseInt(b.viaje)||0);
+    });
     const pdfPhotoRecsF=pdfPhotoRecs.filter(r=>r.images?.length>0);
     if(pdfPhotoRecsF.length>0){
       const PCOLS=3, PER_PAGE=12; // 3 cols × 4 filas = 12 fotos/página
