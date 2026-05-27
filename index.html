@@ -3223,10 +3223,10 @@ function renderList(){
     const chips=['paletas','cajas','sobres'].filter(k=>r[k]).map(k=>`<div class="chip"><strong>${r[k]}</strong> ${k.slice(0,3)}.</div>`).join('');
     return`<div class="rc" onclick="showDet('${r.id}')">
       <div class="rc-top"><div class="rc-num">${r.orden||'S/N'}${r.viaje?' · V'+r.viaje:''}</div><div class="rc-date">${formatDateToDDMMYYYY(r.fechaInicio)}${r.turnoInicio?' · '+r.turnoInicio:''}</div></div>
+      ${r.cliente?`<div class="rc-main" style="color:#60a5fa">${r.cliente}</div>`:''}
       <div class="rc-main">${r.ruta||'Sin ruta'}</div>
       <div class="rc-sub">${r.transportista||'—'}${r.tipoUnidad?' · '+r.tipoUnidad:''}</div>
       ${(r.placa||r.conductor)?`<div class="rc-sub" style="font-size:11px;opacity:.8">${r.placa||''}${r.placa&&r.conductor?' · ':''}${r.conductor||''}</div>`:''}
-      ${r.cliente?`<div class="rc-sub" style="font-size:11px;opacity:.75">👤 ${r.cliente}</div>`:''}
       ${chips?`<div class="rc-chips">${chips}</div>`:''}
       <div class="rc-foot"><span class="badge ${sc}">${r.status||'—'}</span><div class="thumbs">${ths}${more}</div></div>
     </div>`;
