@@ -1590,7 +1590,7 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="istatus" id="iStatus"></div>
     <input type="file" id="camIn" accept="image/*" capture="environment" multiple onchange="addImgs(this)">
     <input type="file" id="filIn" accept="image/*" multiple onchange="addImgs(this)">
-    <input type="file" id="docIn" accept="image/*" onchange="addDocImg(this)">
+    <input type="file" id="docIn" accept="image/*,application/pdf" onchange="addDocImg(this)">
   </div>
   <div class="faction">
     <button class="btn-s" onclick="cancelForm()">Cancelar</button>
@@ -2218,7 +2218,7 @@ let spDriveId=null;
 let records=[], editingId=null, activeFilter='todos', dashFilter='todos', recFilter='todos';
 let _clientes=[];
 let formImgs=[], deletedImgs=[]; 
-let recImgs={}, detImgs=[], galImgs=[], galIdx=0, touchX=0;
+let recImgs={}, detImgs=[], detImgsOnly=[], galImgs=[], galIdx=0, touchX=0;
 let lastSync=null, cfg={cid:'',tid:'common'};
 
 /* ════════════════════════════════════════════════════════
@@ -3215,7 +3215,7 @@ function renderList(){
   list.innerHTML=fil.slice().reverse().map(r=>{
     const sc=['pendiente','en-ruta','completado','cancelado'].includes(r.status)?r.status:'def';
     const pc=r.images?.length||r.photoCount||0;
-    const ths=(r.images||[]).slice(0,3).map((s,i)=>`<img class="th" src="${s}" onclick="event.stopPropagation();openGal(recImgs['${r.id}'],${i})">`).join('');
+    const ths=(r.images||[]).slice(0,3).map((s,i)=>s.startsWith('data:application/pdf')?`<div class="th" onclick="event.stopPropagation();_openGalSafe(recImgs['${r.id}'],${i})" style="display:flex;align-items:center;justify-content:center;background:#fef2f2;border-radius:6px;font-size:10px;font-weight:700;color:#dc2626;cursor:pointer">PDF</div>`:`<img class="th" src="${s}" onclick="event.stopPropagation();_openGalSafe(recImgs['${r.id}'],${i})">`).join('');
     const more=pc>3?`<div class="th-more" onclick="event.stopPropagation();tapMore('${r.id}')">+${pc-3}</div>`:pc>0&&!r.images?.length?`<div class="th-more" onclick="event.stopPropagation();tapMore('${r.id}')">📷${pc}</div>`:'';
     const chips=['paletas','cajas','sobres'].filter(k=>r[k]).map(k=>`<div class="chip"><strong>${r[k]}</strong> ${k.slice(0,3)}.</div>`).join('');
     return`<div class="rc" onclick="showDet('${r.id}')">
@@ -3255,8 +3255,13 @@ function triggerDocUpload(type, source) {
   currentDocType = `${type}_${cleanNum}`;
   
   const inp = document.getElementById('docIn');
-  if(source === 'cam') { inp.setAttribute('capture', 'environment'); } 
-  else { inp.removeAttribute('capture'); }
+  if(source === 'cam') {
+    inp.setAttribute('capture', 'environment');
+    inp.accept = 'image/*';
+  } else {
+    inp.removeAttribute('capture');
+    inp.accept = 'image/*,application/pdf';
+  }
   inp.click();
 }
 
@@ -3345,12 +3350,16 @@ function addDocImg(inp){
       await new Promise(resolve=>{
         const reader=new FileReader();
         reader.onload=async e=>{
+          const ext=file.name.split('.').pop().toLowerCase();
+          const isPdf=ext==='pdf'||file.type==='application/pdf';
+          if(isPdf){
+            formImgs.push({dataUrl:e.target.result,blob:file,name:`${currentDocType}.pdf`,isOld:false});
+            renderIG();resolve();return;
+          }
           try{
-            const ext=file.name.split('.').pop().toLowerCase();
             const resized=await resizeDataUrl(e.target.result,2560,2560,0.88);
             formImgs.push({dataUrl:resized,blob:file,name:`${currentDocType}.${ext}`,isOld:false});
           }catch{
-            const ext=file.name.split('.').pop().toLowerCase();
             formImgs.push({dataUrl:e.target.result,blob:file,name:`${currentDocType}.${ext}`,isOld:false});
           }
           renderIG();
@@ -3453,6 +3462,7 @@ function updateDocIndicators(){
   dot('dot-hojaIngreso',    formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('hojaingreso')||n.startsWith('hoja_ingreso')||n.startsWith('hoja');}));
   dot('dot-fotosGenerales', formImgs.some(f=>{const n=f.name.toLowerCase();return !n.startsWith('guiaremitente')&&!n.startsWith('guia_remitente')&&!n.startsWith('guiatransportista')&&!n.startsWith('guia_transportista')&&!n.startsWith('hojaingreso')&&!n.startsWith('hoja_ingreso')&&!n.startsWith('hoja');}));
 }
+function _isFilePdf(f){return (f.name||'').toLowerCase().endsWith('.pdf')||(f.dataUrl||'').startsWith('data:application/pdf');}
 function renderIG(){
   document.getElementById('igrid').innerHTML=formImgs.map((f,i)=>{
     const gpsLine=f.gps
@@ -3460,9 +3470,15 @@ function renderIG(){
           <a href="https://maps.google.com/?q=${f.gps.lat},${f.gps.lon}" target="_blank" class="iw-meta-link" onclick="event.stopPropagation()">🗺️ Ver</a>
         </div>`
       :'<div class="iw-meta-gps" style="color:#94a3b8">Sin GPS</div>';
+    const preview=_isFilePdf(f)
+      ?`<div class="ith" onclick="openPdfForm(${i})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;cursor:pointer;border-radius:8px">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          <span style="font-size:11px;font-weight:700;color:#dc2626;margin-top:4px">PDF</span>
+        </div>`
+      :`<img class="ith" src="${f.dataUrl}" onclick="openGalForm(${i})">`;
     return`<div class="iw">
       <div class="iw-img-wrap">
-        <img class="ith" src="${f.dataUrl}" onclick="openGalForm(${i})">
+        ${preview}
         <button class="idel" onclick="event.stopPropagation();rmImg(${i})">✕</button>
       </div>
       <div class="iw-meta">
@@ -3473,7 +3489,33 @@ function renderIG(){
   }).join('');
   updateDocIndicators();
 }
-function openGalForm(idx){openGal(formImgs.map(f=>f.dataUrl),idx);}
+function _openPdfDataUrl(dataUrl){
+  const w=window.open('','_blank');
+  if(w){w.document.write('<!DOCTYPE html><html><body style="margin:0;background:#222"><embed src="'+dataUrl+'" type="application/pdf" width="100%" height="100%" style="height:100vh;display:block"></body></html>');}
+}
+function _openGalSafe(imgs,origIdx){
+  if(!imgs||!imgs.length)return;
+  const s=imgs[origIdx];
+  if(s&&s.startsWith('data:application/pdf')){_openPdfDataUrl(s);return;}
+  const filtered=imgs.filter(x=>!x.startsWith('data:application/pdf'));
+  const newIdx=s?filtered.indexOf(s):0;
+  openGal(filtered,newIdx<0?0:newIdx);
+}
+function openPdfForm(idx){
+  const f=formImgs[idx];if(!f)return;
+  _openPdfDataUrl(f.dataUrl);
+}
+function _openDetPdf(idx){
+  const s=detImgs[idx];if(!s)return;
+  _openPdfDataUrl(s);
+}
+function openGalForm(idx){
+  const f=formImgs[idx];if(!f)return;
+  if(_isFilePdf(f)){openPdfForm(idx);return;}
+  const imgs=formImgs.filter(x=>!_isFilePdf(x));
+  const imgIdx=imgs.indexOf(f);
+  openGal(imgs.map(x=>x.dataUrl),imgIdx<0?0:imgIdx);
+}
 function rmImg(i){
   const removed = formImgs.splice(i,1)[0];
   if(removed && removed.isOld && removed.name) deletedImgs.push(removed);
@@ -3689,6 +3731,8 @@ async function loadDetPhotos(id){
 function showDet(id){
   const r=records.find(x=>x.id===id);if(!r)return;
   detImgs=r.images||[];
+  // Sólo imágenes reales para la galería (excluir PDFs)
+  detImgsOnly=detImgs.filter(s=>!s.startsWith('data:application/pdf'));
   const sc=['pendiente','en-ruta','completado','cancelado'].includes(r.status)?r.status:'def';
   const pc=r.images?.length||r.photoCount||0;
   const imgs=(r.images||[]).map((s,i)=>{
@@ -3699,7 +3743,14 @@ function showDet(id){
           <a href="https://maps.google.com/?q=${gps.lat},${gps.lon}" target="_blank" class="dimg-meta-link">🗺️ Ver mapa</a>
         </div>`
       :'';
-    return`<div class="dimg-card"><img class="dimg" src="${s}" onclick="openGal(detImgs,${i})">
+    const isPdf=s.startsWith('data:application/pdf')||name.toLowerCase().endsWith('.pdf');
+    const imgEl=isPdf
+      ?`<div class="dimg" onclick="_openDetPdf(${i})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;cursor:pointer;border-radius:8px;min-height:90px">
+           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+           <span style="font-size:11px;font-weight:700;color:#dc2626;margin-top:4px">PDF</span>
+         </div>`
+      :`<img class="dimg" src="${s}" onclick="openGal(detImgsOnly,${detImgsOnly.indexOf(s)})">`;
+    return`<div class="dimg-card">${imgEl}
       <div class="dimg-meta">
         <div class="dimg-meta-name" title="${esc(name)}">${esc(name)}</div>
         ${gpsLine}
