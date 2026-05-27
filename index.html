@@ -3793,8 +3793,11 @@ function showDet(id){
     </div>
     <div class="dsec"><div class="dst">Transporte</div>
       <div class="dgrid">
+        ${r.cliente?`<div class="di w"><div class="l">Cliente</div><div class="v">${r.cliente}</div></div>`:''}
         <div class="di"><div class="l">Transportista</div><div class="v">${r.transportista||'—'}</div></div>
         <div class="di"><div class="l">Tipo de Unidad</div><div class="v">${r.tipoUnidad||'—'}</div></div>
+        <div class="di"><div class="l">Placa</div><div class="v">${r.placa||'—'}</div></div>
+        <div class="di"><div class="l">Conductor</div><div class="v">${r.conductor||'—'}</div></div>
         ${r.motivo?`<div class="di"><div class="l">Motivo</div><div class="v">${r.motivo}</div></div>`:''}
         ${r.viaje?`<div class="di"><div class="l">N° Viaje</div><div class="v">${r.viaje}</div></div>`:''}
       </div>
