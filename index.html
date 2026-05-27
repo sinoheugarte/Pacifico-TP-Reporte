@@ -2876,26 +2876,27 @@ async function uploadExcel(){
     {k:'turnoInicio'},             // F
     {k:'turnoTermino'},            // G
     {k:'orden'},                   // H
-    {k:'dam'},                     // I
-    {k:'tipoUnidad'},              // J
-    {k:'transportista'},           // K
-    {k:'placa'},                   // L
-    {k:'conductor'},               // M
-    {k:'origen'},                  // N
-    {k:'destino'},                 // O
-    {k:'ruta'},                    // P
-    {k:'motivo'},                  // Q
-    {k:'viaje',        num:true},  // R
-    {k:'guiaRemitente'},           // S
-    {k:'guiaTransportista'},       // T
-    {k:'hojaIngreso'},             // U
-    {k:'paletas',      num:true},  // V
-    {k:'cajas',        num:true},  // W
-    {k:'sobres',       num:true},  // X
-    {k:'status'},                  // Y
-    {k:'observaciones'},           // Z
-    {k:'_photoCount',  num:true},  // AA = N° FOTOS
-    {k:'_folder'},                 // AB = CARPETA FOTOS
+    {k:'cliente'},                 // I ← NUEVO
+    {k:'dam'},                     // J
+    {k:'tipoUnidad'},              // K
+    {k:'transportista'},           // L
+    {k:'placa'},                   // M
+    {k:'conductor'},               // N
+    {k:'origen'},                  // O
+    {k:'destino'},                 // P
+    {k:'ruta'},                    // Q
+    {k:'motivo'},                  // R
+    {k:'viaje',        num:true},  // S
+    {k:'guiaRemitente'},           // T
+    {k:'guiaTransportista'},       // U
+    {k:'hojaIngreso'},             // V
+    {k:'paletas',      num:true},  // W
+    {k:'cajas',        num:true},  // X
+    {k:'sobres',       num:true},  // Y
+    {k:'status'},                  // Z
+    {k:'observaciones'},           // AA
+    {k:'_photoCount',  num:true},  // AB = N° FOTOS
+    {k:'_folder'},                 // AC = CARPETA FOTOS
   ];
   const HDR_ROW=4, DATA_START=5;
 
@@ -2906,11 +2907,11 @@ async function uploadExcel(){
   /* Step 2: Clear all old data rows (A–Z) */
   const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:Z6');
   for(let R=DATA_START;R<=Math.max(oldRange.e.r,DATA_START+500);R++){
-    for(let C=0;C<=27;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
+    for(let C=0;C<=28;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
   }
 
   /* Step 2b: Write column headers dynamically (keeps template in sync) */
-  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   HDR_LABELS.forEach((label,i)=>{
     ws[XLSX.utils.encode_cell({r:HDR_ROW,c:i+1})]={t:'s',v:label};
   });
@@ -2934,7 +2935,7 @@ async function uploadExcel(){
 
   /* Step 4: Update range + table ref */
   const lastRow=Math.max(DATA_START+records.length, HDR_ROW+2);
-  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:27}});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:28}});
   if(!ws['!rows']) ws['!rows']=[];
   ws['!rows'][HDR_ROW]={hpt:31};
 
@@ -4051,7 +4052,7 @@ function closeEM(){document.getElementById('emenu').style.display='none';documen
 function expXLSX(){
   closeEM();
   if(!records.length){toast('No hay registros');return;}
-  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   const MAP=[
     {k:'fechaInicio',      fmt:true},
     {k:'fechaTermino',     fmt:true},
@@ -4060,6 +4061,7 @@ function expXLSX(){
     {k:'turnoInicio'},
     {k:'turnoTermino'},
     {k:'orden'},
+    {k:'cliente'},
     {k:'dam'},
     {k:'tipoUnidad'},
     {k:'transportista'},
@@ -4100,7 +4102,7 @@ function expXLSX(){
   toast('✓ Excel descargado con todos los registros');
 }
 function expCSV(){closeEM();if(!records.length){toast('No hay registros');return;}
-  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const rows=records.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
     if(k==='fechaInicio'||k==='fechaTermino') v = formatDateToDDMMYYYY(v);
