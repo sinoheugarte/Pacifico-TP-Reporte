@@ -338,6 +338,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .dhero{background:var(--navy);padding:20px;color:#fff}
 .dord{font-family:'DM Mono',monospace;font-size:11px;opacity:.5;margin-bottom:4px}
 .druta{font-size:20px;font-weight:700;margin-bottom:8px}
+.dcliente{font-size:20px;font-weight:700;color:#60a5fa;margin-bottom:8px}
 .dmeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .dmeta span{font-size:12px;opacity:.7}
 .dsec{padding:16px 18px;border-bottom:1px solid var(--border)}
@@ -1013,6 +1014,7 @@ body.has-pending .pending-dot{display:inline-block}
   #scr-detail>div{width:100%;max-width:1000px}
   #scr-detail .dhero{padding:32px 48px}
   #scr-detail .druta{font-size:28px;margin-bottom:10px}
+  #scr-detail .dcliente{font-size:28px}
   #scr-detail .dord{font-size:13px;margin-bottom:6px}
   #scr-detail .dmeta{gap:14px}
   #scr-detail .dmeta span{font-size:13px}
@@ -3781,6 +3783,7 @@ function showDet(id){
     <div class="dhero">
       <div class="dord">ORD: ${r.orden||'—'} · Viaje: ${r.viaje||'—'} · DAM: ${r.dam||'—'}</div>
       <div class="druta">${r.ruta||'Sin ruta'}</div>
+      ${r.cliente?`<div class="dcliente">${r.cliente}</div>`:''}
       <div class="dmeta"><span>${formatDateToDDMMYYYY(r.fechaInicio)}</span>${r.turnoInicio?`<span>·</span><span>${r.turnoInicio}</span>`:''}<span class="badge ${sc}" style="font-size:10px;padding:2px 8px">${r.status||'—'}</span></div>
     </div>
     <div class="dsec"><div class="dst">Tiempos</div>
@@ -3793,7 +3796,6 @@ function showDet(id){
     </div>
     <div class="dsec"><div class="dst">Transporte</div>
       <div class="dgrid">
-        ${r.cliente?`<div class="di w"><div class="l">Cliente</div><div class="v">${r.cliente}</div></div>`:''}
         <div class="di"><div class="l">Transportista</div><div class="v">${r.transportista||'—'}</div></div>
         <div class="di"><div class="l">Tipo de Unidad</div><div class="v">${r.tipoUnidad||'—'}</div></div>
         <div class="di"><div class="l">Placa</div><div class="v">${r.placa||'—'}</div></div>
