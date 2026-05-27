@@ -3782,8 +3782,8 @@ function showDet(id){
   document.getElementById('detC').innerHTML=`
     <div class="dhero">
       <div class="dord">ORD: ${r.orden||'—'} · Viaje: ${r.viaje||'—'} · DAM: ${r.dam||'—'}</div>
-      <div class="druta">${r.ruta||'Sin ruta'}</div>
       ${r.cliente?`<div class="dcliente">${r.cliente}</div>`:''}
+      <div class="druta">${r.ruta||'Sin ruta'}</div>
       <div class="dmeta"><span>${formatDateToDDMMYYYY(r.fechaInicio)}</span>${r.turnoInicio?`<span>·</span><span>${r.turnoInicio}</span>`:''}<span class="badge ${sc}" style="font-size:10px;padding:2px 8px">${r.status||'—'}</span></div>
     </div>
     <div class="dsec"><div class="dst">Tiempos</div>
