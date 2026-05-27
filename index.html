@@ -7781,6 +7781,26 @@ var _rtCols=[
 /* Default visible columns (the most useful at a glance) */
 var _rtVisibleCols=new Set(['fechaInicio','orden','viaje','transportista','ruta','motivo','status','cajas','paletas']);
 
+function _getReportRows(){
+  const base=_visibleRecords();
+  const q=(document.getElementById('rec-srch')?.value||'').toLowerCase();
+  const desde=document.getElementById('rec-desde')?.value||'';
+  const hasta=document.getElementById('rec-hasta')?.value||'';
+  const sc=_rtSort.col, sd=_rtSort.dir;
+  return base.filter(r=>{
+    if(recFilter!=='todos'&&(r.status||'').toLowerCase()!==recFilter)return false;
+    if(!_matchesSearch(r,q))return false;
+    const f=r.fechaInicio||'';
+    if(desde&&f&&f<desde)return false;
+    if(hasta&&f&&f>hasta)return false;
+    return true;
+  }).sort((a,b)=>{
+    let av=a[sc]||'',bv=b[sc]||'';
+    if(['cajas','paletas','sobres','viaje','photoCount'].includes(sc)){av=parseInt(av)||0;bv=parseInt(bv)||0;}
+    return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
+  });
+}
+
 function renderRecordsTable(){
   const records=_visibleRecords();
   /* column toggles */
@@ -7791,27 +7811,7 @@ function renderRecordsTable(){
   const head=document.getElementById('rtbl-head');
   head.innerHTML='<tr>'+visCols.map(c=>`<th data-col="${c.k}" class="${_rtSort.col===c.k?_rtSort.dir:''}" onclick="sortRT('${c.k}')">${c.label}<span class="sort-ic"></span></th>`).join('')+'</tr>';
 
-  /* filter */
-  const q     = (document.getElementById('rec-srch')?.value||'').toLowerCase();
-  const desde = document.getElementById('rec-desde')?.value||'';
-  const hasta = document.getElementById('rec-hasta')?.value||'';
-  let rows = records.filter(r=>{
-    if(recFilter!=='todos'&&(r.status||'').toLowerCase()!==recFilter)return false;
-    if(!_matchesSearch(r,q))return false;
-    const f=r.fechaInicio||'';
-    if(desde&&f&&f<desde)return false;
-    if(hasta&&f&&f>hasta)return false;
-    return true;
-  });
-
-  /* sort */
-  const sc=_rtSort.col, sd=_rtSort.dir;
-  rows.sort((a,b)=>{
-    let av=a[sc]||'', bv=b[sc]||'';
-    if(sc==='cajas'||sc==='paletas'||sc==='sobres'){av=parseInt(av)||0;bv=parseInt(bv)||0;}
-    const r=av<bv?-1:av>bv?1:0;
-    return sd==='asc'?r:-r;
-  });
+  const rows=_getReportRows();
 
   const body=document.getElementById('rtbl-body');
   if(!rows.length){
@@ -7859,13 +7859,7 @@ async function exportRecordsXLSX(){
   }
 
   const visCols=_rtCols.filter(c=>_rtVisibleCols.has(c.k));
-  let rows=[...records];
-  const sc=_rtSort.col,sd=_rtSort.dir;
-  rows.sort((a,b)=>{
-    let av=a[sc]||'',bv=b[sc]||'';
-    if(['cajas','paletas','sobres','viaje','photoCount'].includes(sc)){av=parseInt(av)||0;bv=parseInt(bv)||0;}
-    return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
-  });
+  const rows=_getReportRows();
 
   function stripHtml(v){if(typeof v==='string'&&v.includes('<')){const d=document.createElement('div');d.innerHTML=v;return d.textContent.trim();}return String(v);}
 
@@ -7929,6 +7923,18 @@ async function exportRecordsXLSX(){
     });
   });
 
+  /* Auto-fit column widths based on content */
+  ws.columns.forEach((col,ci)=>{
+    if(ci===0){col.width=1;return;}
+    const vc=visCols[ci-1];
+    let max=vc?vc.label.length:10;
+    rows.forEach(r=>{
+      const v=stripHtml(vc?vc.fmt(r):'');
+      if(v&&v.length>max)max=v.length;
+    });
+    col.width=Math.min(Math.max(max+2,10),50);
+  });
+
   /* AutoFilter on header row — columns B onwards (col 2 to 2+N-1) */
   ws.autoFilter={from:{row:1,column:2},to:{row:1,column:visCols.length+1}};
 
@@ -7962,13 +7968,7 @@ function exportRecordsPDF(){
   const {jsPDF}=window.jspdf;
   const visCols=_rtCols.filter(c=>_rtVisibleCols.has(c.k));
 
-  let rows=[...records];
-  const sc=_rtSort.col,sd=_rtSort.dir;
-  rows.sort((a,b)=>{
-    let av=a[sc]||'',bv=b[sc]||'';
-    if(['cajas','paletas','sobres','viaje','photoCount'].includes(sc)){av=parseInt(av)||0;bv=parseInt(bv)||0;}
-    return (sd==='asc'?1:-1)*(av<bv?-1:av>bv?1:0);
-  });
+  const rows=_getReportRows();
 
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const PW=doc.internal.pageSize.getWidth();
