@@ -6020,7 +6020,7 @@ async function generatePPTX(){
     const s3=pptx.addSlide(); s3.background={color:BG};
     addHdr(s3,'INDICADORES CLAVE DE DESEMPEÑO',`Total: ${total} registros`); addFtr(s3,++pageN);
     const KW=2.2, KH=1.72, KGAP=0.13;
-    [{l:'TOTAL REPORTES',v:total,c:BLUE,bg:BLUE_BG},{l:'COMPLETADOS',v:comp,c:GREEN,bg:GREEN_BG},{l:'EN RUTA',v:enRuta,c:'1E40AF',bg:'DBEAFE'},{l:'% CUMPLIMIENTO',v:pctComp+'%',c:PURPLE,bg:PURPLE_BG},{l:'PENDIENTES',v:pend,c:ORANGE,bg:ORANGE_BG},{l:'CANCELADOS',v:cancel,c:RED,bg:RED_BG},{l:'PALETAS',v:paletas,c:'166534',bg:GREEN_BG},{l:'CAJAS',v:cajas,c:'9A3412',bg:ORANGE_BG}].forEach(({l,v,c,bg},i)=>{
+    [{l:'TOTAL REPORTES',v:total,c:BLUE,bg:BLUE_BG},{l:'COMPLETADOS',v:comp,c:GREEN,bg:GREEN_BG},{l:'EN RUTA',v:enRuta,c:'1E40AF',bg:'DBEAFE'},{l:'% CUMPLIMIENTO',v:pctComp+'%',c:PURPLE,bg:PURPLE_BG},{l:'PENDIENTES',v:pend,c:ORANGE,bg:ORANGE_BG},{l:'CANCELADOS',v:cancel,c:RED,bg:RED_BG},{l:'PALETAS',v:paletas,c:'166534',bg:GREEN_BG},{l:'CAJAS',v:cajas,c:'9A3412',bg:ORANGE_BG},{l:'SOBRES',v:sobres,c:PURPLE,bg:PURPLE_BG}].forEach(({l,v,c,bg},i)=>{
       const kx=ML+(i%4)*(KW+KGAP), ky=CTX_Y+Math.floor(i/4)*1.88;
       s3.addShape(pptx.ShapeType.roundRect,{x:kx,y:ky,w:KW,h:KH,fill:{color:bg},line:{color:c,width:.6}});
       s3.addShape(pptx.ShapeType.rect,{x:kx,y:ky,w:KW,h:.06,fill:{color:c}});
@@ -6561,7 +6561,7 @@ async function generateRevealPresentation(){
   const ov={};records.forEach(r=>{const k=`${r.orden||''}_${r.motivo||''}`;ov[k]=(ov[k]||0)+1;});
   const multiV=Object.entries(ov).filter(([,c])=>c>1).sort((a,b)=>b[1]-a[1]).slice(0,5);
   // Last 5
-  const last5=records.slice().sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||'')).slice(0,5);
+  const last5=records.slice().sort((a,b)=>(parseInt(a.viaje)||0)-(parseInt(b.viaje)||0)).slice(0,5);
 
   const transLabels=JSON.stringify(topTrans.map(([k])=>k));
   const transData=JSON.stringify(topTrans.map(([,v])=>v));
@@ -6627,7 +6627,11 @@ async function generateRevealPresentation(){
   // ── Cargar fotos para la presentación Live ──
   const liveNeedPhotos=records.filter(r=>r.photoNames?.length&&(!r.images||!r.images.length));
   for(const rec of liveNeedPhotos){ try{await loadPhotosForRec(rec);}catch(e){} }
-  const livePhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+  const livePhotoRecs=[...records].sort((a,b)=>{
+    const fd=(a.fechaInicio||'').localeCompare(b.fechaInicio||'');if(fd!==0)return fd;
+    const od=(a.orden||'').localeCompare(b.orden||'');if(od!==0)return od;
+    return (parseInt(a.viaje)||0)-(parseInt(b.viaje)||0);
+  });
   const livePhotoRecsF=livePhotoRecs.filter(r=>r.images?.length>0);
   const stCssLive={completado:'#22c55e',pendiente:'#f59e0b','en-ruta':'#3b82f6',cancelado:'#ef4444'};
   const totalLivePhotos=livePhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
@@ -6637,7 +6641,7 @@ async function generateRevealPresentation(){
 <section data-transition="fade" data-background="linear-gradient(135deg,#0a1628,#0f2340)">
   <div class="accent-line" style="margin-bottom:20px"></div>
   <h2 style="font-size:1.5em">Evidencia <span class="gold">Fotográfica</span></h2>
-  <p style="opacity:.5;margin-top:15px;font-size:.8em">${totalLivePhotos} fotografía${totalLivePhotos!==1?'s':''} · ${livePhotoRecsF.length} registros · ordenados por fecha</p>
+  <p style="opacity:.5;margin-top:15px;font-size:.8em">${totalLivePhotos} fotografía${totalLivePhotos!==1?'s':''} · ${livePhotoRecsF.length} registros · ordenados por día, orden y viaje</p>
   <div class="accent-line" style="margin-top:20px"></div>
 </section>`;
     const LPP=6;
@@ -6792,10 +6796,11 @@ async function generateRevealPresentation(){
     <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:var(--blue)">${enRuta}</div><div class="kpi-lbl">En Ruta</div></div>
     <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:var(--amber)">${pend}</div><div class="kpi-lbl">Pendientes</div></div>
   </div>
-  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);max-width:700px;margin:0 auto">
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin:0 auto">
     <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:var(--red)">${cancel}</div><div class="kpi-lbl">Cancelados</div></div>
     <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:var(--green)">${paletas}</div><div class="kpi-lbl">Paletas</div></div>
     <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:var(--amber)">${cajas}</div><div class="kpi-lbl">Cajas</div></div>
+    <div class="kpi-box fragment fade-up"><div class="kpi-val" style="color:#a78bfa">${sobres}</div><div class="kpi-lbl">Sobres</div></div>
   </div>
 </section>
 
