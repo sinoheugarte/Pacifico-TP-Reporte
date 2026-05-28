@@ -6320,7 +6320,7 @@ async function generatePPTX(){
           {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:_c()},
           {text:String(r.orden||'—'),                    options:_c()},
           {text:String(r.cliente||'—'),                  options:_t()},
-          {text:String(r.ruta||'—'),                     options:{fontSize:6,fill:bg,valign:'middle',wrap:true}},
+          {text:String(r.ruta||'—').replace(' - ','\n'),   options:{fontSize:6,fill:bg,valign:'middle',wrap:true}},
           {text:String(r.transportista||'—'),            options:_t()},
           {text:String(r.placa||'—'),                    options:_c()},
           {text:'V'+String(r.viaje||'—'),                options:_c()},
