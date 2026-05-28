@@ -6290,8 +6290,8 @@ async function generatePPTX(){
     const _hasCaj=records.some(r=>parseInt(r.cajas||0)>0);
     const _hasSob=records.some(r=>parseInt(r.sobres||0)>0);
     // Base widths — Fecha|Orden|Cliente|Ruta|Trans|Placa|Viaje|Conductor|Motivo|Estado
-    const _tblBase=[.60,.45,.80,1.90,.85,.55,.27,.80,.80,.72];
-    const _tblNum=(_hasPal?[.38]:[]).concat(_hasCaj?[.38]:[]).concat(_hasSob?[.46]:[]);
+    const _tblBase=[.60,.45,.78,1.88,.83,.54,.26,.78,.78,.72];
+    const _tblNum=(_hasPal?[.38]:[]).concat(_hasCaj?[.38]:[]).concat(_hasSob?[.66]:[]);
     const _tblRaw=[..._tblBase,..._tblNum];
     const _tblScale=CW/_tblRaw.reduce((a,v)=>a+v,0);
     const _tblW=_tblRaw.map(v=>Math.round(v*_tblScale*100)/100);
@@ -6320,7 +6320,7 @@ async function generatePPTX(){
           {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:_c()},
           {text:String(r.orden||'—'),                    options:_c()},
           {text:String(r.cliente||'—'),                  options:_t()},
-          {text:String(r.ruta||'—'),                     options:_t()},
+          {text:String(r.ruta||'—'),                     options:{fontSize:6,fill:bg,valign:'middle',wrap:true}},
           {text:String(r.transportista||'—'),            options:_t()},
           {text:String(r.placa||'—'),                    options:_c()},
           {text:'V'+String(r.viaje||'—'),                options:_c()},
