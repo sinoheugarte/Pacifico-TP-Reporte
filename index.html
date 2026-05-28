@@ -2513,7 +2513,7 @@ function downloadBlob(blob,filename){
      el foco al WebView y cause parpadeo en el overlay + touch events zombie */
   if(window.AndroidBridge&&window.AndroidBridge.isAndroidApp&&window.AndroidBridge.isAndroidApp()){
     if(downloadBlob._busy)return;
-    downloadBlob._busy=true; setTimeout(()=>{downloadBlob._busy=false;},5000);
+    downloadBlob._busy=true; setTimeout(()=>{downloadBlob._busy=false;},1000);
     const reader=new FileReader();
     reader.onloadend=function(){
       const b64=reader.result.split(',')[1];
@@ -4061,7 +4061,7 @@ function closeEM(){document.getElementById('emenu').style.display='none';documen
 function expXLSX(e){
   if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
   if(expXLSX._busy)return;
-  expXLSX._busy=true; setTimeout(()=>{expXLSX._busy=false;},5000);
+  expXLSX._busy=true; setTimeout(()=>{expXLSX._busy=false;},1000);
   closeEM();
   if(!records.length){toast('No hay registros');return;}
   const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
@@ -4120,7 +4120,7 @@ function expXLSX(e){
     toast('✓ Excel descargado con todos los registros');
   }
 }
-function expCSV(e){if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}if(expCSV._busy)return;expCSV._busy=true;setTimeout(()=>{expCSV._busy=false;},5000);closeEM();if(!records.length){toast('No hay registros');return;}
+function expCSV(e){if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}if(expCSV._busy)return;expCSV._busy=true;setTimeout(()=>{expCSV._busy=false;},1000);closeEM();if(!records.length){toast('No hay registros');return;}
   const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const rows=records.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
@@ -4146,7 +4146,7 @@ function expCSV(e){if(e){e.preventDefault();e.stopPropagation();e.stopImmediateP
 
 function expSQL(e){
   if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
-  if(expSQL._busy)return;expSQL._busy=true;setTimeout(()=>{expSQL._busy=false;},5000);
+  if(expSQL._busy)return;expSQL._busy=true;setTimeout(()=>{expSQL._busy=false;},1000);
   closeEM();
   if(!records.length){toast('No hay registros');return;}
   const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
