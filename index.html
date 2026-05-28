@@ -5999,7 +5999,7 @@ async function generatePPTX(){
     s1.addText(`Período: ${periodo}`,{x:ML+.22,y:2.85,w:7.5,h:.36,fontSize:11,color:'94A3B8'});
     s1.addShape(pptx.ShapeType.rect,{x:0,y:3.46,w:10,h:.03,fill:{color:'1E3A5F'}});
     // 4 cards centered: 4×2.2 + 3×0.27 gap, start x=0.3 → ends at 9.71
-    [[total,'OPERACIONES',0.3,AMBER],[comp,'COMPLETADAS',2.77,'22C55E'],[pctComp+'%','CUMPLIMIENTO',5.24,'60A5FA'],[(paletas+cajas),'CARGA (pal+caj)',7.71,'F472B6']].forEach(([v,l,x],idx)=>{
+    [[total,'OPERACIONES',0.3,AMBER],[comp,'COMPLETADAS',2.77,'22C55E'],[pctComp+'%','CUMPLIMIENTO',5.24,'60A5FA'],[paletas,'PALETAS',7.71,'F472B6']].forEach(([v,l,x],idx)=>{
       const c=[AMBER,'22C55E','60A5FA','F472B6'][idx];
       s1.addShape(pptx.ShapeType.rect,{x,y:3.5,w:2.2,h:1.34,fill:{color:'0A1628'},line:{color:'1E3A5F',width:.4}});
       s1.addText(String(v),{x,y:3.52,w:2.2,h:.72,fontSize:26,bold:true,color:c,align:'center'});
@@ -6034,17 +6034,18 @@ async function generatePPTX(){
     setUpStep('Indicadores Clave'); setUpBar(16);
     const s3=pptx.addSlide(); s3.background={color:BG};
     addHdr(s3,'INDICADORES CLAVE DE DESEMPEÑO',`Total: ${total} registros`); addFtr(s3,++pageN);
-    const KW=2.2, KH=1.72, KGAP=0.13;
+    const KGAP=0.13, KW3=parseFloat(((CW-2*KGAP)/3).toFixed(2)), KH3=1.30, KSTEP3=1.46;
     [{l:'TOTAL REPORTES',v:total,c:BLUE,bg:BLUE_BG},{l:'COMPLETADOS',v:comp,c:GREEN,bg:GREEN_BG},{l:'EN RUTA',v:enRuta,c:'1E40AF',bg:'DBEAFE'},{l:'% CUMPLIMIENTO',v:pctComp+'%',c:PURPLE,bg:PURPLE_BG},{l:'PENDIENTES',v:pend,c:ORANGE,bg:ORANGE_BG},{l:'CANCELADOS',v:cancel,c:RED,bg:RED_BG},{l:'PALETAS',v:paletas,c:'166534',bg:GREEN_BG},{l:'CAJAS',v:cajas,c:'9A3412',bg:ORANGE_BG},{l:'SOBRES',v:sobres,c:PURPLE,bg:PURPLE_BG}].forEach(({l,v,c,bg},i)=>{
-      const kx=ML+(i%4)*(KW+KGAP), ky=CTX_Y+Math.floor(i/4)*1.88;
-      s3.addShape(pptx.ShapeType.roundRect,{x:kx,y:ky,w:KW,h:KH,fill:{color:bg},line:{color:c,width:.6}});
-      s3.addShape(pptx.ShapeType.rect,{x:kx,y:ky,w:KW,h:.06,fill:{color:c}});
-      s3.addText(String(v),{x:kx,y:ky+.18,w:KW,h:.88,fontSize:36,bold:true,color:c,align:'center'});
-      s3.addText(l,{x:kx,y:ky+1.22,w:KW,h:.38,fontSize:7.5,bold:true,color:c,align:'center'});
+      const kx=ML+(i%3)*(KW3+KGAP), ky=CTX_Y+Math.floor(i/3)*KSTEP3;
+      s3.addShape(pptx.ShapeType.roundRect,{x:kx,y:ky,w:KW3,h:KH3,fill:{color:bg},line:{color:c,width:.6}});
+      s3.addShape(pptx.ShapeType.rect,{x:kx,y:ky,w:KW3,h:.06,fill:{color:c}});
+      s3.addText(String(v),{x:kx,y:ky+.10,w:KW3,h:.70,fontSize:32,bold:true,color:c,align:'center'});
+      s3.addText(l,{x:kx,y:ky+.88,w:KW3,h:.34,fontSize:7,bold:true,color:c,align:'center'});
     });
-    s3.addShape(pptx.ShapeType.roundRect,{x:ML,y:CTX_Y+3.88,w:CW,h:.18,fill:{color:'E2E8F0'},line:{color:'E2E8F0'}});
-    if(pctComp>0) s3.addShape(pptx.ShapeType.roundRect,{x:ML,y:CTX_Y+3.88,w:CW*pctComp/100,h:.18,fill:{color:GREEN},line:{color:GREEN}});
-    s3.addText(`Tasa de cumplimiento global: ${pctComp}%`,{x:ML,y:CTX_Y+4.1,w:CW,h:.22,fontSize:8,bold:true,color:GREEN,align:'center'});
+    const _kpiBot=CTX_Y+3*KSTEP3;
+    s3.addShape(pptx.ShapeType.roundRect,{x:ML,y:_kpiBot,w:CW,h:.18,fill:{color:'E2E8F0'},line:{color:'E2E8F0'}});
+    if(pctComp>0) s3.addShape(pptx.ShapeType.roundRect,{x:ML,y:_kpiBot,w:CW*pctComp/100,h:.18,fill:{color:GREEN},line:{color:GREEN}});
+    s3.addText(`Tasa de cumplimiento global: ${pctComp}%`,{x:ML,y:_kpiBot+.22,w:CW,h:.22,fontSize:8,bold:true,color:GREEN,align:'center'});
 
     // ══ SLIDE 4 — ESTADO (native doughnut) ══
     setUpStep('Estado de Operaciones'); setUpBar(23);
@@ -6283,52 +6284,55 @@ async function generatePPTX(){
 
     // ══ TABLA DE REGISTROS ══
     setUpStep('Tabla de Registros'); setUpBar(70);
-    const recsPerSlide=10, tblSlides=Math.ceil(records.length/recsPerSlide);
+    const recsPerSlide=9, tblSlides=Math.ceil(records.length/recsPerSlide);
     // Detectar columnas numéricas con datos reales
     const _hasPal=records.some(r=>parseInt(r.paletas||0)>0);
     const _hasCaj=records.some(r=>parseInt(r.cajas||0)>0);
     const _hasSob=records.some(r=>parseInt(r.sobres||0)>0);
-    // Base widths para 10 columnas fijas (Fecha|Orden|Cliente|Ruta|Trans|Placa|Viaje|Conductor|Motivo|Estado)
-    const _tblBase=[.68,.38,.88,1.72,.82,.46,.36,.88,.82,.58];
-    const _tblNum=(_hasPal?[.44]:[]).concat(_hasCaj?[.44]:[]).concat(_hasSob?[.44]:[]);
+    // Base widths — Fecha|Orden|Cliente|Ruta|Trans|Placa|Viaje|Conductor|Motivo|Estado
+    const _tblBase=[.60,.30,.88,2.10,.90,.42,.32,.88,.88,.56];
+    const _tblNum=(_hasPal?[.38]:[]).concat(_hasCaj?[.38]:[]).concat(_hasSob?[.38]:[]);
     const _tblRaw=[..._tblBase,..._tblNum];
     const _tblScale=CW/_tblRaw.reduce((a,v)=>a+v,0);
     const _tblW=_tblRaw.map(v=>Math.round(v*_tblScale*100)/100);
     const stC={completado:'22C55E',pendiente:'F59E0B','en-ruta':'3B82F6',cancelado:'EF4444'};
+    const _shr={shrinkText:true};
     for(let si=0;si<tblSlides;si++){
       const recs=records.slice(si*recsPerSlide,(si+1)*recsPerSlide);
       const st=pptx.addSlide(); st.background={color:BG};
       addHdr(st,'TABLA DE REGISTROS OPERATIVOS',`Pág. ${si+1}/${tblSlides}  ·  ${total} registros`); addFtr(st,++pageN);
-      const _hOpt={bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6};
+      const _hOpt={bold:true,color:WHITE,fill:NAVY,align:'center',fontSize:6,shrinkText:true};
       const _hdrRow=[
         {text:'Fecha',         options:_hOpt},{text:'Orden',        options:_hOpt},
         {text:'Cliente',       options:_hOpt},{text:'Ruta',         options:_hOpt},
         {text:'Transportista', options:_hOpt},{text:'Placa',        options:_hOpt},
         {text:'Viaje',         options:_hOpt},{text:'Conductor',    options:_hOpt},
         {text:'Motivo',        options:_hOpt},{text:'Estado',       options:_hOpt},
-        ...(_hasPal?[{text:'Paletas',options:_hOpt}]:[]),
-        ...(_hasCaj?[{text:'Cajas',  options:_hOpt}]:[]),
-        ...(_hasSob?[{text:'Sobres', options:_hOpt}]:[]),
+        ...(_hasPal?[{text:'Pal.',options:_hOpt}]:[]),
+        ...(_hasCaj?[{text:'Caj.',options:_hOpt}]:[]),
+        ...(_hasSob?[{text:'Sob.',options:_hOpt}]:[]),
       ];
       st.addTable([_hdrRow,...recs.map((r,ri)=>{
         const bg=ri%2===0?WHITE:'F1F5F9', sc=stC[(r.status||'').toLowerCase()]||T1;
+        const _c=(extra={})=>({fontSize:6,fill:bg,align:'center',valign:'middle',..._shr,...extra});
+        const _t=(extra={})=>({fontSize:6,fill:bg,valign:'middle',wrap:true,..._shr,...extra});
         const _row=[
-          {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.orden||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.cliente||'—'),                  options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
-          {text:String(r.ruta||'—'),                     options:{fontSize:6,fill:bg,valign:'middle',wrap:true,shrinkText:true}},
-          {text:String(r.transportista||'—'),            options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
-          {text:String(r.placa||'—'),                    options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:'V'+String(r.viaje||'—'),               options:{fontSize:6,fill:bg,align:'center',valign:'middle'}},
-          {text:String(r.conductor||'—'),                options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
-          {text:String(r.motivo||'—'),                   options:{fontSize:6,fill:bg,valign:'middle',shrinkText:true}},
-          {text:String(r.status||'—'),                   options:{fontSize:6,bold:true,color:sc,fill:bg,align:'center',valign:'middle'}},
-          ...(_hasPal?[{text:String(r.paletas||'0'),options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
-          ...(_hasCaj?[{text:String(r.cajas||'0'),  options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
-          ...(_hasSob?[{text:String(r.sobres||'0'), options:{fontSize:6,fill:bg,align:'center',valign:'middle'}}]:[]),
+          {text:formatDateToDDMMYYYY(r.fechaInicio)||'—',options:_c()},
+          {text:String(r.orden||'—'),                    options:_c()},
+          {text:String(r.cliente||'—'),                  options:_t()},
+          {text:String(r.ruta||'—'),                     options:_t()},
+          {text:String(r.transportista||'—'),            options:_t()},
+          {text:String(r.placa||'—'),                    options:_c()},
+          {text:'V'+String(r.viaje||'—'),                options:_c()},
+          {text:String(r.conductor||'—'),                options:_t()},
+          {text:String(r.motivo||'—'),                   options:_t()},
+          {text:String(r.status||'—'),                   options:_c({bold:true,color:sc})},
+          ...(_hasPal?[{text:String(r.paletas||'0'),options:_c()}]:[]),
+          ...(_hasCaj?[{text:String(r.cajas||'0'),  options:_c()}]:[]),
+          ...(_hasSob?[{text:String(r.sobres||'0'), options:_c()}]:[]),
         ];
         return _row;
-      })],{x:ML,y:CTX_Y,w:CW,colW:_tblW,fontSize:6,border:{pt:.3,color:BORDER},rowH:.34});
+      })],{x:ML,y:CTX_Y,w:CW,colW:_tblW,fontSize:6,border:{pt:.3,color:BORDER},rowH:.42});
     }
 
     // ══ SECCIÓN FOTOGRÁFICA ══
@@ -6342,7 +6346,11 @@ async function generatePPTX(){
     }
     setUpStep('Sección fotográfica'); setUpBar(85);
     const isMobilePptx=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const pptPhotoRecs=[...records].sort((a,b)=>(a.fechaInicio||'')>(b.fechaInicio||'')?1:-1);
+    const pptPhotoRecs=[...records].sort((a,b)=>{
+      const fd=(a.fechaInicio||'').localeCompare(b.fechaInicio||'');if(fd!==0)return fd;
+      const od=(a.orden||'').localeCompare(b.orden||'');if(od!==0)return od;
+      return (parseInt(a.viaje)||0)-(parseInt(b.viaje)||0);
+    });
     const pptPhotoRecsF=pptPhotoRecs.filter(r=>r.images?.length>0);
     if(pptPhotoRecsF.length>0){
       const totalPptPhotos=pptPhotoRecsF.reduce((s,r)=>s+(r.images?.length||0),0);
@@ -6381,8 +6389,15 @@ async function generatePPTX(){
             const px=ML+col*(pW+pGapX);
             const py=photoAreaY+row*(pH+pGapY);
             let imgData=batch[i];
-            if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,900,0.82);}catch(e){}
-            try{ ps.addImage({data:imgData,x:px,y:py,w:pW,h:pH,sizing:{type:'contain',w:pW,h:pH}}); }catch(e){console.warn('PPTX photo:',e);}
+            if(isMobilePptx) try{imgData=await resizeDataUrl(imgData,1200,1200,0.82);}catch(e){}
+            try{
+              const _d=await new Promise(res=>{const _i=new Image();_i.onload=()=>res([_i.naturalWidth,_i.naturalHeight]);_i.onerror=()=>res([4,3]);_i.src=imgData;});
+              const _r=_d[0]/_d[1], _cr=pW/pH;
+              let dW=pW,dH=pH,dX=px,dY=py;
+              if(_r<_cr){dH=pH;dW=dH*_r;dX=px+(pW-dW)/2;}
+              else{dW=pW;dH=dW/_r;dY=py+(pH-dH)/2;}
+              ps.addImage({data:imgData,x:dX,y:dY,w:dW,h:dH});
+            }catch(e){console.warn('PPTX photo:',e);}
           }
         }
       }
