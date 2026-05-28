@@ -6290,7 +6290,9 @@ async function generatePPTX(){
     const _hasCaj=records.some(r=>parseInt(r.cajas||0)>0);
     const _hasSob=records.some(r=>parseInt(r.sobres||0)>0);
     // Base widths — Fecha|Orden|Cliente|Ruta|Trans|Placa|Viaje|Conductor|Motivo|Estado
-    const _tblBase=[.60,.45,.78,1.76,.83,.54,.38,.78,.78,.72];
+    // RUTA: ancho dinámico según la parte más larga (origen o destino) entre los datos reales
+    const _rutaBase=Math.round(Math.min(Math.max(records.reduce((mx,r)=>{const p=(r.ruta||'').split(' - ');return Math.max(mx,...p.map(s=>s.length));},8)*0.056,1.2),2.8)*100)/100;
+    const _tblBase=[.60,.45,.78,_rutaBase,.83,.54,.38,.78,.78,.72];
     const _tblNum=(_hasPal?[.38]:[]).concat(_hasCaj?[.38]:[]).concat(_hasSob?[.66]:[]);
     const _tblRaw=[..._tblBase,..._tblNum];
     const _tblScale=CW/_tblRaw.reduce((a,v)=>a+v,0);
