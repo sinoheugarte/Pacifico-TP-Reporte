@@ -2512,6 +2512,8 @@ function downloadBlob(blob,filename){
   /* En Android APK usar el bridge nativo para evitar que a.click() robe
      el foco al WebView y cause parpadeo en el overlay + touch events zombie */
   if(window.AndroidBridge&&window.AndroidBridge.isAndroidApp&&window.AndroidBridge.isAndroidApp()){
+    if(downloadBlob._busy)return;
+    downloadBlob._busy=true; setTimeout(()=>{downloadBlob._busy=false;},5000);
     const reader=new FileReader();
     reader.onloadend=function(){
       const b64=reader.result.split(',')[1];
@@ -4108,7 +4110,7 @@ function expXLSX(){
   XLSX.writeFile(wb,`ReporteTransporte_${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('✓ Excel descargado con todos los registros');
 }
-function expCSV(){closeEM();if(!records.length){toast('No hay registros');return;}
+function expCSV(){if(expCSV._busy)return;expCSV._busy=true;setTimeout(()=>{expCSV._busy=false;},5000);closeEM();if(!records.length){toast('No hay registros');return;}
   const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
   const rows=records.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
@@ -4133,6 +4135,7 @@ function expCSV(){closeEM();if(!records.length){toast('No hay registros');return
 }
 
 function expSQL(){
+  if(expSQL._busy)return;expSQL._busy=true;setTimeout(()=>{expSQL._busy=false;},5000);
   closeEM();
   if(!records.length){toast('No hay registros');return;}
   const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
