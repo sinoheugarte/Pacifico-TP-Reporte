@@ -2690,7 +2690,33 @@ function setPhotoStorage(mode){
 
 async function spSaveJson(){
   const driveId = await ensureSPDrive();
-  const cloudRecords = records.map(r=>{const c={...r};delete c.images;return c;});
+  let cloudRecords = records.map(r=>{const c={...r};delete c.images;return c;});
+
+  /* Read-merge-write: antes de escribir, leer la versión actual de SP y fusionar
+     photoNames para que dos usuarios editando el mismo registro no se pierdan
+     las fotos subidas por el otro. El merge es unión (nunca se reduce photoNames). */
+  try{
+    const item = await gGet(`drives/${driveId}/root:/${encodeGraphPath(OD_ROOT+'/'+OD_JSON)}?$select=@microsoft.graph.downloadUrl`);
+    const dlUrl = item['@microsoft.graph.downloadUrl'];
+    const res = await fetch(dlUrl + (dlUrl.includes('?')? '&':'?') + 't=' + Date.now());
+    if(res.ok){
+      const spData = await res.json();
+      if(Array.isArray(spData)){
+        const spMap = {};
+        spData.forEach(r => { spMap[r.id] = r; });
+        cloudRecords = cloudRecords.map(r => {
+          const sp = spMap[r.id];
+          if(!sp) return r;
+          const localNames = Array.isArray(r.photoNames) ? r.photoNames : [];
+          const spNames   = Array.isArray(sp.photoNames) ? sp.photoNames : [];
+          const merged    = [...new Set([...localNames, ...spNames])];
+          if(merged.length === localNames.length) return r;
+          return {...r, photoNames: merged, photoCount: merged.length};
+        });
+      }
+    }
+  }catch(e){ console.warn('spSaveJson merge:', e.message); }
+
   await withRetry(async()=>{
     const tk = await freshToken();
     const r = await fetch(
