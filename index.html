@@ -3470,7 +3470,7 @@ function newRecord(){
   const todayEl=document.getElementById('f-fechaInicio');
   if(todayEl) todayEl.value=_hoy;
   renderIG();setEl('iStatus','');_unlockForm();showScr('form');
-  setTimeout(()=>{ clearSig(); initSigPad(); captureGPS(); },180);
+  setTimeout(()=>{ clearSig(); initSigPad(); _sigCleared=false; captureGPS(); },180);
 }
 function cancelForm(){clearSig();_currentGPS=null;showScr('list');}
 function fv(k){const e=document.getElementById('f-'+k);return e?e.value.trim():'';}
@@ -3686,7 +3686,8 @@ async function saveRecord(){
   // Firma digital
   const _sigData=getSigData();
   if(_sigData){rec.signatureData=_sigData;rec.signedAt=new Date().toISOString();rec.signedBy=user?.email||'';}
-  else if(existingRec?.signatureData){rec.signatureData=existingRec.signatureData;rec.signedAt=existingRec.signedAt;rec.signedBy=existingRec.signedBy;}
+  else if(!_sigCleared&&existingRec?.signatureData){rec.signatureData=existingRec.signatureData;rec.signedAt=existingRec.signedAt;rec.signedBy=existingRec.signedBy;}
+  // Si _sigCleared=true y no hay nueva firma → no se copia la anterior (borrado intencional)
 
   /* Save orig values BEFORE pushToOneDrive overwrites the record */
   const origValues = existingRec ? {
@@ -3949,7 +3950,7 @@ async function editRec(id){
     if(r.horaTermino) calcTurno('Termino');
     renderIG();
     setEl('iStatus', formImgs.length ? `${formImgs.length} foto${formImgs.length!==1?'s':''} (${formImgs.filter(f=>f.isOld).length} existente${formImgs.filter(f=>f.isOld).length!==1?'s':''})` : '');
-    clearSig(); initSigPad();
+    clearSig(); initSigPad(); _sigCleared=false;
     if(r.signatureData && _sigPad){
       _sigPad.fromDataURL(r.signatureData).then(()=>{
         document.getElementById('signature-pad-wrap')?.classList.add('sig-done');
@@ -8336,7 +8337,7 @@ function captureGPS(){
 /* ════════════════════════════════════════════════════════
    FIRMA DIGITAL — signature_pad
 ════════════════════════════════════════════════════════ */
-let _sigPad=null;
+let _sigPad=null, _sigCleared=false;
 function initSigPad(){
   const canvas=document.getElementById('signature-pad');
   if(!canvas||!window.SignaturePad)return;
@@ -8355,6 +8356,7 @@ function initSigPad(){
 }
 function clearSig(){
   if(_sigPad)_sigPad.clear();
+  _sigCleared=true;
   document.getElementById('signature-pad-wrap')?.classList.remove('sig-done');
   const st=document.getElementById('sig-status');if(st)st.textContent='';
   document.getElementById('dot-firma')?.classList.remove('has');
