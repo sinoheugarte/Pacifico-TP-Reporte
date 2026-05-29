@@ -782,6 +782,13 @@ body.has-pending .pending-dot{display:inline-block}
 .users-tbl td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
 .users-tbl tr:last-child td{border-bottom:none}
 .rol-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.stor-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.stor-badge.sp{background:#d1fae5;color:#065f46}
+.stor-badge.od{background:#fee2e2;color:#991b1b}
+.stor-badge.unk{background:#f1f5f9;color:#64748b}
+[data-theme="dark"] .stor-badge.sp{background:#022c22;color:#6ee7b7}
+[data-theme="dark"] .stor-badge.od{background:#450a0a;color:#fca5a5}
+[data-theme="dark"] .stor-badge.unk{background:#1e293b;color:#94a3b8}
 .rol-badge.admin{background:#fef3c7;color:#92400e}
 .rol-badge.supervisor{background:#dbeafe;color:#1e40af}
 .rol-badge.conductor{background:#d1fae5;color:#065f46}
@@ -2056,7 +2063,7 @@ body.has-pending .pending-dot{display:inline-block}
       <table class="users-tbl">
         <thead>
           <tr>
-            <th>Nombre</th><th>Apellidos</th><th>Email</th><th>DNI</th><th>Empresa</th><th>Rol</th><th></th>
+            <th>Nombre</th><th>Apellidos</th><th>Email</th><th>DNI</th><th>Empresa</th><th>Rol</th><th>Almacenamiento</th><th></th>
           </tr>
         </thead>
         <tbody id="users-tbody"></tbody>
@@ -2374,6 +2381,7 @@ async function signIn(){
     await setupOneDrive();
     await loadRecordsFromOD();
     loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
+    _syncUserStorageCfg().catch(()=>{});
     showScr('list');
     history.replaceState({_appRoot:true},'');
     for(var _hi=0;_hi<15;_hi++) history.pushState({_appRoot:true},'');
@@ -2419,6 +2427,7 @@ async function _handleRedirectCallback(){
     await setupOneDrive();
     await loadRecordsFromOD();
     loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
+    _syncUserStorageCfg().catch(()=>{});
     showScr('list');
     checkLiveHash();
     return true;
@@ -2466,6 +2475,7 @@ async function tryAutoLogin(){
     await setupOneDrive();
     await loadRecordsFromOD();
     loadClientesFromSP().then(()=>{populateClienteSelect();}).catch(()=>{});
+    _syncUserStorageCfg().catch(()=>{});
     showScr('list');
     checkLiveHash();
     return true;
@@ -8630,6 +8640,24 @@ async function pushUsersSP(){
   await gPut(`${basePath}:/content`,content,'application/json');
 }
 
+/* Registra la configuración de almacenamiento del usuario actual en _sysUsers
+   y sube al SharePoint compartido para que el admin pueda verla. */
+async function _syncUserStorageCfg(){
+  if(!user?.email||!cfg)return;
+  try{
+    await loadUsersFromSP();
+    const idx=_sysUsers.findIndex(u=>(u.email||'').toLowerCase()===(user.email||'').toLowerCase());
+    if(idx<0)return; // usuario no registrado en el sistema
+    _sysUsers[idx].storageInfo={
+      dbStorage:   cfg.dbStorage    ||'sp',
+      photoStorage:cfg.photoStorage ||'sp',
+      lastSeen:    new Date().toISOString()
+    };
+    localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
+    await pushUsersSP();
+  }catch(e){console.warn('_syncUserStorageCfg:',e.message);}
+}
+
 function startUsersAutoRefresh(){
   clearInterval(_usersRefInterval);
   _usersRefInterval=setInterval(()=>{
@@ -8664,6 +8692,22 @@ function renderUsersScreen(){
   });
   tbody.innerHTML=sorted.map((u,i)=>{
     const origIdx=_sysUsers.indexOf(u);
+    const si=u.storageInfo||{};
+    const db=si.dbStorage||'';
+    const ps=si.photoStorage||'';
+    const seen=si.lastSeen?new Date(si.lastSeen).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+    let storCell;
+    if(!db&&!ps){
+      storCell=`<span class="stor-badge unk" title="Nunca ha iniciado sesión">Sin datos</span>`;
+    }else{
+      const dbBadge=db==='sp'
+        ?`<span class="stor-badge sp" title="Base de datos en SharePoint compartido">📋 SP</span>`
+        :`<span class="stor-badge od" title="Base de datos en OneDrive personal — registros no visibles para otros">⚠ OD</span>`;
+      const psBadge=ps==='sp'
+        ?`<span class="stor-badge sp" title="Fotos en SharePoint compartido">📷 SP</span>`
+        :`<span class="stor-badge od" title="Fotos en OneDrive personal — no visibles para otros">⚠ OD</span>`;
+      storCell=`<div style="display:flex;flex-direction:column;gap:3px">${dbBadge}${psBadge}${seen?`<span style="font-size:9px;color:var(--text2)">Visto: ${seen}</span>`:''}</div>`;
+    }
     return `<tr>
     <td>${esc(u.nombre)}</td>
     <td>${esc(u.apellidos)}</td>
@@ -8671,6 +8715,7 @@ function renderUsersScreen(){
     <td>${esc(u.dni)}</td>
     <td>${esc(u.empresa)}</td>
     <td><span class="rol-badge ${esc(u.rol||'conductor')}">${esc(u.rol||'conductor')}</span></td>
+    <td>${storCell}</td>
     <td style="white-space:nowrap">
       <button class="btn-usr-edit" onclick="openUserModal(${origIdx})">Editar</button>
       <button class="btn-usr-del" onclick="deleteUser(${origIdx})">Eliminar</button>
