@@ -3064,11 +3064,6 @@ async function loadPhotosForRec(rec) {
   rec.images = [];
   rec._photosPrivate = false;
 
-  if (!rec.photoNames || rec.photoNames.length === 0) {
-    console.warn('No photoNames saved for record:', rec.id);
-    return;
-  }
-
   /* Backward compat: registros sin campo usan 'sp' (igual que cfg default).
      Si storage='od' y es de otro usuario: intentar SharePoint primero.
      Caso típico: registros guardados antes de que existiera el campo, o
@@ -3082,7 +3077,35 @@ async function loadPhotosForRec(rec) {
   let driveId = null;
   if(useSP) try{ driveId = await ensureSPDrive(); }catch(e){ console.warn('ensureSPDrive:', e); }
 
-  for (const fname of rec.photoNames) {
+  /* Cuando cargamos desde SharePoint, enumerar la carpeta real para capturar
+     fotos subidas por otros usuarios que no quedaron en photoNames del JSON. */
+  let filesToLoad = Array.isArray(rec.photoNames) ? [...rec.photoNames] : [];
+  if(useSP && driveId && filesToLoad.length > 0){
+    try{
+      const tk = await freshToken();
+      const listUrl = `${GRAPH}/drives/${driveId}/root:/${encodeGraphPath(folderPath)}:/children?$select=name&$top=200`;
+      const listRes = await fetch(listUrl, {headers:{Authorization:`Bearer ${tk}`}});
+      if(listRes.ok){
+        const listData = await listRes.json();
+        const spNames = (listData.value||[]).map(f=>f.name).filter(n=>/\.(jpg|jpeg|png|gif|webp|heic|pdf)$/i.test(n));
+        // Unión: photoNames + archivos encontrados en SP (sin duplicados)
+        const merged = [...new Set([...filesToLoad, ...spNames])];
+        if(merged.length !== filesToLoad.length){
+          filesToLoad = merged;
+          // Actualizar photoNames y photoCount en el registro local
+          rec.photoNames = filesToLoad;
+          rec.photoCount = filesToLoad.length;
+        }
+      }
+    }catch(e){ console.warn('SP folder enum:', e.message); }
+  }
+
+  if(filesToLoad.length === 0){
+    console.warn('No photoNames saved for record:', rec.id);
+    return;
+  }
+
+  for (const fname of filesToLoad) {
     try {
       const filePath = `${folderPath}/${fname}`;
       const tk  = await freshToken();
