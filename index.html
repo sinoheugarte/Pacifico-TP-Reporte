@@ -4865,9 +4865,9 @@ var _efm={type:'pdf',state:{},dateMode:'list',dateFrom:'',dateTo:'',primaryField
 var _EFM_FIELDS=[
   {id:'orden',label:'📋 Número de Orden',key:'orden'},
   {id:'fecha',label:'📅 Fecha de Inicio',key:'fechaInicio',isDate:true},
-  {id:'cliente',label:'🏢 Cliente',key:'cliente',getVals:function(){return (_clientes||[]).map(function(c){return c.razonSocial||'';}).filter(Boolean).sort();}},
+  {id:'cliente',label:'🏢 Cliente',key:'cliente'},
   {id:'motivo',label:'🚚 Motivo de Traslado',key:'motivo'},
-  {id:'transportista',label:'👤 Transportista',key:'transportista',getVals:function(){return (_transportistaDB.empresas||[]).map(function(e){return e.razonSocial||'';}).filter(Boolean).sort();}},
+  {id:'transportista',label:'👤 Transportista',key:'transportista'},
   {id:'placa',label:'🚗 Placa',key:'placa'},
   {id:'conductor',label:'🧑‍✈️ Conductor',key:'conductor'},
   {id:'ruta',label:'🗺️ Ruta',key:'ruta'},
@@ -4884,6 +4884,8 @@ function showExportFilter(type){
   _efm.dateFrom='';
   _efm.dateTo='';
   _efm.primaryField=null;
+  // Sincronizar datos frescos en background antes de mostrar el filtro
+  loadRecordsFromOD().catch(()=>{}).finally(()=>{_efmBuild();_efmUpdateCount();});
   _efmBuild();
   _efmUpdateCount();
   document.getElementById('efm-gen-btn').textContent=_EFM_TYPE_LABELS[type]||'Generar';
