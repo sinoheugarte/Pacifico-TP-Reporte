@@ -9204,23 +9204,27 @@ function renderUsersScreen(){
   const isSup=userRole==='supervisor';
   const lbl=document.getElementById('users-admin-label');
   if(lbl) lbl.textContent=(isSup?'Supervisor: ':'Admin: ')+(user?.name||user?.email||'Administrador');
-  // Ocultar tab Permisos y botón agregar usuario para supervisor
+  // Ocultar tab Permisos para supervisor; mostrar botón añadir (puede crear conductores)
   const permTab=document.getElementById('utab-perms');
   if(permTab) permTab.style.display=isSup?'none':'';
   const addUserBtn=document.getElementById('btn-add-user');
-  if(addUserBtn) addUserBtn.style.display=isSup?'none':'';
+  if(addUserBtn) addUserBtn.style.display='';
   const logoutWrap=document.querySelector('#scr-users .admin-logout-wrap');
   if(logoutWrap) logoutWrap.style.display=isSup?'none':'';
   const tbody=document.getElementById('users-tbody');
   const empty=document.getElementById('users-empty');
   if(!tbody)return;
-  if(!_sysUsers.length){
+  // Supervisor solo ve usuarios con rol conductor
+  const visibleUsers=isSup
+    ?_sysUsers.filter(u=>(u.rol||'conductor').toLowerCase()==='conductor')
+    :_sysUsers;
+  if(!visibleUsers.length){
     tbody.innerHTML='';
     if(empty)empty.style.display='';
     return;
   }
   if(empty)empty.style.display='none';
-  const sorted=[..._sysUsers].sort((a,b)=>{
+  const sorted=[...visibleUsers].sort((a,b)=>{
     const ka=((a.nombre||'')+' '+(a.apellidos||'')).toLowerCase();
     const kb=((b.nombre||'')+' '+(b.apellidos||'')).toLowerCase();
     return ka.localeCompare(kb,'es');
