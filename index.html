@@ -8897,6 +8897,7 @@ async function loadUserRole(){
     if(found?.rol){
       userRole=found.rol.toLowerCase();
       if(userRole==='admin'&&!_adminMode) enterAdminMode();
+      else if(userRole==='supervisor') enterSupervisorMode();
       renderUserCard();
       applyRoleRestrictions();
     }
@@ -8958,6 +8959,16 @@ function enterAdminMode(){
   if(nbT)nbT.style.display='';
   const nbM=document.getElementById('nb-mapa');
   if(nbM)nbM.style.display='';
+  loadTransportista();
+  loadSysUsers().catch(()=>{});
+  loadClientesFromSP().catch(()=>{});
+}
+
+function enterSupervisorMode(){
+  const nb=document.getElementById('nb-users');
+  if(nb)nb.style.display='';
+  const nbT=document.getElementById('nb-transportista');
+  if(nbT)nbT.style.display='';
   loadTransportista();
   loadSysUsers().catch(()=>{});
   loadClientesFromSP().catch(()=>{});
@@ -9190,10 +9201,16 @@ function stopUsersAutoRefresh(){
 }
 
 function renderUsersScreen(){
+  const isSup=userRole==='supervisor';
   const lbl=document.getElementById('users-admin-label');
-  if(lbl){
-    if(lbl) lbl.textContent='Admin: '+(user?.name||user?.email||'Administrador');
-  }
+  if(lbl) lbl.textContent=(isSup?'Supervisor: ':'Admin: ')+(user?.name||user?.email||'Administrador');
+  // Ocultar tab Permisos y botón agregar usuario para supervisor
+  const permTab=document.getElementById('utab-perms');
+  if(permTab) permTab.style.display=isSup?'none':'';
+  const addUserBtn=document.getElementById('btn-add-user');
+  if(addUserBtn) addUserBtn.style.display=isSup?'none':'';
+  const logoutWrap=document.querySelector('#scr-users .admin-logout-wrap');
+  if(logoutWrap) logoutWrap.style.display=isSup?'none':'';
   const tbody=document.getElementById('users-tbody');
   const empty=document.getElementById('users-empty');
   if(!tbody)return;
@@ -9236,7 +9253,7 @@ function renderUsersScreen(){
     <td>${storCell}</td>
     <td style="white-space:nowrap">
       <button class="btn-usr-edit" onclick="openUserModal(${origIdx})">Editar</button>
-      <button class="btn-usr-del" onclick="deleteUser(${origIdx})">Eliminar</button>
+      ${!isSup?`<button class="btn-usr-del" onclick="deleteUser(${origIdx})">Eliminar</button>`:''}
     </td>
   </tr>`;
   }).join('');
@@ -9266,7 +9283,14 @@ function openUserModal(idx){
   document.getElementById('um-dni').value=u.dni||'';
   _populateUmEmpresa();
   document.getElementById('um-empresa').value=u.empresa||'';
-  document.getElementById('um-rol').value=u.rol||'conductor';
+  const rolSel=document.getElementById('um-rol');
+  if(userRole==='supervisor'){
+    rolSel.innerHTML='<option value="conductor">Conductor</option>';
+    rolSel.value='conductor';
+  }else{
+    rolSel.innerHTML='<option value="conductor">Conductor</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option>';
+    rolSel.value=u.rol||'conductor';
+  }
   document.getElementById('user-modal-ov').classList.add('on');
   setTimeout(()=>document.getElementById('um-nombre').focus(),100);
 }
@@ -9916,6 +9940,7 @@ function applyRoleRestrictions(){
 }
 
 function switchUsersTab(tab){
+  if(userRole==='supervisor'&&tab==='perms') return;
   document.getElementById('utab-content-users').style.display=tab==='users'?'':'none';
   document.getElementById('utab-content-clientes').style.display=tab==='clientes'?'':'none';
   document.getElementById('utab-content-perms').style.display=tab==='perms'?'':'none';
