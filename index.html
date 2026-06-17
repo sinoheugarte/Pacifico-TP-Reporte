@@ -9225,9 +9225,6 @@ function renderUsersScreen(){
   if(permTab) permTab.style.display=isSup?'none':'';
   const addUserBtn=document.getElementById('btn-add-user');
   if(addUserBtn) addUserBtn.style.display='';
-  // Importar masivo solo disponible para admin (no supervisor)
-  document.getElementById('btn-tpl-user')?.style.setProperty('display',isSup?'none':'');
-  document.getElementById('btn-imp-user')?.style.setProperty('display',isSup?'none':'');
   const logoutWrap=document.querySelector('#scr-users .admin-logout-wrap');
   if(logoutWrap) logoutWrap.style.display=isSup?'none':'';
   const tbody=document.getElementById('users-tbody');
