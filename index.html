@@ -2122,7 +2122,13 @@ body.has-pending .pending-dot{display:inline-block}
     </div>
     <div class="users-hdr-actions" id="users-hdr-actions">
       <button class="btn-usr-add" id="btn-add-user" onclick="openUserModal()">+ Añadir</button>
+      <button class="btn-usr-add" id="btn-tpl-user" onclick="downloadImportTemplate('usuarios')" title="Descargar plantilla Excel" style="background:#065f46">📋 Plantilla</button>
+      <button class="btn-usr-add" id="btn-imp-user" onclick="document.getElementById('imp-file-usuarios').click()" title="Importar desde Excel" style="background:#1e40af">📥 Importar</button>
+      <input type="file" id="imp-file-usuarios" accept=".xlsx,.xls" style="display:none" onchange="importFromExcel('usuarios',this)">
       <button class="btn-usr-add" id="btn-add-cliente" style="display:none" onclick="openClienteModal()">+ Añadir</button>
+      <button class="btn-usr-add" id="btn-tpl-cliente" style="display:none" onclick="downloadImportTemplate('clientes')" title="Descargar plantilla Excel" style="background:#065f46">📋 Plantilla</button>
+      <button class="btn-usr-add" id="btn-imp-cliente" style="display:none" onclick="document.getElementById('imp-file-clientes').click()" title="Importar desde Excel" style="background:#1e40af">📥 Importar</button>
+      <input type="file" id="imp-file-clientes" accept=".xlsx,.xls" style="display:none" onchange="importFromExcel('clientes',this)">
     </div>
   </div>
   <!-- Tabs -->
@@ -2205,7 +2211,12 @@ body.has-pending .pending-dot{display:inline-block}
   <div id="trtab-content-empresa">
     <div class="users-hdr" style="padding:10px 16px 6px">
       <div style="font-size:12px;color:var(--text2)">Empresas transportistas registradas</div>
-      <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openEmpresaModal()">+ Añadir</button></div>
+      <div class="users-hdr-actions">
+        <button class="btn-usr-add" onclick="openEmpresaModal()">+ Añadir</button>
+        <button class="btn-usr-add" onclick="downloadImportTemplate('empresas')" title="Descargar plantilla Excel" style="background:#065f46">📋 Plantilla</button>
+        <button class="btn-usr-add" onclick="document.getElementById('imp-file-empresas').click()" title="Importar desde Excel" style="background:#1e40af">📥 Importar</button>
+        <input type="file" id="imp-file-empresas" accept=".xlsx,.xls" style="display:none" onchange="importFromExcel('empresas',this)">
+      </div>
     </div>
     <div class="users-tbl-wrap">
       <table class="users-tbl"><thead><tr><th>Razón Social</th><th>RUC</th><th>Dirección</th><th>Cód. MTC</th><th></th></tr></thead><tbody id="empresa-tbody"></tbody></table>
@@ -2216,7 +2227,12 @@ body.has-pending .pending-dot{display:inline-block}
   <div id="trtab-content-vehiculos" style="display:none">
     <div class="users-hdr" style="padding:10px 16px 6px">
       <div style="font-size:12px;color:var(--text2)">Vehículos registrados</div>
-      <div class="users-hdr-actions"><button class="btn-usr-add" onclick="openVehiculoModal()">+ Añadir</button></div>
+      <div class="users-hdr-actions">
+        <button class="btn-usr-add" onclick="openVehiculoModal()">+ Añadir</button>
+        <button class="btn-usr-add" onclick="downloadImportTemplate('vehiculos')" title="Descargar plantilla Excel" style="background:#065f46">📋 Plantilla</button>
+        <button class="btn-usr-add" onclick="document.getElementById('imp-file-vehiculos').click()" title="Importar desde Excel" style="background:#1e40af">📥 Importar</button>
+        <input type="file" id="imp-file-vehiculos" accept=".xlsx,.xls" style="display:none" onchange="importFromExcel('vehiculos',this)">
+      </div>
     </div>
     <div class="users-tbl-wrap">
       <table class="users-tbl"><thead><tr><th>Placa</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Empresa</th><th></th></tr></thead><tbody id="vehiculo-tbody"></tbody></table>
@@ -9209,6 +9225,9 @@ function renderUsersScreen(){
   if(permTab) permTab.style.display=isSup?'none':'';
   const addUserBtn=document.getElementById('btn-add-user');
   if(addUserBtn) addUserBtn.style.display='';
+  // Importar masivo solo disponible para admin (no supervisor)
+  document.getElementById('btn-tpl-user')?.style.setProperty('display',isSup?'none':'');
+  document.getElementById('btn-imp-user')?.style.setProperty('display',isSup?'none':'');
   const logoutWrap=document.querySelector('#scr-users .admin-logout-wrap');
   if(logoutWrap) logoutWrap.style.display=isSup?'none':'';
   const tbody=document.getElementById('users-tbody');
@@ -9957,8 +9976,195 @@ function switchUsersTab(tab){
   const btnCliente=document.getElementById('btn-add-cliente');
   if(btnUser)btnUser.style.display=tab==='users'?'':'none';
   if(btnCliente)btnCliente.style.display=tab==='clientes'?'':'none';
+  document.getElementById('btn-tpl-user')?.style.setProperty('display',tab==='users'?'':'none');
+  document.getElementById('btn-imp-user')?.style.setProperty('display',tab==='users'?'':'none');
+  document.getElementById('btn-tpl-cliente')?.style.setProperty('display',tab==='clientes'?'':'none');
+  document.getElementById('btn-imp-cliente')?.style.setProperty('display',tab==='clientes'?'':'none');
   if(tab==='perms')renderPermsPanel();
   if(tab==='clientes'){renderClientesTable();if(!_clientes.length)loadClientesFromSP().then(()=>renderClientesTable()).catch(()=>{});}
+}
+
+/* ════════════════════════════════════════════════════════
+   IMPORTACIÓN MASIVA DESDE EXCEL
+════════════════════════════════════════════════════════ */
+function downloadImportTemplate(type){
+  const TIPOS_UNIDAD="CAMIÓN, CONTENEDOR 20', CONTENEDOR 40', FURGÓN, FURGONETA, OTRO, PLATAFORMA, TRAILER";
+  const TPL={
+    usuarios:{
+      filename:'plantilla_usuarios.xlsx',
+      sheetName:'Usuarios',
+      rows:[
+        ['Nombre *','Apellidos','Email *','DNI','Empresa','Rol (conductor/supervisor/admin)'],
+        ['Juan','García','juan@empresa.com','12345678','Transportes SAC','conductor'],
+        ['* Campos obligatorios. Rol permitido: conductor, supervisor, admin. Por defecto: conductor']
+      ],
+      widths:[20,18,30,12,25,30]
+    },
+    clientes:{
+      filename:'plantilla_clientes.xlsx',
+      sheetName:'Clientes',
+      rows:[
+        ['Razón Social *','RUC','Dirección','Contacto','Teléfono'],
+        ['Cliente SAC','20123456789','Av. Lima 123','Pedro López','999888777'],
+        ['* Campos obligatorios.']
+      ],
+      widths:[30,15,30,20,15]
+    },
+    empresas:{
+      filename:'plantilla_empresas.xlsx',
+      sheetName:'Empresas',
+      rows:[
+        ['Razón Social *','RUC *','Dirección','Código MTC'],
+        ['Transportes SAC','20123456789','Av. Javier Prado 456','T-001'],
+        ['* Campos obligatorios. RUC debe ser único.']
+      ],
+      widths:[30,15,30,15]
+    },
+    vehiculos:{
+      filename:'plantilla_vehiculos.xlsx',
+      sheetName:'Vehículos',
+      rows:[
+        ['Placa *','Tipo Unidad *','Marca','Modelo','Código MTC','Empresa *'],
+        ['ABC-123','CAMIÓN','Volvo','FH16','V-001','Transportes SAC'],
+        ['* Campos obligatorios. Placa debe ser única. Empresa debe coincidir exactamente con una empresa registrada.'],
+        ['Tipos válidos: '+TIPOS_UNIDAD]
+      ],
+      widths:[12,20,15,15,15,30]
+    }
+  };
+  const tpl=TPL[type];
+  if(!tpl)return;
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(tpl.rows);
+  ws['!cols']=tpl.widths.map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,tpl.sheetName);
+  const fname=tpl.filename;
+  if(window.AndroidBridge?.isAndroidApp?.()){
+    const b64=XLSX.write(wb,{bookType:'xlsx',type:'base64'});
+    try{window.AndroidBridge.downloadBase64(b64,fname,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');}
+    catch(e){toast('⚠ No se pudo descargar la plantilla');}
+  }else{
+    XLSX.writeFile(wb,fname);
+    toast('✓ Plantilla descargada: '+fname);
+  }
+}
+
+async function importFromExcel(type,inputEl){
+  const file=inputEl.files[0];
+  inputEl.value='';
+  if(!file)return;
+  toast('⟳ Leyendo archivo…');
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    if(rows.length<2){toast('⚠ El archivo está vacío o solo tiene encabezados');return;}
+    // Fila 0 = encabezados; filas siguientes con al menos una celda no vacía
+    const dataRows=rows.slice(1).filter(r=>r.some(c=>String(c).trim()!==''));
+    if(!dataRows.length){toast('⚠ No se encontraron datos para importar');return;}
+    if(type==='usuarios')      await _importUsuarios(dataRows);
+    else if(type==='clientes') await _importClientes(dataRows);
+    else if(type==='empresas') await _importEmpresas(dataRows);
+    else if(type==='vehiculos')await _importVehiculos(dataRows);
+  }catch(e){
+    toast('⚠ Error al leer el archivo');
+    console.error('importFromExcel:',e);
+  }
+}
+
+async function _importUsuarios(rows){
+  let added=0,skipped=0,errors=[];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const nombre=String(r[0]||'').trim();
+    const apellidos=String(r[1]||'').trim();
+    const email=String(r[2]||'').trim().toLowerCase();
+    const dni=String(r[3]||'').trim();
+    const empresa=String(r[4]||'').trim();
+    const rolRaw=String(r[5]||'conductor').trim().toLowerCase();
+    const rol=['conductor','supervisor','admin'].includes(rolRaw)?rolRaw:'conductor';
+    if(!nombre||!email){errors.push(`Fila ${i+2}: Nombre y Email son requeridos`);continue;}
+    if(!email.includes('@')){errors.push(`Fila ${i+2}: Email inválido "${email}"`);continue;}
+    if(_sysUsers.find(u=>(u.email||'').toLowerCase()===email)){skipped++;continue;}
+    _sysUsers.push({nombre,apellidos,email,dni,empresa,rol});
+    added++;
+  }
+  if(errors.length){console.warn('importUsuarios:',errors);toast(`⚠ ${errors.length} fila(s) con error (ver consola). ${added} importados.`);if(!added)return;}
+  else if(!added){toast('ℹ No hay nuevos usuarios (todos ya existen)');return;}
+  localStorage.setItem('ptp_users',JSON.stringify(_sysUsers));
+  renderUsersScreen();
+  toast(`✓ ${added} usuario(s) importado(s)${skipped?`, ${skipped} duplicado(s) omitido(s)`:''} — subiendo a SharePoint…`);
+  pushUsersAction().catch(()=>{});
+}
+
+async function _importClientes(rows){
+  let added=0,skipped=0,errors=[];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const razonSocial=String(r[0]||'').trim();
+    const ruc=String(r[1]||'').trim();
+    const direccion=String(r[2]||'').trim();
+    const contacto=String(r[3]||'').trim();
+    const telefono=String(r[4]||'').trim();
+    if(!razonSocial){errors.push(`Fila ${i+2}: Razón Social es requerida`);continue;}
+    if(_clientes.find(c=>(c.razonSocial||'').toLowerCase()===razonSocial.toLowerCase())){skipped++;continue;}
+    _clientes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),razonSocial,ruc,direccion,contacto,telefono});
+    added++;
+  }
+  if(errors.length){console.warn('importClientes:',errors);toast(`⚠ ${errors.length} fila(s) con error. ${added} importados.`);if(!added)return;}
+  else if(!added){toast('ℹ No hay nuevos clientes (todos ya existen)');return;}
+  renderClientesTable();
+  toast(`✓ ${added} cliente(s) importado(s)${skipped?`, ${skipped} duplicado(s) omitido(s)`:''} — subiendo a SharePoint…`);
+  saveClientesToSP().catch(()=>{});
+}
+
+async function _importEmpresas(rows){
+  let added=0,skipped=0,errors=[];
+  const empresas=_transportistaDB.empresas||[];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const razonSocial=String(r[0]||'').trim();
+    const ruc=String(r[1]||'').trim();
+    const direccion=String(r[2]||'').trim();
+    const codigoMTC=String(r[3]||'').trim();
+    if(!razonSocial||!ruc){errors.push(`Fila ${i+2}: Razón Social y RUC son requeridos`);continue;}
+    if(empresas.find(e=>(e.ruc||'')===ruc)){skipped++;continue;}
+    empresas.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),razonSocial,ruc,direccion,codigoMTC});
+    added++;
+  }
+  if(errors.length){console.warn('importEmpresas:',errors);toast(`⚠ ${errors.length} fila(s) con error. ${added} importadas.`);if(!added)return;}
+  else if(!added){toast('ℹ No hay nuevas empresas (todas ya existen por RUC)');return;}
+  _transportistaDB.empresas=empresas;
+  renderEmpresaList();
+  toast(`✓ ${added} empresa(s) importada(s)${skipped?`, ${skipped} duplicado(s) omitido(s)`:''} — subiendo a SharePoint…`);
+  _saveTransportistaSP().catch(()=>{});
+}
+
+async function _importVehiculos(rows){
+  const TIPOS=['CAMIÓN',"CONTENEDOR 20'","CONTENEDOR 40'",'FURGÓN','FURGONETA','OTRO','PLATAFORMA','TRAILER'];
+  let added=0,skipped=0,errors=[];
+  const vehiculos=_transportistaDB.vehiculos||[];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const placa=String(r[0]||'').trim().toUpperCase();
+    const tipoUnidad=String(r[1]||'').trim().toUpperCase();
+    const marca=String(r[2]||'').trim();
+    const modelo=String(r[3]||'').trim();
+    const codigoMTC=String(r[4]||'').trim();
+    const empresa=String(r[5]||'').trim();
+    if(!placa||!tipoUnidad||!empresa){errors.push(`Fila ${i+2}: Placa, Tipo Unidad y Empresa son requeridos`);continue;}
+    if(!TIPOS.includes(tipoUnidad)){errors.push(`Fila ${i+2}: Tipo Unidad inválido "${tipoUnidad}"`);continue;}
+    if(vehiculos.find(v=>(v.placa||'').toUpperCase()===placa)){skipped++;continue;}
+    vehiculos.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),placa,tipoUnidad,marca,modelo,codigoMTC,empresa});
+    added++;
+  }
+  if(errors.length){console.warn('importVehiculos:',errors);toast(`⚠ ${errors.length} fila(s) con error. ${added} importados.`);if(!added)return;}
+  else if(!added){toast('ℹ No hay nuevos vehículos (todos ya existen por placa)');return;}
+  _transportistaDB.vehiculos=vehiculos;
+  renderVehiculoList();
+  toast(`✓ ${added} vehículo(s) importado(s)${skipped?`, ${skipped} duplicado(s) omitido(s)`:''} — subiendo a SharePoint…`);
+  _saveTransportistaSP().catch(()=>{});
 }
 
 /* ════════════════════════════════════════════════════════
