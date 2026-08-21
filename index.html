@@ -4301,6 +4301,20 @@ function showDet(id){
         <div class="di"><div class="l">Fecha Término</div><div class="v">${formatDateToDDMMYYYY(r.fechaTermino)||'—'}</div></div>
         <div class="di"><div class="l">Hora Inicio</div><div class="v">${r.horaInicio||'—'} ${r.turnoInicio?`(${r.turnoInicio})`:''}</div></div>
         <div class="di"><div class="l">Hora Término</div><div class="v">${r.horaTermino||'—'} ${r.turnoTermino?`(${r.turnoTermino})`:''}</div></div>
+        ${(()=>{
+          if(!r.fechaInicio||!r.horaInicio||!r.fechaTermino||!r.horaTermino) return '';
+          try{
+            const ini=new Date(`${r.fechaInicio}T${r.horaInicio}`);
+            const fin=new Date(`${r.fechaTermino}T${r.horaTermino}`);
+            const diff=fin-ini; if(diff<=0) return '';
+            const totalMin=Math.round(diff/60000);
+            const hh=Math.floor(totalMin/60), mm=totalMin%60;
+            const d=Math.floor(hh/24), rh=hh%24;
+            const hhmm=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} hrs.`;
+            const desglose=`${d>0?d+'d · ':''}${rh}h · ${mm}m`;
+            return `<div class="di" style="grid-column:1/-1"><div class="l">Duración del Servicio</div><div class="v" style="font-weight:600;color:var(--amber)">${hhmm}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:10px">${desglose}</span></div></div>`;
+          }catch(e){return '';}
+        })()}
       </div>
     </div>
     <div class="dsec"><div class="dst">Transporte</div>
