@@ -254,6 +254,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .chip strong{color:var(--text);font-weight:600}
 .rc-foot{display:flex;align-items:center;justify-content:space-between}
 .badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;animation:statusBlink 1.6s ease-in-out infinite}
+.badge.completado{animation:none}
 .badge.pendiente{background:var(--amber-light);color:#92400e}
 .badge.completado{background:var(--green-light);color:#065f46}
 .badge.cancelado{background:var(--red-light);color:#991b1b}
@@ -734,6 +735,7 @@ body.has-pending .pending-dot{display:inline-block}
 .rtbl td.td-orden{font-weight:700;color:var(--navy);font-family:'DM Mono',monospace}
 .rtbl td.td-trunc{max-width:130px;overflow:hidden;text-overflow:ellipsis}
 .rtbl .badge-sm{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.03em;animation:statusBlink 1.6s ease-in-out infinite}
+.rtbl .badge-sm.b-completado{animation:none}
 .rtbl .b-completado{background:var(--green-light);color:#065f46}
 .rtbl .b-en-ruta{background:#dbeafe;color:#1e40af}
 .rtbl .b-pendiente{background:var(--amber-light);color:#92400e}
