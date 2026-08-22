@@ -253,12 +253,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
   padding:3px 8px;font-size:11px;color:var(--text2)}
 .chip strong{color:var(--text);font-weight:600}
 .rc-foot{display:flex;align-items:center;justify-content:space-between}
-.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;animation:statusBlink 1.6s ease-in-out infinite}
 .badge.pendiente{background:var(--amber-light);color:#92400e}
 .badge.completado{background:var(--green-light);color:#065f46}
 .badge.cancelado{background:var(--red-light);color:#991b1b}
 .badge.en-ruta{background:#dbeafe;color:#1e40af}
 .badge.def{background:var(--bg);color:var(--text2)}
+@keyframes statusBlink{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor}
+  50%{opacity:.7;box-shadow:0 0 8px 2px currentColor}
+}
 .thumbs{display:flex;gap:5px;align-items:center}
 .th{width:40px;height:40px;border-radius:6px;object-fit:cover;
   border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;transition:transform .12s}
@@ -354,11 +358,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .di .l{font-size:11px;color:var(--text2);margin-bottom:3px}
 .di .v{font-size:14px;font-weight:500;color:var(--text);word-break:break-word}
-.di .l.doc-loaded{display:inline-block;padding:2px 8px;border-radius:5px;color:#052e16;font-weight:700;animation:docLoadedPulse 1.4s ease-in-out infinite}
-@keyframes docLoadedPulse{
-  0%,100%{background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.55)}
-  50%{background:#4ade80;box-shadow:0 0 6px 4px rgba(34,197,94,.35)}
-}
+.di .l.doc-loaded{color:#4ade80;font-weight:700}
 .di.w{grid-column:1/-1}
 .dnums{display:flex;gap:10px}
 .nbox{flex:1;background:var(--bg);border:1px solid var(--border);
@@ -732,7 +732,7 @@ body.has-pending .pending-dot{display:inline-block}
 .rtbl td.td-date{color:var(--text2);font-family:'DM Mono',monospace;font-size:11.5px}
 .rtbl td.td-orden{font-weight:700;color:var(--navy);font-family:'DM Mono',monospace}
 .rtbl td.td-trunc{max-width:130px;overflow:hidden;text-overflow:ellipsis}
-.rtbl .badge-sm{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.03em}
+.rtbl .badge-sm{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.03em;animation:statusBlink 1.6s ease-in-out infinite}
 .rtbl .b-completado{background:var(--green-light);color:#065f46}
 .rtbl .b-en-ruta{background:#dbeafe;color:#1e40af}
 .rtbl .b-pendiente{background:var(--amber-light);color:#92400e}
