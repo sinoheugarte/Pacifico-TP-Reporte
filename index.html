@@ -354,6 +354,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .di .l{font-size:11px;color:var(--text2);margin-bottom:3px}
 .di .v{font-size:14px;font-weight:500;color:var(--text);word-break:break-word}
+.di .l.doc-loaded{display:inline-block;padding:2px 8px;border-radius:5px;color:#052e16;font-weight:700;animation:docLoadedPulse 1.4s ease-in-out infinite}
+@keyframes docLoadedPulse{
+  0%,100%{background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.55)}
+  50%{background:#4ade80;box-shadow:0 0 6px 4px rgba(34,197,94,.35)}
+}
 .di.w{grid-column:1/-1}
 .dnums{display:flex;gap:10px}
 .nbox{flex:1;background:var(--bg);border:1px solid var(--border);
@@ -3989,6 +3994,15 @@ function addImgs(inp){
     setEl('iStatus',formImgs.length?`${formImgs.length} foto(s)`:'');
   })();
 }
+function _docLoaded(rec, prefixes){
+  if(!rec) return false;
+  const names = rec.photoNames || [];
+  if(!names.length) return false;
+  return names.some(n=>{
+    const nl = (n||'').toLowerCase();
+    return prefixes.some(p=>nl.startsWith(p));
+  });
+}
 function updateDocIndicators(){
   const dot=(id,v)=>{const el=document.getElementById(id);if(el)el.classList.toggle('has',v);};
   dot('dot-guiaRemitente',  formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiaremitente')||n.startsWith('guia_remitente');}));
@@ -4377,13 +4391,13 @@ function showDet(id){
     </div>
     <div class="dsec"><div class="dst">Documentos</div>
       <div class="dgrid">
-        <div class="di"><div class="l">Guía Remitente</div><div class="v">${r.guiaRemitente||'—'}</div></div>
-        <div class="di"><div class="l">Guía Transportista</div><div class="v">${r.guiaTransportista||'—'}</div></div>
-        <div class="di w"><div class="l">N° Hoja Ingreso TAI LOY</div><div class="v">${r.hojaIngreso||'—'}</div></div>
-        <div class="di"><div class="l">Tickets</div><div class="v">${r.tickets||'—'}</div></div>
-        <div class="di"><div class="l">EIR</div><div class="v">${r.eir||'—'}</div></div>
-        <div class="di"><div class="l">GPS</div><div class="v">${r.gps||'—'}</div></div>
-        <div class="di w"><div class="l">Inspección de Unidades</div><div class="v">${r.inspeccionUnidades||'—'}</div></div>
+        <div class="di"><div class="l${_docLoaded(r,['guiaremitente','guia_remitente'])?' doc-loaded':''}">Guía Remitente</div><div class="v">${r.guiaRemitente||'—'}</div></div>
+        <div class="di"><div class="l${_docLoaded(r,['guiatransportista','guia_transportista'])?' doc-loaded':''}">Guía Transportista</div><div class="v">${r.guiaTransportista||'—'}</div></div>
+        <div class="di w"><div class="l${_docLoaded(r,['hojaingreso','hoja_ingreso','hoja'])?' doc-loaded':''}">N° Hoja Ingreso TAI LOY</div><div class="v">${r.hojaIngreso||'—'}</div></div>
+        <div class="di"><div class="l${_docLoaded(r,['tickets'])?' doc-loaded':''}">Tickets</div><div class="v">${r.tickets||'—'}</div></div>
+        <div class="di"><div class="l${_docLoaded(r,['eir'])?' doc-loaded':''}">EIR</div><div class="v">${r.eir||'—'}</div></div>
+        <div class="di"><div class="l${_docLoaded(r,['gps'])?' doc-loaded':''}">GPS</div><div class="v">${r.gps||'—'}</div></div>
+        <div class="di w"><div class="l${_docLoaded(r,['inspeccionunidades','inspeccion_unidades'])?' doc-loaded':''}">Inspección de Unidades</div><div class="v">${r.inspeccionUnidades||'—'}</div></div>
       </div>
     </div>
     <div class="dsec"><div class="dst">Cantidades</div>
