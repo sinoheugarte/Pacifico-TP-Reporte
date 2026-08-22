@@ -1615,6 +1615,38 @@ body.has-pending .pending-dot{display:inline-block}
           <button class="guide-btn" onclick="triggerQR('Hoja Ingreso')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
         </div>
       </div>
+      <div class="f"><label>TICKETS <span class="doc-dot" id="dot-tickets"></span></label>
+        <div class="guide-group">
+          <input type="text" id="f-tickets" placeholder="Número de ticket">
+          <button class="guide-btn" onclick="triggerDocUpload('Tickets', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <button class="guide-btn" onclick="triggerDocUpload('Tickets', 'file')" title="Archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></button>
+          <button class="guide-btn" onclick="triggerQR('Tickets')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
+        </div>
+      </div>
+      <div class="f"><label>EIR <span class="doc-dot" id="dot-eir"></span></label>
+        <div class="guide-group">
+          <input type="text" id="f-eir" placeholder="Número de EIR">
+          <button class="guide-btn" onclick="triggerDocUpload('Eir', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <button class="guide-btn" onclick="triggerDocUpload('Eir', 'file')" title="Archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></button>
+          <button class="guide-btn" onclick="triggerQR('EIR')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
+        </div>
+      </div>
+      <div class="f"><label>GPS <span class="doc-dot" id="dot-gps"></span></label>
+        <div class="guide-group">
+          <input type="text" id="f-gps" placeholder="Número o código GPS">
+          <button class="guide-btn" onclick="triggerDocUpload('Gps', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <button class="guide-btn" onclick="triggerDocUpload('Gps', 'file')" title="Archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></button>
+          <button class="guide-btn" onclick="triggerQR('GPS')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
+        </div>
+      </div>
+      <div class="f"><label>INSPECCIÓN DE UNIDADES <span class="doc-dot" id="dot-inspeccionUnidades"></span></label>
+        <div class="guide-group">
+          <input type="text" id="f-inspeccionUnidades" placeholder="Número de inspección">
+          <button class="guide-btn" onclick="triggerDocUpload('InspeccionUnidades', 'cam')" title="Cámara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+          <button class="guide-btn" onclick="triggerDocUpload('InspeccionUnidades', 'file')" title="Archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></button>
+          <button class="guide-btn" onclick="triggerQR('Inspección de Unidades')" title="Escanear QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg></button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="fsec">
@@ -2321,7 +2353,7 @@ const CACHE_KEY = 'ptp_cache';
 const DEFAULT_SP_SITE = 'https://quimpaccorp.sharepoint.com/sites/PacificoTP';
 
 const FKEYS = ['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','transportista','placa','tipoUnidad','conductor','origen','destino','ruta','motivo','viaje',
-               'guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+               'guiaRemitente','guiaTransportista','hojaIngreso','tickets','eir','gps','inspeccionUnidades','paletas','cajas','sobres','status','observaciones'];
 
 let token=null, user=null;
 let spDriveId=null;
@@ -3056,13 +3088,17 @@ async function uploadExcel(){
     {k:'guiaRemitente'},           // T
     {k:'guiaTransportista'},       // U
     {k:'hojaIngreso'},             // V
-    {k:'paletas',      num:true},  // W
-    {k:'cajas',        num:true},  // X
-    {k:'sobres',       num:true},  // Y
-    {k:'status'},                  // Z
-    {k:'observaciones'},           // AA
-    {k:'_photoCount',  num:true},  // AB = N° FOTOS
-    {k:'_folder'},                 // AC = CARPETA FOTOS
+    {k:'tickets'},                 // W
+    {k:'eir'},                     // X
+    {k:'gps'},                     // Y
+    {k:'inspeccionUnidades'},      // Z
+    {k:'paletas',      num:true},  // AA
+    {k:'cajas',        num:true},  // AB
+    {k:'sobres',       num:true},  // AC
+    {k:'status'},                  // AD
+    {k:'observaciones'},           // AE
+    {k:'_photoCount',  num:true},  // AF = N° FOTOS
+    {k:'_folder'},                 // AG = CARPETA FOTOS
   ];
   const HDR_ROW=4, DATA_START=5;
 
@@ -3071,13 +3107,13 @@ async function uploadExcel(){
   const ws=wb.Sheets['REPORTE']||wb.Sheets[wb.SheetNames[0]];
 
   /* Step 2: Clear all old data rows (A–Z) */
-  const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:Z6');
+  const oldRange=XLSX.utils.decode_range(ws['!ref']||'B5:AG6');
   for(let R=DATA_START;R<=Math.max(oldRange.e.r,DATA_START+500);R++){
-    for(let C=0;C<=28;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
+    for(let C=0;C<=32;C++) delete ws[XLSX.utils.encode_cell({r:R,c:C})];
   }
 
   /* Step 2b: Write column headers dynamically (keeps template in sync) */
-  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const HDR_LABELS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','TICKETS','EIR','GPS','INSPECCION DE UNIDADES','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   HDR_LABELS.forEach((label,i)=>{
     ws[XLSX.utils.encode_cell({r:HDR_ROW,c:i+1})]={t:'s',v:label};
   });
@@ -3101,7 +3137,7 @@ async function uploadExcel(){
 
   /* Step 4: Update range + table ref */
   const lastRow=Math.max(DATA_START+records.length, HDR_ROW+2);
-  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:28}});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:32}});
   if(!ws['!rows']) ws['!rows']=[];
   ws['!rows'][HDR_ROW]={hpt:31};
 
@@ -3958,7 +3994,11 @@ function updateDocIndicators(){
   dot('dot-guiaRemitente',  formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiaremitente')||n.startsWith('guia_remitente');}));
   dot('dot-guiaTransportista', formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('guiatransportista')||n.startsWith('guia_transportista');}));
   dot('dot-hojaIngreso',    formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('hojaingreso')||n.startsWith('hoja_ingreso')||n.startsWith('hoja');}));
-  dot('dot-fotosGenerales', formImgs.some(f=>{const n=f.name.toLowerCase();return !n.startsWith('guiaremitente')&&!n.startsWith('guia_remitente')&&!n.startsWith('guiatransportista')&&!n.startsWith('guia_transportista')&&!n.startsWith('hojaingreso')&&!n.startsWith('hoja_ingreso')&&!n.startsWith('hoja');}));
+  dot('dot-tickets',        formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('tickets');}));
+  dot('dot-eir',            formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('eir');}));
+  dot('dot-gps',            formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('gps');}));
+  dot('dot-inspeccionUnidades', formImgs.some(f=>{const n=f.name.toLowerCase();return n.startsWith('inspeccionunidades')||n.startsWith('inspeccion_unidades');}));
+  dot('dot-fotosGenerales', formImgs.some(f=>{const n=f.name.toLowerCase();return !n.startsWith('guiaremitente')&&!n.startsWith('guia_remitente')&&!n.startsWith('guiatransportista')&&!n.startsWith('guia_transportista')&&!n.startsWith('hojaingreso')&&!n.startsWith('hoja_ingreso')&&!n.startsWith('hoja')&&!n.startsWith('tickets')&&!n.startsWith('eir')&&!n.startsWith('gps')&&!n.startsWith('inspeccionunidades')&&!n.startsWith('inspeccion_unidades');}));
 }
 function _isFilePdf(f){return (f.name||'').toLowerCase().endsWith('.pdf')||(f.dataUrl||'').startsWith('data:application/pdf');}
 function renderIG(){
@@ -4126,6 +4166,10 @@ async function saveRecord(){
     guiaRem:   existingRec._origGuiaRem   ?? existingRec.guiaRemitente    ?? '',
     guiaTrans: existingRec._origGuiaTrans ?? existingRec.guiaTransportista?? '',
     hoja:      existingRec._origHoja      ?? existingRec.hojaIngreso      ?? '',
+    tickets:   existingRec._origTickets   ?? existingRec.tickets          ?? '',
+    eir:       existingRec._origEir       ?? existingRec.eir              ?? '',
+    gps:       existingRec._origGps       ?? existingRec.gps              ?? '',
+    inspeccionUnidades: existingRec._origInspeccionUnidades ?? existingRec.inspeccionUnidades ?? '',
   } : null;
 
   editingId = id; // prevent duplicate record if Excel fails and user retries
@@ -4144,6 +4188,10 @@ async function saveRecord(){
     rec._origGuiaRem   = origValues?.guiaRem   ?? '';
     rec._origGuiaTrans = origValues?.guiaTrans ?? '';
     rec._origHoja      = origValues?.hoja      ?? '';
+    rec._origTickets   = origValues?.tickets   ?? '';
+    rec._origEir       = origValues?.eir       ?? '';
+    rec._origGps       = origValues?.gps       ?? '';
+    rec._origInspeccionUnidades = origValues?.inspeccionUnidades ?? '';
 
     /* Carry over photoStorage / createdBy from the existing record on edit */
     if(existingRec){
@@ -4332,6 +4380,10 @@ function showDet(id){
         <div class="di"><div class="l">Guía Remitente</div><div class="v">${r.guiaRemitente||'—'}</div></div>
         <div class="di"><div class="l">Guía Transportista</div><div class="v">${r.guiaTransportista||'—'}</div></div>
         <div class="di w"><div class="l">N° Hoja Ingreso TAI LOY</div><div class="v">${r.hojaIngreso||'—'}</div></div>
+        <div class="di"><div class="l">Tickets</div><div class="v">${r.tickets||'—'}</div></div>
+        <div class="di"><div class="l">EIR</div><div class="v">${r.eir||'—'}</div></div>
+        <div class="di"><div class="l">GPS</div><div class="v">${r.gps||'—'}</div></div>
+        <div class="di w"><div class="l">Inspección de Unidades</div><div class="v">${r.inspeccionUnidades||'—'}</div></div>
       </div>
     </div>
     <div class="dsec"><div class="dst">Cantidades</div>
@@ -4407,6 +4459,10 @@ async function editRec(id){
   r._origGuiaRem  = r.guiaRemitente   || '';
   r._origGuiaTrans= r.guiaTransportista|| '';
   r._origHoja     = r.hojaIngreso      || '';
+  r._origTickets  = r.tickets          || '';
+  r._origEir      = r.eir              || '';
+  r._origGps      = r.gps              || '';
+  r._origInspeccionUnidades = r.inspeccionUnidades || '';
   editingId = id;
   deletedImgs = [];
   _currentGPS = null;
@@ -4450,17 +4506,25 @@ async function renamePhotosIfNeeded(rec){
   const origGR  = rec._origGuiaRem   ?? '';
   const origGT  = rec._origGuiaTrans ?? '';
   const origHI  = rec._origHoja      ?? '';
+  const origTK  = rec._origTickets   ?? '';
+  const origEI  = rec._origEir       ?? '';
+  const origGP  = rec._origGps       ?? '';
+  const origIU  = rec._origInspeccionUnidades ?? '';
   const guiaChanged = (rec.guiaRemitente||'')!==origGR ||
                       (rec.guiaTransportista||'')!==origGT ||
-                      (rec.hojaIngreso||'')!==origHI;
+                      (rec.hojaIngreso||'')!==origHI ||
+                      (rec.tickets||'')!==origTK ||
+                      (rec.eir||'')!==origEI ||
+                      (rec.gps||'')!==origGP ||
+                      (rec.inspeccionUnidades||'')!==origIU;
   if(!guiaChanged) return;
   setUpStep('Renombrando fotos de guías…');
   const folderPath = `${OD_ROOT}/${OD_PHOTOS}/${getFolderName(rec)}`;
   const newNames = [];
   for(let i=0;i<rec.photoNames.length;i++){
     const oldName = rec.photoNames[i];
-    /* Only rename doc photos (guiaRemitente_, guiaTransportista_, hojaIngreso_) */
-    const isDoc = /^(guiaRemitente|guiaTransportista|hojaIngreso|GuiaRemitente|GuiaTransportista|HojaIngreso|Guia|Hoja|GR-|GT-|HI-)/i.test(oldName);
+    /* Only rename doc photos (guiaRemitente_, guiaTransportista_, hojaIngreso_, tickets_, eir_, gps_, inspeccionUnidades_) */
+    const isDoc = /^(guiaRemitente|guiaTransportista|hojaIngreso|GuiaRemitente|GuiaTransportista|HojaIngreso|Guia|Hoja|GR-|GT-|HI-|tickets|Tickets|eir|Eir|gps|Gps|inspeccionUnidades|InspeccionUnidades|inspeccion_unidades)/i.test(oldName);
     if(!isDoc){ newNames.push(oldName); continue; }
     const ext = oldName.split('.').pop().toLowerCase();
     let newName = oldName;
@@ -4470,6 +4534,14 @@ async function renamePhotosIfNeeded(rec){
       newName = `GuiaTransportista_${rec.guiaTransportista.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
     } else if(/^(hojaIngreso|HojaIngreso|Hoja|HI-)/i.test(oldName) && rec.hojaIngreso){
       newName = `HojaIngreso_${rec.hojaIngreso.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+    } else if(/^(tickets|Tickets)/i.test(oldName) && rec.tickets){
+      newName = `Tickets_${rec.tickets.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+    } else if(/^(eir|Eir)/i.test(oldName) && rec.eir){
+      newName = `Eir_${rec.eir.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+    } else if(/^(gps|Gps)/i.test(oldName) && rec.gps){
+      newName = `Gps_${rec.gps.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
+    } else if(/^(inspeccionUnidades|InspeccionUnidades|inspeccion_unidades)/i.test(oldName) && rec.inspeccionUnidades){
+      newName = `InspeccionUnidades_${rec.inspeccionUnidades.replace(/[^a-zA-Z0-9-]/g,'_')}.${ext}`;
     }
     if(oldName !== newName){
       try{
@@ -4605,7 +4677,7 @@ function expXLSX(e){
   if(!records.length){toast('No hay registros');return;}
   const _src=_hasActiveFilters()?_activeListFilter():records;
   if(!_src.length){toast('No hay registros para exportar');return;}
-  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
+  const COLS=['FECHA DE INICIO','FECHA DE TÉRMINO','HORA DE INICIO','HORA DE TÉRMINO','TURNO DE INICIO','TURNO DE TÉRMINO','ORDEN','CLIENTE','DAM','TIPO DE UNIDAD','TRANSPORTISTA','PLACA','CONDUCTOR','ORIGEN','DESTINO','RUTA','MOTIVO DE TRASLADO','N° VIAJE','N° GUIA REMITENTE','N° GUIA TRANSPORTISTA','N° HOJA INGRESO TAI LOY','TICKETS','EIR','GPS','INSPECCION DE UNIDADES','PALETAS','CAJAS','SOBRES','STATUS','OBSERVACIONES','N° FOTOS','CARPETA FOTOS'];
   const MAP=[
     {k:'fechaInicio',      fmt:true},
     {k:'fechaTermino',     fmt:true},
@@ -4628,6 +4700,10 @@ function expXLSX(e){
     {k:'guiaRemitente'},
     {k:'guiaTransportista'},
     {k:'hojaIngreso'},
+    {k:'tickets'},
+    {k:'eir'},
+    {k:'gps'},
+    {k:'inspeccionUnidades'},
     {k:'paletas',          num:true},
     {k:'cajas',            num:true},
     {k:'sobres',           num:true},
@@ -4664,7 +4740,7 @@ function expXLSX(e){
 function expCSV(e){if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}if(expCSV._busy)return;expCSV._busy=true;setTimeout(()=>{expCSV._busy=false;},1000);closeEM();if(!records.length){toast('No hay registros');return;}
   const _src=_hasActiveFilters()?_activeListFilter():records;
   if(!_src.length){toast('No hay registros para exportar');return;}
-  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','cliente','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','tickets','eir','gps','inspeccionUnidades','paletas','cajas','sobres','status','observaciones'];
   const rows=_src.map(r=>KEYS.map(k=>{
     let v = r[k]||'';
     if(k==='fechaInicio'||k==='fechaTermino') v = formatDateToDDMMYYYY(v);
@@ -4694,7 +4770,7 @@ function expSQL(e){
   if(!records.length){toast('No hay registros');return;}
   const _src=_hasActiveFilters()?_activeListFilter():records;
   if(!_src.length){toast('No hay registros para exportar');return;}
-  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','paletas','cajas','sobres','status','observaciones'];
+  const KEYS=['id','fechaInicio','fechaTermino','horaInicio','horaTermino','turnoInicio','turnoTermino','orden','dam','tipoUnidad','transportista','placa','conductor','origen','destino','ruta','motivo','guiaRemitente','guiaTransportista','hojaIngreso','tickets','eir','gps','inspeccionUnidades','paletas','cajas','sobres','status','observaciones'];
   function esc(v){
     if(v===null||v===undefined||v==='') return 'NULL';
     return "'"+String(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
@@ -4722,6 +4798,10 @@ function expSQL(e){
     '  `guiaRemitente` VARCHAR(100),',
     '  `guiaTransportista` VARCHAR(100),',
     '  `hojaIngreso` VARCHAR(100),',
+    '  `tickets` VARCHAR(100),',
+    '  `eir` VARCHAR(100),',
+    '  `gps` VARCHAR(100),',
+    '  `inspeccionUnidades` VARCHAR(100),',
     '  `paletas` INT,',
     '  `cajas` INT,',
     '  `sobres` INT,',
@@ -8377,6 +8457,10 @@ var _rtCols=[
   {k:'guiaRemitente',     label:'Guía Remit.',     fmt:r=>r.guiaRemitente||'—',                          cls:'td-trunc'},
   {k:'guiaTransportista', label:'Guía Transp.',    fmt:r=>r.guiaTransportista||'—',                      cls:'td-trunc'},
   {k:'hojaIngreso',       label:'Hoja Ingreso',    fmt:r=>r.hojaIngreso||'—',                            cls:'td-trunc'},
+  {k:'tickets',           label:'Tickets',         fmt:r=>r.tickets||'—',                                cls:'td-trunc'},
+  {k:'eir',               label:'EIR',             fmt:r=>r.eir||'—',                                    cls:'td-trunc'},
+  {k:'gps',               label:'GPS',             fmt:r=>r.gps||'—',                                    cls:'td-trunc'},
+  {k:'inspeccionUnidades',label:'Insp. Unidades',  fmt:r=>r.inspeccionUnidades||'—',                     cls:'td-trunc'},
   {k:'paletas',           label:'Paletas',         fmt:r=>r.paletas||'—',                                cls:''},
   {k:'cajas',             label:'Cajas',           fmt:r=>r.cajas||'—',                                  cls:''},
   {k:'sobres',            label:'Sobres',          fmt:r=>r.sobres||'—',                                 cls:''},
@@ -9946,7 +10030,7 @@ async function savePermsAction(){
 
 function _lockFormForConductor(){
   if((userRole||'conductor')!=='conductor')return;
-  const ALLOWED=new Set(['f-guiaRemitente','f-guiaTransportista','f-hojaIngreso']);
+  const ALLOWED=new Set(['f-guiaRemitente','f-guiaTransportista','f-hojaIngreso','f-tickets','f-eir','f-gps','f-inspeccionUnidades']);
   const form=document.getElementById('scr-form');
   if(!form)return;
   // Deshabilitar todos los inputs/selects/textareas excepto los permitidos y los file inputs
