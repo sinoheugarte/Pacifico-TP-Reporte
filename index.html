@@ -10690,6 +10690,92 @@ function toggleAIPanel(){
    transportista+lo-que-sea igual que si consultara la base de datos, en vez
    de depender solo de agregados pre-calculados que no cubren toda combinación
    posible de filtros. */
+/* ── Motor de filtrado LOCAL (sin IA) ────────────────────────────────
+   Los modelos de IA no son confiables "contando" listas largas de
+   registros, y por límites de tokens (sobre todo en Groq gratuito) no
+   siempre reciben el dataset completo. Este motor detecta cliente/
+   transportista/motivo/ruta/status/fecha mencionados en la pregunta,
+   filtra el array COMPLETO de `records` en JavaScript (100% exacto, sin
+   gastar tokens) y devuelve el resultado ya calculado para que la IA
+   solo lo redacte, en vez de tener que "adivinar" o contar ella misma. */
+function _normalizeAI(s){
+  return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+}
+function _localFilterRecords(question){
+  const recs=records||[];
+  if(!recs.length) return null;
+  const q=_normalizeAI(question);
+  let filtered=recs;
+  const applied=[];
+
+  const uniq=k=>[...new Set(recs.map(r=>r[k]).filter(Boolean))];
+  const bestMatch=(list)=>{
+    let best=null,bestScore=0;
+    for(const v of list){
+      const nv=_normalizeAI(v);
+      if(!nv) continue;
+      const tokens=nv.split(/\s+/).filter(t=>t.length>2);
+      if(!tokens.length) continue;
+      let hits=0; tokens.forEach(t=>{ if(q.includes(t)) hits++; });
+      const score=hits/tokens.length;
+      if(score>bestScore && score>=0.6){ bestScore=score; best=v; }
+    }
+    return best;
+  };
+
+  const cli=bestMatch(uniq('cliente'));
+  const tr=bestMatch(uniq('transportista'));
+  const mo=bestMatch(uniq('motivo'));
+  const ru=bestMatch(uniq('ruta'));
+  const st=bestMatch(uniq('status'));
+  const cd=bestMatch(uniq('conductor'));
+  const pl=bestMatch(uniq('placa'));
+
+  if(cli){filtered=filtered.filter(r=>r.cliente===cli);applied.push(`cliente="${cli}"`);}
+  if(tr){filtered=filtered.filter(r=>r.transportista===tr);applied.push(`transportista="${tr}"`);}
+  if(mo){filtered=filtered.filter(r=>r.motivo===mo);applied.push(`motivo="${mo}"`);}
+  if(ru){filtered=filtered.filter(r=>r.ruta===ru);applied.push(`ruta="${ru}"`);}
+  if(st){filtered=filtered.filter(r=>r.status===st);applied.push(`status="${st}"`);}
+  if(cd){filtered=filtered.filter(r=>r.conductor===cd);applied.push(`conductor="${cd}"`);}
+  if(pl){filtered=filtered.filter(r=>r.placa===pl);applied.push(`placa="${pl}"`);}
+
+  /* Mes + año mencionados (ej: "junio 2026") */
+  const meses={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,setiembre:9,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+  let mesNum=null;
+  for(const [name,num] of Object.entries(meses)){ if(q.includes(name)){ mesNum=num; break; } }
+  const yearMatch=q.match(/\b(20\d{2})\b/);
+  const anio=yearMatch?yearMatch[1]:null;
+  if(mesNum && anio){
+    const ym=`${anio}-${String(mesNum).padStart(2,'0')}`;
+    filtered=filtered.filter(r=>(r.fechaInicio||'').startsWith(ym));
+    applied.push(`mes=${ym}`);
+  } else if(anio){
+    filtered=filtered.filter(r=>(r.fechaInicio||'').startsWith(anio));
+    applied.push(`año=${anio}`);
+  }
+
+  /* Fecha explícita dd/mm/yyyy o dd-mm-yyyy */
+  const dateMatch=question.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(dateMatch){
+    const iso=`${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`;
+    filtered=filtered.filter(r=>r.fechaInicio===iso);
+    applied.push(`fecha=${iso}`);
+  }
+
+  if(!applied.length) return null; // no se detectó ningún filtro con confianza — se deja el flujo normal
+
+  const paletas=filtered.reduce((a,r)=>a+(parseInt(r.paletas)||0),0);
+  const cajas=filtered.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
+  const sobres=filtered.reduce((a,r)=>a+(parseInt(r.sobres)||0),0);
+
+  return {
+    filtrosDetectados: applied,
+    totalCoincidencias: filtered.length,
+    paletas, cajas, sobres,
+    muestra: filtered.slice(0,12).map(r=>({orden:r.orden,fecha:r.fechaInicio,cliente:r.cliente,transportista:r.transportista,motivo:r.motivo,status:r.status,viaje:r.viaje}))
+  };
+}
+
 function _buildAIContext(prov){
   const recs=records||[];
   const total=recs.length;
@@ -10777,7 +10863,7 @@ function _aiSystemPrompt(prov){
   /* Versión compacta para Groq (plan gratuito, límite de tokens por minuto muy bajo) */
   if(prov==='groq'){
     return `Asistente de datos de Pacífico Transportation SAC (transporte/logística Perú). ${usuariosRegla}
-El campo "registros" del contexto es la tabla completa de viajes (claves cortas en "_leyendaCamposRegistros": f=fecha, mo=motivo, t=transportista, st=status, ru=ruta, pa/ca/so=paletas/cajas/sobres). Fíltrala y cuenta tú mismo para responder preguntas combinadas (fecha+motivo, transportista+status, etc.) — nunca digas que no puedes filtrar, siempre puedes cruzando esos campos. Responde en español, corto y directo, con el número exacto calculado, sin inventar datos.`;
+Si el mensaje del usuario incluye un bloque "[DATO EXACTO CALCULADO POR EL SISTEMA...]", ESE es el resultado correcto y completo (ya fue calculado sobre TODOS los registros, no solo los que ves en el contexto) — úsalo directamente para responder, no lo cuestiones ni digas que no hay datos. Si NO viene ese bloque, usa "registros" (claves en "_leyendaCamposRegistros") filtrando tú mismo. Responde en español, corto y directo, con el número exacto, sin inventar datos.`;
   }
 
   return `Eres el asistente de análisis de datos de Pacífico Transportation SAC, empresa peruana de logística y transporte.
@@ -10786,10 +10872,11 @@ ${isAdmin
   ? 'El usuario actual es ADMINISTRADOR, por lo que también tienes acceso a la información de Usuarios del sistema (nombres, correos, roles) y puedes responder preguntas sobre ella.'
   : 'El usuario actual NO es administrador. NO tienes acceso a la información de la pestaña Usuarios (nombres, correos, roles del personal) — si te preguntan sobre usuarios del sistema, responde que esa información solo está disponible para administradores y sugiere que consulten con uno.'}
 
-DATASET: el campo "registros" del contexto contiene el LISTADO COMPLETO de registros de transporte, uno por objeto, con claves cortas explicadas en "_leyendaCamposRegistros" (ej: f=fecha, mo=motivo, t=transportista, st=status, ru=ruta, pa/ca/so=paletas/cajas/sobres). ESTE ES TU DATASET PRINCIPAL, actúa como si fuera una tabla que puedes filtrar y cruzar libremente:
+DATO PRE-CALCULADO: si el mensaje del usuario incluye un bloque "[DATO EXACTO CALCULADO POR EL SISTEMA...]", ese resultado fue calculado en código sobre el 100% de los registros (no depende de lo que veas en "registros" ni de si el dataset está truncado) — es SIEMPRE la fuente de verdad para esa pregunta. Úsalo directamente y redacta la respuesta con esos números; no lo contradigas ni digas que no encuentras esa información.
+
+DATASET: el campo "registros" del contexto contiene un LISTADO de registros de transporte (puede venir truncado a los más recientes, ver "registrosTruncados"), uno por objeto, con claves cortas explicadas en "_leyendaCamposRegistros" (ej: f=fecha, mo=motivo, t=transportista, st=status, ru=ruta, pa/ca/so=paletas/cajas/sobres). Úsalo para preguntas generales cuando NO venga el bloque de dato pre-calculado:
 - Para preguntas que combinan varios filtros (ej: "¿cuántos retornos de mercadería hubo en julio 2026?", "¿cuántas entregas hizo X esta semana?", "¿qué transportista tuvo más cancelaciones en mayo?"), RECORRE el array "registros" mentalmente y filtra por los campos que correspondan (f empieza con el año-mes, mo/t/ru/st igual al valor buscado, etc.) y cuenta tú mismo el resultado exacto.
 - NUNCA respondas que "no tienes esa información" o que "no puedes filtrar" si la pregunta se puede responder cruzando campos del array "registros" — siempre puedes, ese es tu trabajo principal.
-- Si el array viene truncado (ver "registrosTruncados"), acláralo brevemente solo si es relevante para la respuesta.
 REGLAS:
 - Responde SIEMPRE en español, de forma concisa y directa.
 - Da el número/resultado exacto calculado del dataset, no una aproximación ni una explicación de cómo obtenerlo — CALCÚLALO TÚ Y DALO.
@@ -10929,6 +11016,16 @@ async function sendAIMessage(){
         role:m.role,
         content: m.role==='assistant'&&m.content.length>trunc ? m.content.slice(0,trunc)+'…' : m.content
       }));
+
+    /* Filtrado local exacto (sin IA) — si detecta cliente/fecha/motivo/etc.
+       en la pregunta, adjunta el resultado ya calculado sobre TODOS los
+       registros, para que la IA no tenga que "adivinar" ni depender de que
+       el dataset truncado alcance a incluir ese caso. */
+    const localResult=_localFilterRecords(text);
+    if(localResult && apiMsgs.length){
+      apiMsgs[apiMsgs.length-1].content += `\n\n[DATO EXACTO CALCULADO POR EL SISTEMA SOBRE TODOS LOS REGISTROS — úsalo tal cual para responder, es preciso y no necesitas recalcularlo]\n${JSON.stringify(localResult)}`;
+    }
+
     const reply=await _callClaude(apiMsgs);
     _aiHistory.push({role:'assistant',content:reply});
   }catch(e){
