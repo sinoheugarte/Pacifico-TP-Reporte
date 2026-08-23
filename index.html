@@ -1841,7 +1841,7 @@ body.has-pending .pending-dot{display:inline-block}
         </button>
         <button onclick="selectAIProvider('groq')" id="ai-prov-groq"
           style="border:2px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;background:#fff;color:var(--text)">
-          Groq (Llama)
+          Groq (GPT-OSS)
         </button>
         <button onclick="selectAIProvider('claude')" id="ai-prov-claude"
           style="border:2px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;background:#fff;color:var(--text)">
@@ -10587,7 +10587,7 @@ let _aiHistory=[];
 
 const _AI_PROVIDERS={
   gemini:{label:'Google Gemini',model:'gemini-2.0-flash',placeholder:'AIza…',hint:'Clave gratuita — aistudio.google.com/apikey',lsKey:'ptp_gemini_key'},
-  groq:  {label:'Groq (Llama)',  model:'llama-3.3-70b-versatile',placeholder:'gsk_…',hint:'Clave gratuita — console.groq.com',lsKey:'ptp_groq_key'},
+  groq:  {label:'Groq (GPT-OSS)',model:'openai/gpt-oss-120b',placeholder:'gsk_…',hint:'Clave gratuita — console.groq.com',lsKey:'ptp_groq_key'},
   claude:{label:'Anthropic Claude',model:'claude-sonnet-4-6',placeholder:'sk-ant-api03-…',hint:'console.anthropic.com/settings/keys',lsKey:'ptp_claude_key'}
 };
 
