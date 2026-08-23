@@ -10709,7 +10709,7 @@ function _buildAIContext(){
      de caracteres, para no exceder los límites de TPM del proveedor de IA
      (Groq gratuito permite solo ~8000 tokens por solicitud, incluyendo el
      historial de la conversación). Si no entran todos, se avisa. */
-  const CHAR_BUDGET=15000;
+  const CHAR_BUDGET=6500;
   const orderedRecs=[...recs].reverse(); // más reciente primero
   const registros=[];
   let usedChars=0;
@@ -10811,7 +10811,7 @@ async function _callClaude(messages){
     const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:cfg.model,messages:msgs,max_tokens:1200,temperature:0.4})
+      body:JSON.stringify({model:cfg.model,messages:msgs,max_tokens:700,temperature:0.4})
     });
     if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
     const d=await resp.json();
@@ -10908,10 +10908,10 @@ async function sendAIMessage(){
 
   try{
     const apiMsgs=_aiHistory.filter(m=>m.role!=='assistant'||_aiHistory.indexOf(m)>0)
-      .slice(-6) // limitar historial — el contexto de datos se reconstruye completo en cada llamada
+      .slice(-4) // limitar historial — el contexto de datos se reconstruye completo en cada llamada
       .map(m=>({
         role:m.role,
-        content: m.role==='assistant'&&m.content.length>500 ? m.content.slice(0,500)+'…' : m.content
+        content: m.role==='assistant'&&m.content.length>350 ? m.content.slice(0,350)+'…' : m.content
       }));
     const reply=await _callClaude(apiMsgs);
     _aiHistory.push({role:'assistant',content:reply});
