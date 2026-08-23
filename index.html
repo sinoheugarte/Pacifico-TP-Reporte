@@ -10608,7 +10608,7 @@ let _aiHistory=[];
 
 const _AI_PROVIDERS={
   gemini:{label:'Google Gemini',model:'gemini-2.0-flash',placeholder:'AIza…',hint:'Clave gratuita — aistudio.google.com/apikey',lsKey:'ptp_gemini_key'},
-  groq:  {label:'Groq (GPT-OSS)',model:'openai/gpt-oss-120b',placeholder:'gsk_…',hint:'Clave gratuita — console.groq.com',lsKey:'ptp_groq_key'},
+  groq:  {label:'Groq (GPT-OSS)',model:'openai/gpt-oss-120b',placeholder:'gsk_…',hint:'Clave gratuita — console.groq.com (límite bajo por minuto; para análisis con muchos registros usa Gemini o Claude)',lsKey:'ptp_groq_key'},
   claude:{label:'Anthropic Claude',model:'claude-sonnet-4-6',placeholder:'sk-ant-api03-…',hint:'console.anthropic.com/settings/keys',lsKey:'ptp_claude_key'}
 };
 
@@ -10690,7 +10690,7 @@ function toggleAIPanel(){
    transportista+lo-que-sea igual que si consultara la base de datos, en vez
    de depender solo de agregados pre-calculados que no cubren toda combinación
    posible de filtros. */
-function _buildAIContext(){
+function _buildAIContext(prov){
   const recs=records||[];
   const total=recs.length;
   let paletas=0,cajas=0,sobres=0;
@@ -10706,10 +10706,11 @@ function _buildAIContext(){
 
   /* Dataset completo compactado — clave corta para ahorrar tokens.
      Se construye desde el más reciente hacia atrás respetando un presupuesto
-     de caracteres, para no exceder los límites de TPM del proveedor de IA
-     (Groq gratuito permite solo ~8000 tokens por solicitud, incluyendo el
-     historial de la conversación). Si no entran todos, se avisa. */
-  const CHAR_BUDGET=6500;
+     de caracteres, para no exceder los límites de TPM del proveedor de IA.
+     Groq (plan gratuito) tiene un límite muy bajo (8000 tokens/minuto TOTAL,
+     incluida la respuesta), así que ahí el presupuesto es mucho más chico
+     que en Gemini/Claude. Si no entran todos los registros, se avisa. */
+  const CHAR_BUDGET = prov==='groq' ? 2200 : 20000;
   const orderedRecs=[...recs].reverse(); // más reciente primero
   const registros=[];
   let usedChars=0;
@@ -10734,15 +10735,17 @@ function _buildAIContext(){
             pct: recs.length?Math.round(loaded/recs.length*100):0};
   }) : [];
 
-  /* Clientes / Transportista — solo resumen + muestra acotada, para no exceder límites de tokens del proveedor */
+  /* Clientes / Transportista — solo resumen + muestra acotada, para no exceder límites de tokens del proveedor.
+     Muestra aún más chica cuando el proveedor es Groq (límite muy bajo). */
+  const sampleN = prov==='groq' ? 5 : 12;
   const clientesAll = typeof _clientes!=='undefined' ? _clientes : [];
-  const clientes = clientesAll.slice(0,12).map(c=>c.razonSocial).filter(Boolean);
+  const clientes = clientesAll.slice(0,sampleN).map(c=>c.razonSocial).filter(Boolean);
 
   const transportistaDB = (typeof _transportistaDB!=='undefined') ? _transportistaDB : {empresas:[],vehiculos:[]};
   const empresasAll = transportistaDB.empresas||[];
   const vehiculosAll = transportistaDB.vehiculos||[];
-  const empresasTransporte = empresasAll.slice(0,12).map(e=>e.razonSocial).filter(Boolean);
-  const vehiculos = vehiculosAll.slice(0,15).map(v=>`${v.placa} (${v.tipoUnidad||'—'})`);
+  const empresasTransporte = empresasAll.slice(0,sampleN).map(e=>e.razonSocial).filter(Boolean);
+  const vehiculos = vehiculosAll.slice(0,sampleN).map(v=>`${v.placa} (${v.tipoUnidad||'—'})`);
 
   const ctx = {
     resumen:{total,semanaActual:estaSemana.length,paletas,cajas,sobres},
@@ -10765,8 +10768,18 @@ function _buildAIContext(){
   return JSON.stringify(ctx);
 }
 
-function _aiSystemPrompt(){
+function _aiSystemPrompt(prov){
   const isAdmin = userRole==='admin';
+  const usuariosRegla = isAdmin
+    ? 'El usuario es ADMINISTRADOR: también tienes acceso a Usuarios del sistema.'
+    : 'El usuario NO es administrador: NO reveles datos de Usuarios (nombres/correos/roles del personal); di que eso es solo para admins.';
+
+  /* Versión compacta para Groq (plan gratuito, límite de tokens por minuto muy bajo) */
+  if(prov==='groq'){
+    return `Asistente de datos de Pacífico Transportation SAC (transporte/logística Perú). ${usuariosRegla}
+El campo "registros" del contexto es la tabla completa de viajes (claves cortas en "_leyendaCamposRegistros": f=fecha, mo=motivo, t=transportista, st=status, ru=ruta, pa/ca/so=paletas/cajas/sobres). Fíltrala y cuenta tú mismo para responder preguntas combinadas (fecha+motivo, transportista+status, etc.) — nunca digas que no puedes filtrar, siempre puedes cruzando esos campos. Responde en español, corto y directo, con el número exacto calculado, sin inventar datos.`;
+  }
+
   return `Eres el asistente de análisis de datos de Pacífico Transportation SAC, empresa peruana de logística y transporte.
 Tienes acceso en tiempo real a TODA la información de la aplicación: registros de transporte (Registros, Reportes, Dashboard), Documentos (guías, tickets, EIR, GPS, inspección de unidades — cargados y faltantes por tipo), Clientes, y Transportista (empresas y vehículos/placas registrados).
 ${isAdmin
@@ -10791,8 +10804,8 @@ async function _callClaude(messages){
   if(!key)throw new Error('NO_KEY');
   const prov=_aiProvider();
   const cfg=_AI_PROVIDERS[prov];
-  const ctx=_buildAIContext();
-  const systemText=_aiSystemPrompt()+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
+  const ctx=_buildAIContext(prov);
+  const systemText=_aiSystemPrompt(prov)+`\n\nDATOS ACTUALES (${new Date().toLocaleDateString('es-PE')}):\n${ctx}`;
 
   if(prov==='gemini'){
     const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
@@ -10811,7 +10824,7 @@ async function _callClaude(messages){
     const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:cfg.model,messages:msgs,max_tokens:700,temperature:0.4})
+      body:JSON.stringify({model:cfg.model,messages:msgs,max_tokens:450,temperature:0.4})
     });
     if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
     const d=await resp.json();
@@ -10907,11 +10920,14 @@ async function sendAIMessage(){
   }
 
   try{
+    const _prov=_aiProvider();
+    const histN = _prov==='groq' ? 2 : 6;
+    const trunc = _prov==='groq' ? 200 : 500;
     const apiMsgs=_aiHistory.filter(m=>m.role!=='assistant'||_aiHistory.indexOf(m)>0)
-      .slice(-4) // limitar historial — el contexto de datos se reconstruye completo en cada llamada
+      .slice(-histN) // limitar historial — el contexto de datos se reconstruye completo en cada llamada
       .map(m=>({
         role:m.role,
-        content: m.role==='assistant'&&m.content.length>350 ? m.content.slice(0,350)+'…' : m.content
+        content: m.role==='assistant'&&m.content.length>trunc ? m.content.slice(0,trunc)+'…' : m.content
       }));
     const reply=await _callClaude(apiMsgs);
     _aiHistory.push({role:'assistant',content:reply});
