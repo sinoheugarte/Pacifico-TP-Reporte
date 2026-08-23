@@ -10691,30 +10691,29 @@ function _buildAIContext(){
     sobres+=(parseInt(r.sobres)||0);
   });
 
-  const top=obj=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const ultimos=recs.slice(-15).map(r=>({
+  const top=obj=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const ultimos=recs.slice(-8).map(r=>({
     orden:r.orden,fecha:r.fechaInicio,transportista:r.transportista,
-    ruta:r.ruta,status:r.status,motivo:r.motivo,
-    viaje:r.viaje,turno:r.turnoInicio
+    ruta:r.ruta,status:r.status,viaje:r.viaje
   }));
   const estaSemana=recs.filter(r=>r.fechaInicio&&new Date(r.fechaInicio)>=semanaAtras);
 
   /* Documentos (pestaña Documentos) — cargados/faltantes por tipo, sobre todos los registros */
   const documentos = (typeof DOC_TYPES!=='undefined') ? DOC_TYPES.map(dt=>{
     const loaded=recs.filter(r=>_docLoaded(r,dt.prefixes)).length;
-    return {tipo:dt.label, total:recs.length, cargados:loaded, faltantes:recs.length-loaded,
-            pctCumplimiento: recs.length?Math.round(loaded/recs.length*100):0};
+    return {tipo:dt.label, cargados:loaded, faltantes:recs.length-loaded,
+            pct: recs.length?Math.round(loaded/recs.length*100):0};
   }) : [];
 
-  /* Clientes (pestaña Usuarios → Clientes) */
-  const clientes = (typeof _clientes!=='undefined' ? _clientes : []).map(c=>({
-    razonSocial:c.razonSocial, ruc:c.ruc, contacto:c.contacto, telefono:c.telefono
-  }));
+  /* Clientes / Transportista — solo resumen + muestra acotada, para no exceder límites de tokens del proveedor */
+  const clientesAll = typeof _clientes!=='undefined' ? _clientes : [];
+  const clientes = clientesAll.slice(0,12).map(c=>c.razonSocial).filter(Boolean);
 
-  /* Transportista (pestaña Transportista: empresas y vehículos) */
   const transportistaDB = (typeof _transportistaDB!=='undefined') ? _transportistaDB : {empresas:[],vehiculos:[]};
-  const empresasTransporte = (transportistaDB.empresas||[]).map(e=>({razonSocial:e.razonSocial, ruc:e.ruc, codigoMTC:e.codigoMTC}));
-  const vehiculos = (transportistaDB.vehiculos||[]).map(v=>({placa:v.placa, tipo:v.tipoUnidad, marca:v.marca, modelo:v.modelo, empresa:v.empresa}));
+  const empresasAll = transportistaDB.empresas||[];
+  const vehiculosAll = transportistaDB.vehiculos||[];
+  const empresasTransporte = empresasAll.slice(0,12).map(e=>e.razonSocial).filter(Boolean);
+  const vehiculos = vehiculosAll.slice(0,15).map(v=>`${v.placa} (${v.tipoUnidad||'—'})`);
 
   const ctx = {
     resumen:{total,semanaActual:estaSemana.length,paletas,cajas,sobres},
@@ -10723,22 +10722,22 @@ function _buildAIContext(){
     topRutas:top(byRuta),
     porMotivo:byMotivo,
     porTipoUnidad:byUnidad,
-    tendenciaMensual:Object.entries(byMes).sort(),
-    ultimos15Registros:ultimos,
+    tendenciaMensual:Object.entries(byMes).sort().slice(-6),
+    ultimosRegistros:ultimos,
     documentosPorTipo:documentos,
-    clientes,
-    empresasTransporte,
-    vehiculos
+    clientes:{total:clientesAll.length, muestra:clientes},
+    transportista:{totalEmpresas:empresasAll.length, empresas:empresasTransporte, totalVehiculos:vehiculosAll.length, vehiculosMuestra:vehiculos}
   };
 
   /* Usuarios del sistema — SOLO visible para el asistente si quien pregunta es administrador */
   if(userRole==='admin' && typeof _sysUsers!=='undefined'){
-    ctx.usuariosDelSistema = _sysUsers.map(u=>({
-      nombre:[u.nombre,u.apellidos].filter(Boolean).join(' '), email:u.email, rol:u.rol, empresa:u.empresa
-    }));
+    ctx.usuariosDelSistema = {
+      total:_sysUsers.length,
+      muestra: _sysUsers.slice(0,15).map(u=>`${[u.nombre,u.apellidos].filter(Boolean).join(' ')} · ${u.rol||'—'}`)
+    };
   }
 
-  return JSON.stringify(ctx,null,2);
+  return JSON.stringify(ctx);
 }
 
 function _aiSystemPrompt(){
