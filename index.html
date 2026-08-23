@@ -10701,43 +10701,37 @@ function toggleAIPanel(){
 function _normalizeAI(s){
   return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
 }
+
+/* Recuerda el último filtro detectado en la conversación, para que preguntas
+   de seguimiento ("¿y cuántos viajes?", "¿y en abril?") sigan aplicando el
+   cliente/transportista/etc. que ya se había mencionado antes, sin obligar
+   al usuario a repetirlo cada vez. Se reinicia cuando arranca un chat nuevo. */
+let _aiLastFilterParts=null;
+
 function _localFilterRecords(question){
   const recs=records||[];
   if(!recs.length) return null;
   const q=_normalizeAI(question);
-  let filtered=recs;
-  const applied=[];
 
   const uniq=k=>[...new Set(recs.map(r=>r[k]).filter(Boolean))];
+  /* Coincidencia difusa: gana la entidad con más palabras (>2 letras) de su
+     nombre presentes en la pregunta — basta con UNA palabra distintiva
+     ("papelera" encuentra "PAPELERA NACIONAL S.A.C.") en vez de exigir que
+     coincida la mayoría del nombre completo, que suele ser largo. */
   const bestMatch=(list)=>{
-    let best=null,bestScore=0;
+    let best=null,bestHits=0,bestRatio=0;
     for(const v of list){
       const nv=_normalizeAI(v);
       if(!nv) continue;
       const tokens=nv.split(/\s+/).filter(t=>t.length>2);
       if(!tokens.length) continue;
       let hits=0; tokens.forEach(t=>{ if(q.includes(t)) hits++; });
-      const score=hits/tokens.length;
-      if(score>bestScore && score>=0.6){ bestScore=score; best=v; }
+      if(hits===0) continue;
+      const ratio=hits/tokens.length;
+      if(hits>bestHits || (hits===bestHits && ratio>bestRatio)){ bestHits=hits; bestRatio=ratio; best=v; }
     }
     return best;
   };
-
-  const cli=bestMatch(uniq('cliente'));
-  const tr=bestMatch(uniq('transportista'));
-  const mo=bestMatch(uniq('motivo'));
-  const ru=bestMatch(uniq('ruta'));
-  const st=bestMatch(uniq('status'));
-  const cd=bestMatch(uniq('conductor'));
-  const pl=bestMatch(uniq('placa'));
-
-  if(cli){filtered=filtered.filter(r=>r.cliente===cli);applied.push(`cliente="${cli}"`);}
-  if(tr){filtered=filtered.filter(r=>r.transportista===tr);applied.push(`transportista="${tr}"`);}
-  if(mo){filtered=filtered.filter(r=>r.motivo===mo);applied.push(`motivo="${mo}"`);}
-  if(ru){filtered=filtered.filter(r=>r.ruta===ru);applied.push(`ruta="${ru}"`);}
-  if(st){filtered=filtered.filter(r=>r.status===st);applied.push(`status="${st}"`);}
-  if(cd){filtered=filtered.filter(r=>r.conductor===cd);applied.push(`conductor="${cd}"`);}
-  if(pl){filtered=filtered.filter(r=>r.placa===pl);applied.push(`placa="${pl}"`);}
 
   /* Mes + año mencionados (ej: "junio 2026") */
   const meses={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,setiembre:9,septiembre:9,octubre:10,noviembre:11,diciembre:12};
@@ -10745,24 +10739,55 @@ function _localFilterRecords(question){
   for(const [name,num] of Object.entries(meses)){ if(q.includes(name)){ mesNum=num; break; } }
   const yearMatch=q.match(/\b(20\d{2})\b/);
   const anio=yearMatch?yearMatch[1]:null;
-  if(mesNum && anio){
-    const ym=`${anio}-${String(mesNum).padStart(2,'0')}`;
+  const dateMatch=question.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  const dateIso=dateMatch?`${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`:null;
+
+  const detected={
+    cli:bestMatch(uniq('cliente')), tr:bestMatch(uniq('transportista')),
+    mo:bestMatch(uniq('motivo')), ru:bestMatch(uniq('ruta')),
+    st:bestMatch(uniq('status')), cd:bestMatch(uniq('conductor')),
+    pl:bestMatch(uniq('placa')), mesNum, anio, dateIso
+  };
+  const hayAlgoNuevo=Object.values(detected).some(v=>v!==null&&v!==undefined);
+
+  let parts;
+  if(hayAlgoNuevo){
+    /* Combina lo nuevo con lo anterior: lo nuevo pisa cada campo que trae,
+       lo que no trae se conserva del filtro previo (permite "¿y en abril?"
+       después de haber preguntado por un cliente). */
+    parts={...( _aiLastFilterParts||{} )};
+    Object.entries(detected).forEach(([k,v])=>{ if(v!==null&&v!==undefined) parts[k]=v; });
+  } else if(_aiLastFilterParts && question.trim().split(/\s+/).length<=9){
+    /* Pregunta corta sin entidad nueva → probablemente sigue el hilo anterior */
+    parts=_aiLastFilterParts;
+  } else {
+    return null; // no hay filtro ni contexto previo aplicable — flujo normal
+  }
+
+  let filtered=recs;
+  const applied=[];
+  if(parts.cli){filtered=filtered.filter(r=>r.cliente===parts.cli);applied.push(`cliente="${parts.cli}"`);}
+  if(parts.tr){filtered=filtered.filter(r=>r.transportista===parts.tr);applied.push(`transportista="${parts.tr}"`);}
+  if(parts.mo){filtered=filtered.filter(r=>r.motivo===parts.mo);applied.push(`motivo="${parts.mo}"`);}
+  if(parts.ru){filtered=filtered.filter(r=>r.ruta===parts.ru);applied.push(`ruta="${parts.ru}"`);}
+  if(parts.st){filtered=filtered.filter(r=>r.status===parts.st);applied.push(`status="${parts.st}"`);}
+  if(parts.cd){filtered=filtered.filter(r=>r.conductor===parts.cd);applied.push(`conductor="${parts.cd}"`);}
+  if(parts.pl){filtered=filtered.filter(r=>r.placa===parts.pl);applied.push(`placa="${parts.pl}"`);}
+  if(parts.mesNum && parts.anio){
+    const ym=`${parts.anio}-${String(parts.mesNum).padStart(2,'0')}`;
     filtered=filtered.filter(r=>(r.fechaInicio||'').startsWith(ym));
     applied.push(`mes=${ym}`);
-  } else if(anio){
-    filtered=filtered.filter(r=>(r.fechaInicio||'').startsWith(anio));
-    applied.push(`año=${anio}`);
+  } else if(parts.anio){
+    filtered=filtered.filter(r=>(r.fechaInicio||'').startsWith(parts.anio));
+    applied.push(`año=${parts.anio}`);
+  }
+  if(parts.dateIso){
+    filtered=filtered.filter(r=>r.fechaInicio===parts.dateIso);
+    applied.push(`fecha=${parts.dateIso}`);
   }
 
-  /* Fecha explícita dd/mm/yyyy o dd-mm-yyyy */
-  const dateMatch=question.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if(dateMatch){
-    const iso=`${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`;
-    filtered=filtered.filter(r=>r.fechaInicio===iso);
-    applied.push(`fecha=${iso}`);
-  }
-
-  if(!applied.length) return null; // no se detectó ningún filtro con confianza — se deja el flujo normal
+  if(!applied.length) return null;
+  _aiLastFilterParts=parts; // recordar para la siguiente pregunta de seguimiento
 
   const paletas=filtered.reduce((a,r)=>a+(parseInt(r.paletas)||0),0);
   const cajas=filtered.reduce((a,r)=>a+(parseInt(r.cajas)||0),0);
@@ -10944,7 +10969,10 @@ function renderAIContent(){
     </div>`;
     return;
   }
-  if(_aiHistory.length===0)_aiHistory=[{role:'assistant',content:'¡Hola! Soy el asistente IA de Pacífico TP 🚛\n\nTengo acceso a tus registros, documentos, clientes y transportista. Ejemplos:\n• "¿Cuántas entregas hizo BRUNNEN esta semana?"\n• "¿Cuál es la ruta más operada?"\n• "¿Qué documentos faltan cargar?"\n• "Detecta anomalías en los datos"\n• "¿Qué predices para el próximo mes?"'}];
+  if(_aiHistory.length===0){
+    _aiHistory=[{role:'assistant',content:'¡Hola! Soy el asistente IA de Pacífico TP 🚛\n\nTengo acceso a tus registros, documentos, clientes y transportista. Ejemplos:\n• "¿Cuántas entregas hizo BRUNNEN esta semana?"\n• "¿Cuál es la ruta más operada?"\n• "¿Qué documentos faltan cargar?"\n• "Detecta anomalías en los datos"\n• "¿Qué predices para el próximo mes?"'}];
+    _aiLastFilterParts=null;
+  }
   wrap.innerHTML=`
     <div class="ai-actions">
       <button class="ai-action-btn" id="ai-btn-anomalias" onclick="runAutoAnalysis('anomalias')">
