@@ -695,6 +695,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 .docs-stats-tbl .pct-bar-bg{background:var(--border);border-radius:20px;height:6px;width:100%;overflow:hidden}
 [data-theme="dark"] .docs-stats-tbl .pct-bar-bg{background:#334155}
 .docs-stats-tbl .pct-bar{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:20px}
+.docs-num-link{cursor:pointer;font-weight:700;padding:2px 8px;border-radius:6px;transition:background .15s}
+.docs-num-link:hover{background:rgba(148,163,184,.18);text-decoration:underline}
+.docs-num-link.active{background:currentColor;color:#fff !important;box-shadow:0 0 0 2px currentColor}
+.docs-filter-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;padding:9px 14px;margin-bottom:10px;font-size:12.5px;color:#92400e}
+.docs-filter-banner button{background:none;border:1px solid #92400e;color:#92400e;border-radius:6px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+[data-theme="dark"] .docs-filter-banner{background:#78350f;border-color:#f59e0b;color:#fcd34d}
+[data-theme="dark"] .docs-filter-banner button{border-color:#fcd34d;color:#fcd34d}
 /* Columna Orden de tabla Reportes */
 [data-theme="dark"] .rtbl td.td-orden{color:#93c5fd}
 /* Columna fecha/hora */
@@ -2105,6 +2112,7 @@ body.has-pending .pending-dot{display:inline-block}
 
   <!-- Tabla de órdenes con estado de documentos -->
   <div style="padding:0 14px 30px">
+    <div id="docsTypeFilterBanner"></div>
     <div class="rtbl-wrap"><table class="rtbl docs-tbl" id="docsTbl">
       <thead>
         <tr>
@@ -8555,11 +8563,24 @@ const DOC_TYPES=[
   {key:'inspeccionUnidades', label:'Inspección de Unidades',prefixes:['inspeccionunidades','inspeccion_unidades']},
 ];
 
+var _docsTypeFilter=null; // {key, state:'loaded'|'missing'}
+
 function clearDocsFilters(){
   ['orden','viaje','fecha','cliente','transportista','placa','conductor'].forEach(k=>{
     const el=document.getElementById('docs-f-'+k); if(el) el.value='';
   });
+  _docsTypeFilter=null;
   renderDocumentsScreen();
+}
+
+function setDocsTypeFilter(key,state){
+  if(_docsTypeFilter && _docsTypeFilter.key===key && _docsTypeFilter.state===state){
+    _docsTypeFilter=null;
+  } else {
+    _docsTypeFilter={key,state};
+  }
+  renderDocumentsScreen();
+  document.getElementById('docsTbl')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function renderDocumentsScreen(){
@@ -8586,9 +8607,7 @@ function renderDocumentsScreen(){
     return true;
   }).sort((a,b)=>(b.fechaInicio||'').localeCompare(a.fechaInicio||''));
 
-  setEl('docs-count', `${rows.length} orden${rows.length!==1?'es':''}`);
-
-  /* ── Estadísticas por tipo de documento ── */
+  /* ── Estadísticas por tipo de documento (sobre TODOS los que pasan la búsqueda) ── */
   const stats=DOC_TYPES.map(dt=>{
     const total=rows.length;
     const loaded=rows.filter(r=>_docLoaded(r,dt.prefixes)).length;
@@ -8598,6 +8617,27 @@ function renderDocumentsScreen(){
   const totalDocsPossible=rows.length*DOC_TYPES.length;
   const totalDocsLoaded=stats.reduce((a,s)=>a+s.loaded,0);
   const overallPct=totalDocsPossible?Math.round(totalDocsLoaded/totalDocsPossible*100):0;
+
+  /* ── Filtro por clic en Cargados/Faltantes de un tipo de documento (solo afecta la tabla) ── */
+  let tableRows=rows;
+  if(_docsTypeFilter){
+    const dt=DOC_TYPES.find(d=>d.key===_docsTypeFilter.key);
+    if(dt){
+      tableRows=rows.filter(r=>{
+        const has=_docLoaded(r,dt.prefixes);
+        return _docsTypeFilter.state==='loaded' ? has : !has;
+      });
+    }
+  }
+
+  setEl('docs-count', `${tableRows.length} orden${tableRows.length!==1?'es':''}`);
+
+  const _dtActive=_docsTypeFilter&&DOC_TYPES.find(d=>d.key===_docsTypeFilter.key);
+  setEl('docsTypeFilterBanner', _dtActive ? `
+    <div class="docs-filter-banner">
+      <span>Filtrando por <strong>${_dtActive.label}</strong> — ${_docsTypeFilter.state==='loaded'?'documentos cargados':'documentos faltantes'}</span>
+      <button onclick="setDocsTypeFilter('${_docsTypeFilter.key}','${_docsTypeFilter.state}')">× Quitar filtro</button>
+    </div>` : '');
 
   const _dk=document.documentElement.dataset.theme==='dark';
   const _kpiMap=(fg)=>`border-top-color:${fg}`;
@@ -8638,25 +8678,28 @@ function renderDocumentsScreen(){
     <table class="docs-stats-tbl">
       <thead><tr><th>Tipo de Documento</th><th>Total</th><th>Cargados</th><th>Faltantes</th><th>% Cumplimiento</th></tr></thead>
       <tbody>
-        ${stats.map(s=>`
+        ${stats.map(s=>{
+          const isLoadedActive=_docsTypeFilter&&_docsTypeFilter.key===s.key&&_docsTypeFilter.state==='loaded';
+          const isMissingActive=_docsTypeFilter&&_docsTypeFilter.key===s.key&&_docsTypeFilter.state==='missing';
+          return `
           <tr>
             <td style="font-weight:600">${s.label}</td>
             <td>${s.total}</td>
-            <td style="color:#22c55e;font-weight:700">${s.loaded}</td>
-            <td style="color:#ef4444;font-weight:700">${s.missing}</td>
+            <td><span class="docs-num-link${isLoadedActive?' active':''}" style="color:#22c55e" onclick="setDocsTypeFilter('${s.key}','loaded')" title="Ver órdenes con este documento cargado">${s.loaded}</span></td>
+            <td><span class="docs-num-link${isMissingActive?' active':''}" style="color:#ef4444" onclick="setDocsTypeFilter('${s.key}','missing')" title="Ver órdenes a las que les falta este documento">${s.missing}</span></td>
             <td>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="pct-bar-bg" style="max-width:90px"><div class="pct-bar" style="width:${s.pct}%"></div></div>
                 <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700">${s.pct}%</span>
               </div>
             </td>
-          </tr>`).join('')}
+          </tr>`;}).join('')}
       </tbody>
     </table>
   `);
 
   /* ── Tabla de órdenes ── */
-  setEl('docsTbl-body', rows.map(r=>{
+  setEl('docsTbl-body', tableRows.map(r=>{
     const dots=DOC_TYPES.map(dt=>`<td><span class="doc-pt${_docLoaded(r,dt.prefixes)?' on':''}" title="${dt.label}"></span></td>`).join('');
     return `<tr onclick="showDet('${r.id}')">
       <td class="td-date">${formatDateToDDMMYYYY(r.fechaInicio)||'—'}</td>
