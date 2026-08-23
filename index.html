@@ -665,6 +665,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
 [data-theme="dark"] .dash-card-title{color:#93c5fd !important}
 /* Título principal "Dashboard Ejecutivo" */
 [data-theme="dark"] #scr-dashboard .dash-exec-title{color:#e2e8f0 !important}
+
+/* ── PANTALLA: DOCUMENTOS ── */
+.docs-hero{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#0f2340 0%,#1a3a5c 100%);border-radius:14px;padding:16px 18px;box-shadow:0 4px 15px rgba(15,35,64,.3)}
+.docs-hero-ic{width:42px;height:42px;flex-shrink:0;border-radius:10px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center}
+.docs-hero-title{color:#fff;font-size:16px;font-weight:800}
+.docs-hero-sub{color:rgba(255,255,255,.65);font-size:11.5px;margin-top:2px}
+.docs-search-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.docs-search-f{display:flex;flex-direction:column;gap:3px}
+.docs-search-f label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.docs-search-f input{border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--text)}
+.docs-search-f input:focus{outline:none;border-color:var(--amber)}
+[data-theme="dark"] .docs-search-f input{background:#0f172a;border-color:#334155;color:#e2e8f0}
+.docs-tbl tr{cursor:pointer}
+.docs-tbl tbody tr:hover{background:rgba(245,158,11,.06)}
+[data-theme="dark"] .docs-tbl tbody tr:hover{background:rgba(245,158,11,.1)}
+.doc-pt{display:inline-block;width:11px;height:11px;border-radius:50%;background:#fff;border:1.5px solid #cbd5e1;box-shadow:0 0 0 2px rgba(0,0,0,.03)}
+.doc-pt.on{background:#22c55e;border-color:#16a34a;box-shadow:0 0 5px 1px rgba(34,197,94,.55)}
+[data-theme="dark"] .doc-pt{background:#334155;border-color:#475569}
+[data-theme="dark"] .doc-pt.on{background:#22c55e;border-color:#4ade80}
+.docs-kpi{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;border-top:3px solid var(--amber)}
+[data-theme="dark"] .docs-kpi{background:#1e293b !important;border-color:#334155 !important}
+.docs-kpi .n{font-size:22px;font-weight:800}
+.docs-kpi .l{font-size:10px;color:var(--text2);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.docs-stats-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.docs-stats-tbl th{text-align:left;padding:7px 10px;background:var(--navy);color:#fff;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+.docs-stats-tbl td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+[data-theme="dark"] .docs-stats-tbl td{border-color:#334155;color:#e2e8f0}
+.docs-stats-tbl .pct-bar-bg{background:var(--border);border-radius:20px;height:6px;width:100%;overflow:hidden}
+[data-theme="dark"] .docs-stats-tbl .pct-bar-bg{background:#334155}
+.docs-stats-tbl .pct-bar{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:20px}
 /* Columna Orden de tabla Reportes */
 [data-theme="dark"] .rtbl td.td-orden{color:#93c5fd}
 /* Columna fecha/hora */
@@ -2031,6 +2061,61 @@ body.has-pending .pending-dot{display:inline-block}
   </div>
 </div>
 
+<div class="scr" id="scr-documents">
+  <div style="padding:14px 14px 0">
+    <div class="docs-hero">
+      <div class="docs-hero-ic">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <div>
+        <div class="docs-hero-title">Control de Documentos</div>
+        <div class="docs-hero-sub">Seguimiento de documentación cargada por orden de transporte</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI resumen -->
+  <div id="docsKpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 4px"></div>
+
+  <!-- Panel de estadísticas -->
+  <div style="padding:10px 14px">
+    <div class="dash-card">
+      <div class="dash-card-title">Cumplimiento Documentario por Tipo</div>
+      <div class="dash-chart-area" style="position:relative;height:260px"><canvas id="chartDocs"></canvas></div>
+      <div id="docsStatsTbl" style="overflow-x:auto;margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- Búsqueda por columna -->
+  <div style="padding:6px 14px 8px">
+    <div class="docs-search-grid">
+      <div class="docs-search-f"><label>Orden</label><input id="docs-f-orden" placeholder="N° orden…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Viaje</label><input id="docs-f-viaje" placeholder="N° viaje…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Fecha</label><input id="docs-f-fecha" placeholder="dd-mm-aaaa…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Cliente</label><input id="docs-f-cliente" placeholder="Cliente…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Transportista</label><input id="docs-f-transportista" placeholder="Transportista…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Conductor</label><input id="docs-f-conductor" placeholder="Conductor…" oninput="renderDocumentsScreen()"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+      <span id="docs-count" style="font-size:12px;color:var(--text2);font-weight:600"></span>
+      <button class="sbar-date-clear" style="position:static" title="Limpiar búsquedas" onclick="clearDocsFilters()">× Limpiar</button>
+    </div>
+  </div>
+
+  <!-- Tabla de órdenes con estado de documentos -->
+  <div style="padding:0 14px 30px">
+    <div class="rtbl-wrap"><table class="rtbl docs-tbl" id="docsTbl">
+      <thead>
+        <tr>
+          <th>Orden</th><th>Viaje</th><th>Fecha</th><th>Cliente</th><th>Transportista</th><th>Conductor</th>
+          <th>Guía Remit.</th><th>Guía Transp.</th><th>Hoja Ingreso</th><th>Tickets</th><th>EIR</th><th>GPS</th><th>Insp. Unidades</th>
+        </tr>
+      </thead>
+      <tbody id="docsTbl-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <nav class="nav" id="nav">
   <button class="nb on" id="nb-list" onclick="showScr('list')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -2047,6 +2132,10 @@ body.has-pending .pending-dot{display:inline-block}
   <button class="nb" id="nb-dash" onclick="showScr('dashboard')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     <span>Dashboard</span>
+  </button>
+  <button class="nb" id="nb-docs" onclick="showScr('documents')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>Documentos</span>
   </button>
   <button class="nb" id="nb-mapa" onclick="showScr('mapa')" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3360,7 +3449,7 @@ function loadCacheRecords(){ try{records=JSON.parse(localStorage.getItem(CACHE_K
 function showScr(name){
   closeEM(); document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('scr-'+name).classList.add('on'); document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   const bb=document.getElementById('backBtn'), fab=document.getElementById('fab'), exp=document.getElementById('expBtn'), nav=document.getElementById('nav');
-  setEl('hdrT',{list:'Registro de Transporte',form:editingId?'Editar Registro':'Nuevo Registro',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Reportes',users:'Gestión de Usuarios',transportista:'Transportista',mapa:'Mapa en Vivo'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
+  setEl('hdrT',{list:'Registro de Transporte',form:editingId?'Editar Registro':'Nuevo Registro',detail:'Detalle',settings:'Ajustes',dashboard:'Dashboard',records:'Reportes',users:'Gestión de Usuarios',transportista:'Transportista',mapa:'Mapa en Vivo',documents:'Documentos'}[name]||''); setEl('hdrS',user?user.name:'Pacífico Transportation SAC');
   if(name==='list'){bb.style.display='none';fab.style.display='flex';exp.style.display='flex';nav.style.display='flex';document.getElementById('nb-list').classList.add('on');renderList();}
   else if(name==='dashboard'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-dash').classList.add('on');renderDashboard();}
   else if(name==='form'){bb.style.display='flex';fab.style.display='none';exp.style.display='none';nav.style.display='none';document.getElementById('nb-new').classList.add('on');}
@@ -3370,6 +3459,7 @@ function showScr(name){
   else if(name==='users'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-users').classList.add('on');renderUsersScreen();loadUsersFromSP().then(()=>{renderUsersScreen();_updateMapFilterOptions();}).catch(()=>{});startUsersAutoRefresh();}
   else if(name==='transportista'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-transportista').classList.add('on');switchTranspSubTab('empresa');}
   else if(name==='mapa'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-mapa').classList.add('on');initLiveMap();}
+  else if(name==='documents'){bb.style.display='none';fab.style.display='none';exp.style.display='none';nav.style.display='flex';document.getElementById('nb-docs').classList.add('on');renderDocumentsScreen();}
 }
 function goBack(){if(document.querySelector('.scr.on')?.id!=='scr-list')showScr('list');}
 
@@ -8450,6 +8540,131 @@ function _beginIntroAnimation(scr,_rocketAu){
     }
   }
   raf=requestAnimationFrame(frame);
+}
+
+/* ─── PANTALLA: DOCUMENTOS ──────────────────────────────────── */
+var _docChart=null;
+const DOC_TYPES=[
+  {key:'guiaRemitente',      label:'Guía Remitente',        prefixes:['guiaremitente','guia_remitente']},
+  {key:'guiaTransportista',  label:'Guía Transportista',    prefixes:['guiatransportista','guia_transportista']},
+  {key:'hojaIngreso',        label:'Hoja Ingreso TAI LOY',  prefixes:['hojaingreso','hoja_ingreso','hoja']},
+  {key:'tickets',            label:'Tickets',               prefixes:['tickets']},
+  {key:'eir',                label:'EIR',                   prefixes:['eir']},
+  {key:'gps',                label:'GPS',                   prefixes:['gps']},
+  {key:'inspeccionUnidades', label:'Inspección de Unidades',prefixes:['inspeccionunidades','inspeccion_unidades']},
+];
+
+function clearDocsFilters(){
+  ['orden','viaje','fecha','cliente','transportista','conductor'].forEach(k=>{
+    const el=document.getElementById('docs-f-'+k); if(el) el.value='';
+  });
+  renderDocumentsScreen();
+}
+
+function renderDocumentsScreen(){
+  const all=_visibleRecords();
+  const fOrden=(document.getElementById('docs-f-orden')?.value||'').toLowerCase().trim();
+  const fViaje=(document.getElementById('docs-f-viaje')?.value||'').toLowerCase().trim();
+  const fFecha=(document.getElementById('docs-f-fecha')?.value||'').toLowerCase().trim();
+  const fCliente=(document.getElementById('docs-f-cliente')?.value||'').toLowerCase().trim();
+  const fTransp=(document.getElementById('docs-f-transportista')?.value||'').toLowerCase().trim();
+  const fCond=(document.getElementById('docs-f-conductor')?.value||'').toLowerCase().trim();
+
+  const rows=all.filter(r=>{
+    if(fOrden&&!(r.orden||'').toString().toLowerCase().includes(fOrden))return false;
+    if(fViaje&&!(r.viaje||'').toString().toLowerCase().includes(fViaje))return false;
+    if(fFecha){
+      const fmtd=(formatDateToDDMMYYYY(r.fechaInicio)||'').toLowerCase();
+      if(!fmtd.includes(fFecha)&&!(r.fechaInicio||'').toLowerCase().includes(fFecha))return false;
+    }
+    if(fCliente&&!(r.cliente||'').toLowerCase().includes(fCliente))return false;
+    if(fTransp&&!(r.transportista||'').toLowerCase().includes(fTransp))return false;
+    if(fCond&&!(r.conductor||'').toLowerCase().includes(fCond))return false;
+    return true;
+  }).sort((a,b)=>(b.fechaInicio||'').localeCompare(a.fechaInicio||''));
+
+  setEl('docs-count', `${rows.length} orden${rows.length!==1?'es':''}`);
+
+  /* ── Estadísticas por tipo de documento ── */
+  const stats=DOC_TYPES.map(dt=>{
+    const total=rows.length;
+    const loaded=rows.filter(r=>_docLoaded(r,dt.prefixes)).length;
+    return {...dt, total, loaded, missing:total-loaded, pct: total?Math.round(loaded/total*100):0};
+  });
+
+  const totalDocsPossible=rows.length*DOC_TYPES.length;
+  const totalDocsLoaded=stats.reduce((a,s)=>a+s.loaded,0);
+  const overallPct=totalDocsPossible?Math.round(totalDocsLoaded/totalDocsPossible*100):0;
+
+  const _dk=document.documentElement.dataset.theme==='dark';
+  const _kpiMap=(fg)=>`border-top-color:${fg}`;
+  setEl('docsKpis',[
+    ['Órdenes',       rows.length,        '#3B82F6'],
+    ['Doc. Cargados', totalDocsLoaded,    '#22C55E'],
+    ['Doc. Faltantes',totalDocsPossible-totalDocsLoaded,'#EF4444'],
+    ['Cumplimiento',  overallPct+'%',     '#F59E0B'],
+  ].map(([l,v,fg])=>`<div class="docs-kpi" style="${_kpiMap(fg)}"><div class="n" style="color:${fg}">${v}</div><div class="l">${l}</div></div>`).join(''));
+
+  /* ── Gráfico de barras apiladas ── */
+  if(_docChart){ try{_docChart.destroy();}catch{} _docChart=null; }
+  const _gc=_dk?'#94a3b8':'#64748b', _ggc=_dk?'rgba(255,255,255,.07)':'#f1f5f9';
+  const canvas=document.getElementById('chartDocs');
+  if(canvas){
+    _docChart=new Chart(canvas,{
+      type:'bar',
+      data:{
+        labels:stats.map(s=>s.label),
+        datasets:[
+          {label:'Cargados',  data:stats.map(s=>s.loaded),  backgroundColor:'#22c55e', borderRadius:4, borderSkipped:false, stack:'s'},
+          {label:'Faltantes', data:stats.map(s=>s.missing), backgroundColor:'#ef4444', borderRadius:4, borderSkipped:false, stack:'s'},
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:11},color:_gc,boxWidth:12}}},
+        scales:{
+          x:{stacked:true, grid:{display:false}, ticks:{font:{size:9.5},maxRotation:35,minRotation:20,color:_gc}},
+          y:{stacked:true, grid:{color:_ggc}, ticks:{font:{size:10},stepSize:1,color:_gc}}
+        }
+      }
+    });
+  }
+
+  /* ── Tabla resumen dinámica ── */
+  setEl('docsStatsTbl', `
+    <table class="docs-stats-tbl">
+      <thead><tr><th>Tipo de Documento</th><th>Total</th><th>Cargados</th><th>Faltantes</th><th>% Cumplimiento</th></tr></thead>
+      <tbody>
+        ${stats.map(s=>`
+          <tr>
+            <td style="font-weight:600">${s.label}</td>
+            <td>${s.total}</td>
+            <td style="color:#22c55e;font-weight:700">${s.loaded}</td>
+            <td style="color:#ef4444;font-weight:700">${s.missing}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pct-bar-bg" style="max-width:90px"><div class="pct-bar" style="width:${s.pct}%"></div></div>
+                <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700">${s.pct}%</span>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  `);
+
+  /* ── Tabla de órdenes ── */
+  setEl('docsTbl-body', rows.map(r=>{
+    const dots=DOC_TYPES.map(dt=>`<td><span class="doc-pt${_docLoaded(r,dt.prefixes)?' on':''}" title="${dt.label}"></span></td>`).join('');
+    return `<tr onclick="showDet('${r.id}')">
+      <td class="td-orden">${r.orden||'—'}</td>
+      <td>${r.viaje||'—'}</td>
+      <td class="td-date">${formatDateToDDMMYYYY(r.fechaInicio)||'—'}</td>
+      <td class="td-trunc">${r.cliente||'—'}</td>
+      <td class="td-trunc">${r.transportista||'—'}</td>
+      <td class="td-trunc">${r.conductor||'—'}</td>
+      ${dots}
+    </tr>`;
+  }).join('') || '<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--text2)">No hay órdenes que coincidan con la búsqueda</td></tr>');
 }
 
 /* ─── RECORDS TABLE ──────────────────────────────────── */
