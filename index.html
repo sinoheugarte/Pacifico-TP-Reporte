@@ -2089,11 +2089,12 @@ body.has-pending .pending-dot{display:inline-block}
   <!-- Búsqueda por columna -->
   <div style="padding:6px 14px 8px">
     <div class="docs-search-grid">
+      <div class="docs-search-f"><label>Fecha</label><input id="docs-f-fecha" placeholder="dd-mm-aaaa…" oninput="renderDocumentsScreen()"></div>
       <div class="docs-search-f"><label>Orden</label><input id="docs-f-orden" placeholder="N° orden…" oninput="renderDocumentsScreen()"></div>
       <div class="docs-search-f"><label>Viaje</label><input id="docs-f-viaje" placeholder="N° viaje…" oninput="renderDocumentsScreen()"></div>
-      <div class="docs-search-f"><label>Fecha</label><input id="docs-f-fecha" placeholder="dd-mm-aaaa…" oninput="renderDocumentsScreen()"></div>
       <div class="docs-search-f"><label>Cliente</label><input id="docs-f-cliente" placeholder="Cliente…" oninput="renderDocumentsScreen()"></div>
       <div class="docs-search-f"><label>Transportista</label><input id="docs-f-transportista" placeholder="Transportista…" oninput="renderDocumentsScreen()"></div>
+      <div class="docs-search-f"><label>Placa</label><input id="docs-f-placa" placeholder="Placa…" oninput="renderDocumentsScreen()"></div>
       <div class="docs-search-f"><label>Conductor</label><input id="docs-f-conductor" placeholder="Conductor…" oninput="renderDocumentsScreen()"></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
@@ -2107,7 +2108,7 @@ body.has-pending .pending-dot{display:inline-block}
     <div class="rtbl-wrap"><table class="rtbl docs-tbl" id="docsTbl">
       <thead>
         <tr>
-          <th>Orden</th><th>Viaje</th><th>Fecha</th><th>Cliente</th><th>Transportista</th><th>Conductor</th>
+          <th>Fecha</th><th>Orden</th><th>Viaje</th><th>Cliente</th><th>Transportista</th><th>Placa</th><th>Conductor</th>
           <th>Guía Remit.</th><th>Guía Transp.</th><th>Hoja Ingreso</th><th>Tickets</th><th>EIR</th><th>GPS</th><th>Insp. Unidades</th>
         </tr>
       </thead>
@@ -8555,7 +8556,7 @@ const DOC_TYPES=[
 ];
 
 function clearDocsFilters(){
-  ['orden','viaje','fecha','cliente','transportista','conductor'].forEach(k=>{
+  ['orden','viaje','fecha','cliente','transportista','placa','conductor'].forEach(k=>{
     const el=document.getElementById('docs-f-'+k); if(el) el.value='';
   });
   renderDocumentsScreen();
@@ -8568,6 +8569,7 @@ function renderDocumentsScreen(){
   const fFecha=(document.getElementById('docs-f-fecha')?.value||'').toLowerCase().trim();
   const fCliente=(document.getElementById('docs-f-cliente')?.value||'').toLowerCase().trim();
   const fTransp=(document.getElementById('docs-f-transportista')?.value||'').toLowerCase().trim();
+  const fPlaca=(document.getElementById('docs-f-placa')?.value||'').toLowerCase().trim();
   const fCond=(document.getElementById('docs-f-conductor')?.value||'').toLowerCase().trim();
 
   const rows=all.filter(r=>{
@@ -8579,6 +8581,7 @@ function renderDocumentsScreen(){
     }
     if(fCliente&&!(r.cliente||'').toLowerCase().includes(fCliente))return false;
     if(fTransp&&!(r.transportista||'').toLowerCase().includes(fTransp))return false;
+    if(fPlaca&&!(r.placa||'').toLowerCase().includes(fPlaca))return false;
     if(fCond&&!(r.conductor||'').toLowerCase().includes(fCond))return false;
     return true;
   }).sort((a,b)=>(b.fechaInicio||'').localeCompare(a.fechaInicio||''));
@@ -8656,15 +8659,16 @@ function renderDocumentsScreen(){
   setEl('docsTbl-body', rows.map(r=>{
     const dots=DOC_TYPES.map(dt=>`<td><span class="doc-pt${_docLoaded(r,dt.prefixes)?' on':''}" title="${dt.label}"></span></td>`).join('');
     return `<tr onclick="showDet('${r.id}')">
+      <td class="td-date">${formatDateToDDMMYYYY(r.fechaInicio)||'—'}</td>
       <td class="td-orden">${r.orden||'—'}</td>
       <td>${r.viaje||'—'}</td>
-      <td class="td-date">${formatDateToDDMMYYYY(r.fechaInicio)||'—'}</td>
       <td class="td-trunc">${r.cliente||'—'}</td>
       <td class="td-trunc">${r.transportista||'—'}</td>
+      <td>${r.placa||'—'}</td>
       <td class="td-trunc">${r.conductor||'—'}</td>
       ${dots}
     </tr>`;
-  }).join('') || '<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--text2)">No hay órdenes que coincidan con la búsqueda</td></tr>');
+  }).join('') || '<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">No hay órdenes que coincidan con la búsqueda</td></tr>');
 }
 
 /* ─── RECORDS TABLE ──────────────────────────────────── */
